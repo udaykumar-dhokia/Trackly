@@ -1,6 +1,7 @@
 "use client"
 import { ArrowUpRightIcon } from "@phosphor-icons/react"
 import { Button } from "../ui/button"
+import Link from "next/link"
 
 const menuItems = [
     {
@@ -47,9 +48,13 @@ const Header = () => {
 
                     <div className="flex items-center gap-4">
                         <div className="sm:flex sm:gap-4">
-                            <Button className='border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0'>Login</Button>
+                            <a href="/auth/login">
+                                <Button className='border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0'>Login</Button>
+                            </a>
 
-                            <Button className='border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0'>Get Started Free <ArrowUpRightIcon /></Button>
+                            <Link href="/auth/login?screen_hint=signup">
+                                <Button className='border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0'>Get Started Free <ArrowUpRightIcon /></Button>
+                            </Link>
                         </div>
 
                         <button className="block rounded-sm bg-gray-100 p-2.5 text-gray-600 transition hover:text-gray-600/75 md:hidden">
@@ -61,7 +66,7 @@ const Header = () => {
                     </div>
                 </div>
             </div>
-        </header>
+        </header >
     )
 }
 
