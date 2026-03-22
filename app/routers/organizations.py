@@ -13,9 +13,6 @@ from app.models.orm import Organization, Project
 
 router = APIRouter()
 
-
-# ── Schemas ───────────────────────────────────────────────────────────────────
-
 class OrganizationCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=2, max_length=100)
@@ -52,8 +49,6 @@ class ProjectResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── Organizations ─────────────────────────────────────────────────────────────
-
 @router.post(
     "/organizations",
     response_model=OrganizationResponse,
@@ -64,7 +59,6 @@ async def create_organization(
     body: OrganizationCreate,
     db: AsyncSession = Depends(get_db),
 ) -> OrganizationResponse:
-    # Check slug uniqueness
     existing = await db.execute(
         select(Organization).where(Organization.slug == body.slug)
     )
@@ -76,10 +70,9 @@ async def create_organization(
 
     org = Organization(name=body.name, slug=body.slug)
     db.add(org)
-    await db.flush()   # get the generated id before commit
+    await db.flush()
     await db.refresh(org)
     return org
-
 
 @router.get(
     "/organizations/{org_id}",
@@ -92,9 +85,6 @@ async def get_organization(
 ) -> OrganizationResponse:
     org = await _get_org_or_404(db, org_id)
     return org
-
-
-# ── Projects ──────────────────────────────────────────────────────────────────
 
 @router.post(
     "/organizations/{org_id}/projects",
@@ -153,9 +143,6 @@ async def get_project(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
     return project
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:
     result = await db.execute(

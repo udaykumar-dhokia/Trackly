@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import ingest, stats, organizations, api_keys, events
+from app.routers import ingest, stats, organizations, api_keys, events, users
 
 
 @asynccontextmanager
@@ -36,6 +36,7 @@ app.include_router(stats.router,         prefix=settings.api_prefix, tags=["stat
 app.include_router(organizations.router, prefix=settings.api_prefix, tags=["organizations"])
 app.include_router(api_keys.router,      prefix=settings.api_prefix, tags=["api-keys"])
 app.include_router(events.router,        prefix=settings.api_prefix, tags=["events"])
+app.include_router(users.router,         prefix=settings.api_prefix, tags=["users"])
 
 
 @app.get("/health", tags=["ops"])

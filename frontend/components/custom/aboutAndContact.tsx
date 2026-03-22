@@ -100,7 +100,7 @@ export default function AboutContact() {
                 <div className="mx-auto max-w-[1080px] grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
 
                     {/* ── About card ── */}
-                    <div className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-2xl p-9 h-full overflow-hidden">
+                    <div className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-none p-9 h-full overflow-hidden">
 
                         {/* Label */}
                         <div className="flex items-center gap-2 mb-5">
@@ -110,7 +110,7 @@ export default function AboutContact() {
 
                         {/* Avatar + name */}
                         <div className="flex items-center gap-3.5 mb-6">
-                            <div className="w-13 h-13 rounded-xl bg-[#141418] border border-white/10 flex items-center justify-content-center shrink-0 overflow-hidden" style={{ width: 52, height: 52 }}>
+                            <div className="w-13 h-13 rounded-none bg-[#141418] border border-white/10 flex items-center justify-content-center shrink-0 overflow-hidden" style={{ width: 52, height: 52 }}>
                                 <img
                                     src="https://avatars.githubusercontent.com/udaykumar-dhokia"
                                     alt="Udaykumar Dhokia"
@@ -149,7 +149,7 @@ export default function AboutContact() {
                                 <span
                                     key={tag.label}
                                     className={[
-                                        'text-[10px] px-2.5 py-1 rounded-md border tracking-[.02em]',
+                                        'text-[10px] px-2.5 py-1 rounded-none border tracking-[.02em]',
                                         tag.hi
                                             ? 'border-primary/30 text-primary bg-primary/10'
                                             : 'border-white/10 text-zinc-500 bg-[#141418]',
@@ -184,7 +184,7 @@ export default function AboutContact() {
                     </div>
 
                     {/* ── Contact card ── */}
-                    <div className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-2xl p-9 h-full overflow-hidden">
+                    <div className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-none p-9 h-full overflow-hidden">
 
                         {/* Label */}
                         <div className="flex items-center gap-2 mb-5">

@@ -32,11 +32,20 @@ def _default_window() -> tuple[datetime, datetime]:
 )
 async def get_summary(
     project_id: uuid.UUID,
+    provider: str | None = Query(default=None),
     start: datetime | None = Query(default=None),
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> UsageSummary:
     period_start, period_end = _resolve_window(start, end)
+
+    filters = [
+        LlmEvent.project_id == project_id,
+        LlmEvent.occurred_at >= period_start,
+        LlmEvent.occurred_at < period_end,
+    ]
+    if provider:
+        filters.append(LlmEvent.provider == provider)
 
     stmt = (
         select(
@@ -45,11 +54,7 @@ async def get_summary(
             func.coalesce(func.sum(LlmEvent.estimated_cost_usd), 0.0).label("total_cost"),
             func.avg(LlmEvent.latency_ms).label("avg_latency"),
         )
-        .where(
-            LlmEvent.project_id == project_id,
-            LlmEvent.occurred_at >= period_start,
-            LlmEvent.occurred_at < period_end,
-        )
+        .where(*filters)
     )
     result = await db.execute(stmt)
     row = result.one()
@@ -71,11 +76,20 @@ async def get_summary(
 )
 async def get_by_model(
     project_id: uuid.UUID,
+    provider: str | None = Query(default=None),
     start: datetime | None = Query(default=None),
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[UsageByModel]:
     period_start, period_end = _resolve_window(start, end)
+
+    filters = [
+        LlmEvent.project_id == project_id,
+        LlmEvent.occurred_at >= period_start,
+        LlmEvent.occurred_at < period_end,
+    ]
+    if provider:
+        filters.append(LlmEvent.provider == provider)
 
     stmt = (
         select(
@@ -86,11 +100,7 @@ async def get_by_model(
             func.coalesce(func.sum(LlmEvent.estimated_cost_usd), 0.0).label("total_cost"),
             func.avg(LlmEvent.latency_ms).label("avg_latency"),
         )
-        .where(
-            LlmEvent.project_id == project_id,
-            LlmEvent.occurred_at >= period_start,
-            LlmEvent.occurred_at < period_end,
-        )
+        .where(*filters)
         .group_by(LlmEvent.model, LlmEvent.provider)
         .order_by(text("total_cost DESC"))
     )
@@ -117,11 +127,20 @@ async def get_by_model(
 )
 async def get_by_feature(
     project_id: uuid.UUID,
+    provider: str | None = Query(default=None),
     start: datetime | None = Query(default=None),
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[UsageByFeature]:
     period_start, period_end = _resolve_window(start, end)
+
+    filters = [
+        LlmEvent.project_id == project_id,
+        LlmEvent.occurred_at >= period_start,
+        LlmEvent.occurred_at < period_end,
+    ]
+    if provider:
+        filters.append(LlmEvent.provider == provider)
 
     stmt = (
         select(
@@ -130,11 +149,7 @@ async def get_by_feature(
             func.coalesce(func.sum(LlmEvent.total_tokens), 0).label("total_tokens"),
             func.coalesce(func.sum(LlmEvent.estimated_cost_usd), 0.0).label("total_cost"),
         )
-        .where(
-            LlmEvent.project_id == project_id,
-            LlmEvent.occurred_at >= period_start,
-            LlmEvent.occurred_at < period_end,
-        )
+        .where(*filters)
         .group_by(LlmEvent.feature)
         .order_by(text("total_cost DESC"))
     )
@@ -159,11 +174,20 @@ async def get_by_feature(
 )
 async def get_daily(
     project_id: uuid.UUID,
+    provider: str | None = Query(default=None),
     start: datetime | None = Query(default=None),
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[DailyUsage]:
     period_start, period_end = _resolve_window(start, end)
+
+    filters = [
+        LlmEvent.project_id == project_id,
+        LlmEvent.occurred_at >= period_start,
+        LlmEvent.occurred_at < period_end,
+    ]
+    if provider:
+        filters.append(LlmEvent.provider == provider)
 
     # date_trunc to bucket by day in UTC
     stmt = (
@@ -173,11 +197,7 @@ async def get_daily(
             func.coalesce(func.sum(LlmEvent.total_tokens), 0).label("total_tokens"),
             func.coalesce(func.sum(LlmEvent.estimated_cost_usd), 0.0).label("total_cost"),
         )
-        .where(
-            LlmEvent.project_id == project_id,
-            LlmEvent.occurred_at >= period_start,
-            LlmEvent.occurred_at < period_end,
-        )
+        .where(*filters)
         .group_by(text("day"))
         .order_by(text("day ASC"))
     )

@@ -98,3 +98,19 @@ class DailyUsage(BaseModel):
     event_count: int
     total_tokens: int
     total_cost_usd: float
+
+class UserResponse(BaseModel):
+    id: uuid.UUID
+    auth0_id: str
+    email: str
+    name: str | None
+    org_id: uuid.UUID
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class UserRegisterRequest(BaseModel):
+    auth0_id: str = Field(..., min_length=1, max_length=255)
+    email: str = Field(..., min_length=3, max_length=255)
+    name: str | None = Field(None, max_length=255)
