@@ -41,10 +41,19 @@ all       = [
     "langchain-google-genai>=1.0.0",
     "langchain-ollama>=0.1.0",
 ]
+server    = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.28.0",
+    "pydantic-settings>=2.0.0",
+    "slowapi>=0.1.9",
+    "mangum>=0.17.0",
+]
 dev       = ["pytest>=7.0", "pytest-asyncio>=0.21"]
 
 [project.urls]
-Homepage      = "https://trackly.dev"
+Homepage      = "https://trytrackly.vercel.app"
 Repository    = "https://github.com/udaykumar-dhokia/trackly"
 "Bug Tracker" = "https://github.com/udaykumar-dhokia/trackly/issues"
 

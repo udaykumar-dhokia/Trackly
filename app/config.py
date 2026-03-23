@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+import os
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -9,8 +9,7 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    # database_url: str = "postgresql+asyncpg://postgres:1234@localhost:5432/trackly"
-    database_url: str = "postgresql+asyncpg://neondb_owner:npg_GMDmZ2aS3YFR@ep-super-waterfall-amq6sf25-pooler.c-5.us-east-1.aws.neon.tech/neondb"
+    database_url: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:1234@localhost:5432/trackly")
 
     api_prefix: str = "/v1"
     debug: bool = False

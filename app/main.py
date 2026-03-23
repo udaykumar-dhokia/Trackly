@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import ingest, stats, organizations, api_keys, events, users
+from app.services.rate_limit import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 
 @asynccontextmanager
@@ -20,9 +23,11 @@ app = FastAPI(
     version="0.1.0",
     description="AI usage tracking — ingest, query, and manage LLM cost data.",
     lifespan=lifespan,
-    docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -10,6 +10,7 @@ from app.models.orm import LlmEvent
 from app.models.schemas import EventPayload, IngestRequest, IngestResponse
 from app.services.auth import authenticate
 from app.services.pricing import compute_cost
+from app.services.rate_limit import limiter
 
 router = APIRouter()
 
@@ -20,7 +21,9 @@ router = APIRouter()
     status_code=status.HTTP_202_ACCEPTED,
     summary="Ingest a batch of LLM events from the SDK",
 )
+@limiter.limit("120/minute")
 async def ingest_events(
+    request: Request, 
     body: IngestRequest,
     authorization: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db),
