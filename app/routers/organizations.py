@@ -9,7 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.models.orm import Organization, Project
+from app.models.orm import Organization, Project, User, ProjectMember, OrganizationMember
+from app.models.schemas import ProjectMemberResponse, ProjectMemberAdd, UserResponse, OrganizationMemberAdd
 
 router = APIRouter()
 
@@ -144,10 +145,202 @@ async def get_project(
         raise HTTPException(status_code=404, detail="Project not found.")
     return project
 
-async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:
+@router.get(
+    "/projects/{project_id}/members",
+    response_model=list[ProjectMemberResponse],
+    summary="List all members of a project",
+)
+async def list_project_members(
+    project_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> list[ProjectMemberResponse]:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    from sqlalchemy.orm import joinedload
     result = await db.execute(
-        select(Organization).where(Organization.id == org_id)
+        select(ProjectMember)
+        .options(joinedload(ProjectMember.user))
+        .where(ProjectMember.project_id == project_id)
     )
+    members = result.scalars().all()
+
+    return [
+        ProjectMemberResponse(
+            id=m.id,
+            project_id=m.project_id,
+            user_id=m.user_id,
+            email=m.user.email,
+            name=m.user.name,
+            role=m.role,
+            created_at=m.created_at,
+        )
+        for m in members
+    ]
+
+
+@router.post(
+    "/projects/{project_id}/members",
+    response_model=ProjectMemberResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a member to a project",
+)
+async def add_project_member(
+    project_id: uuid.UUID,
+    body: ProjectMemberAdd,
+    db: AsyncSession = Depends(get_db),
+) -> ProjectMemberResponse:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail=f"User with email '{body.email}' not found.",
+        )
+
+    result = await db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == project.org_id,
+            OrganizationMember.user_id == user.id,
+        )
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=403,
+            detail="User must be a member of the organization to join this project.",
+        )
+
+    result = await db.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project_id, ProjectMember.user_id == user.id
+        )
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=409, detail="User is already a member of this project."
+        )
+
+    member = ProjectMember(project_id=project_id, user_id=user.id, role=body.role)
+    db.add(member)
+    await db.flush()
+    await db.refresh(member, ["user"])
+
+    return ProjectMemberResponse(
+        id=member.id,
+        project_id=member.project_id,
+        user_id=member.user_id,
+        email=member.user.email,
+        name=member.user.name,
+        role=member.role,
+        created_at=member.created_at,
+    )
+
+
+@router.delete(
+    "/projects/{project_id}/members/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a member from a project",
+)
+async def remove_project_member(
+    project_id: uuid.UUID,
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project_id, ProjectMember.user_id == user_id
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found.")
+
+    await db.delete(member)
+    await db.commit()
+    return
+
+
+@router.get(
+    "/organizations/{org_id}/users",
+    response_model=list[UserResponse],
+    summary="List all users in an organization",
+)
+async def list_org_users(
+    org_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> list[UserResponse]:
+    await _get_org_or_404(db, org_id)
+    from sqlalchemy.orm import joinedload
+
+    result = await db.execute(
+        select(OrganizationMember)
+        .options(joinedload(OrganizationMember.user))
+        .where(OrganizationMember.org_id == org_id)
+    )
+    members = result.scalars().all()
+
+    return [
+        UserResponse(
+            id=m.user.id,
+            auth0_id=m.user.auth0_id,
+            email=m.user.email,
+            name=m.user.name,
+            org_id=org_id,
+            created_at=m.user.created_at,
+        )
+        for m in members
+    ]
+
+
+@router.post(
+    "/organizations/{org_id}/users",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add/Invite a user to an organization",
+)
+async def add_org_user(
+    org_id: uuid.UUID,
+    body: OrganizationMemberAdd,
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    await _get_org_or_404(db, org_id)
+
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        invited_id = f"invited|{uuid.uuid4().hex}"
+        user = User(auth0_id=invited_id, email=body.email, name=body.name)
+        db.add(user)
+        await db.flush()
+
+    result = await db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org_id, OrganizationMember.user_id == user.id
+        )
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="User already in this organization.")
+
+    member = OrganizationMember(org_id=org_id, user_id=user.id)
+    db.add(member)
+    await db.commit()
+    await db.refresh(user)
+
+    resp = UserResponse.model_validate(user)
+    resp.org_id = org_id
+    return resp
+
+
+async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:
+    result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found.")

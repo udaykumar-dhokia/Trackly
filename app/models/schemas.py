@@ -104,7 +104,7 @@ class UserResponse(BaseModel):
     auth0_id: str
     email: str
     name: str | None
-    org_id: uuid.UUID
+    org_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -114,3 +114,50 @@ class UserRegisterRequest(BaseModel):
     auth0_id: str = Field(..., min_length=1, max_length=255)
     email: str = Field(..., min_length=3, max_length=255)
     name: str | None = Field(None, max_length=255)
+
+
+class ProjectMemberResponse(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    user_id: uuid.UUID
+    email: str
+    name: str | None
+    role: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProjectMemberAdd(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    role: str = Field(default="member", max_length=50)
+
+
+class OrganizationMemberAdd(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    name: str | None = Field(None, max_length=255)
+
+
+class OrganizationMemberResponse(BaseModel):
+    id: uuid.UUID
+    org_id: uuid.UUID
+    user_id: uuid.UUID
+    email: str
+    name: str | None
+    role: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class OrganizationWithRoleResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    slug: str
+    role: str
+
+    model_config = {"from_attributes": True}
+
+
+class UserOrganizationsResponse(BaseModel):
+    organizations: list[OrganizationWithRoleResponse]

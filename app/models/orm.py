@@ -29,7 +29,7 @@ class Organization(Base):
 
     projects: Mapped[list[Project]] = relationship(back_populates="organization")
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="organization")
-    users: Mapped[list[User]] = relationship(back_populates="organization")
+    members: Mapped[list[OrganizationMember]] = relationship(back_populates="organization")
 
 
 class User(Base):
@@ -39,10 +39,10 @@ class User(Base):
     auth0_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=True)
-    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
-    organization: Mapped[Organization] = relationship(back_populates="users")
+    memberships: Mapped[list[OrganizationMember]] = relationship(back_populates="user")
+    project_memberships: Mapped[list[ProjectMember]] = relationship(back_populates="user")
 
 
 class Project(Base):
@@ -57,6 +57,7 @@ class Project(Base):
     organization: Mapped[Organization] = relationship(back_populates="projects")
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="project")
     events: Mapped[list[LlmEvent]] = relationship(back_populates="project")
+    members: Mapped[list[ProjectMember]] = relationship(back_populates="project")
 
 
 class ApiKey(Base):
@@ -80,6 +81,40 @@ class ApiKey(Base):
     organization: Mapped[Organization] = relationship(back_populates="api_keys")
     project: Mapped[Project | None] = relationship(back_populates="api_keys")
     events: Mapped[list[LlmEvent]] = relationship(back_populates="api_key")
+
+
+class OrganizationMember(Base):
+    __tablename__ = "organization_members"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="member")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    organization: Mapped[Organization] = relationship(back_populates="members")
+    user: Mapped[User] = relationship(back_populates="memberships")
+
+    __table_args__ = (
+        Index("ix_org_members_org_user", "org_id", "user_id", unique=True),
+    )
+
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="member")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    project: Mapped[Project] = relationship(back_populates="members")
+    user: Mapped[User] = relationship(back_populates="project_memberships")
+
+    __table_args__ = (
+        Index("ix_project_members_project_user", "project_id", "user_id", unique=True),
+    )
 
 
 class LlmEvent(Base):

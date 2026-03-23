@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { useAppSelector } from "@/lib/store/hooks";
 import {
   Gear,
   UserCircle,
@@ -12,6 +13,7 @@ import Link from "next/link";
 
 export default function SettingsPage() {
   const { user, isLoading } = useUser();
+  const { activeOrgId } = useAppSelector((state) => state.projects);
 
   if (isLoading) {
     return (

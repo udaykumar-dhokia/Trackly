@@ -28,7 +28,9 @@ export default function ApiKeysPage() {
     newKeyDisplay,
     lastFetchedOrgId,
   } = useAppSelector((state) => state.apiKeys);
-  const { items: projects } = useAppSelector((state) => state.projects);
+  const { items: projects, activeOrgId } = useAppSelector(
+    (state) => state.projects,
+  );
 
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -36,23 +38,23 @@ export default function ApiKeysPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (user?.org_id) {
-      if (lastFetchedOrgId !== user.org_id) {
-        dispatch(fetchApiKeys(user.org_id as string));
+    if (activeOrgId) {
+      if (lastFetchedOrgId !== activeOrgId) {
+        dispatch(fetchApiKeys(activeOrgId));
       }
     }
-  }, [user, dispatch, lastFetchedOrgId]);
+  }, [activeOrgId, dispatch, lastFetchedOrgId]);
 
   const handleCreateKey = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newKeyName.trim() || !user?.org_id) return;
+    if (!newKeyName.trim() || !activeOrgId) return;
     setIsCreating(true);
     try {
       const payloadProjectId =
         selectedProjectId === "none" ? null : selectedProjectId;
       await dispatch(
         createApiKey({
-          orgId: user.org_id as string,
+          orgId: activeOrgId,
           name: newKeyName,
           projectId: payloadProjectId,
         }),
@@ -133,7 +135,9 @@ export default function ApiKeysPage() {
           <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
             <h2 className="text-2xl font-bold text-white">Active Keys</h2>
             <button
-              onClick={() => dispatch(fetchApiKeys(user?.org_id as string))}
+              onClick={() => {
+                if (activeOrgId) dispatch(fetchApiKeys(activeOrgId));
+              }}
               disabled={status === "loading"}
               className="flex items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
               title="Refresh API Keys"

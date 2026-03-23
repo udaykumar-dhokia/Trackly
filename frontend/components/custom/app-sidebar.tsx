@@ -34,10 +34,17 @@ import {
   UserCircle,
   ActivityIcon,
   Book,
+  Users,
+  Monitor,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
-import { fetchProjects } from "@/lib/store/features/projectsSlice";
+import {
+  fetchProjects,
+  setActiveProject,
+  fetchUserOrgs,
+  setActiveOrg,
+} from "@/lib/store/features/projectsSlice";
 import Link from "next/link";
 
 type UserProps = {
@@ -60,11 +67,6 @@ const navItems = [
     title: "Events Log",
     url: "/events",
     icon: ActivityIcon,
-  },
-  {
-    title: "Organizations",
-    url: "/organizations",
-    icon: Database,
   },
   {
     title: "API Keys",
@@ -91,35 +93,40 @@ export function AppSidebar({
   const pathname = usePathname();
 
   const dispatch = useAppDispatch();
-  const { status, lastFetchedOrgId } = useAppSelector(
-    (state) => state.projects,
-  );
+  const {
+    items: projects,
+    activeProjectId,
+    organizations,
+    activeOrgId,
+  } = useAppSelector((state) => state.projects);
+  const activeProject = projects.find((p) => p.id === activeProjectId);
+  const activeOrg = organizations.find((o) => o.id === activeOrgId);
 
   useEffect(() => {
-    if (user?.org_id) {
-      if (lastFetchedOrgId !== user.org_id) {
-        dispatch(fetchProjects(user.org_id as string));
-      }
+    if (user?.sub) {
+      dispatch(fetchUserOrgs(user.sub));
     }
-  }, [user, dispatch, lastFetchedOrgId]);
+  }, [user?.sub, dispatch]);
+
+  useEffect(() => {
+    if (activeOrgId) {
+      dispatch(fetchProjects(activeOrgId));
+    }
+  }, [activeOrgId, dispatch]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/10" {...props}>
-      <SidebarHeader className="border-b border-white/5 pb-4 pt-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="hover:bg-white/5 cursor-default"
-            >
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-zinc-100">
-                  Trackly
-                </span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-b border-white/5 pb-6 pt-6 px-4">
+        <div className="flex items-center gap-3 px-2 space-y-1">
+          <div className="flex flex-col">
+            <span className="text-xl font-black tracking-tighter text-white leading-none">
+              Trackly
+            </span>
+            <span className="text-[9px] text-zinc-500 font-mono tracking-[0.2em] mt-1">
+              Zero-overhead AI tracking
+            </span>
+          </div>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -158,9 +165,232 @@ export function AppSidebar({
             })}
           </SidebarMenu>
         </SidebarGroup>
+
+        {(activeOrg?.role === "admin" || activeOrg?.role === "owner") && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">
+              Organization Settings
+            </SidebarGroupLabel>
+            <SidebarMenu className="space-y-1">
+              <SidebarMenuItem>
+                {(() => {
+                  const projectsUrl = `/organizations`;
+                  const isActive = pathname === projectsUrl;
+                  return (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={
+                        isActive
+                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
+                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
+                      }
+                    >
+                      <Link href={projectsUrl}>
+                        <Database
+                          size={20}
+                          weight={isActive ? "fill" : "duotone"}
+                          className={isActive ? "text-black" : "text-zinc-400"}
+                        />
+                        <span>Projects</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  );
+                })()}
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                {(() => {
+                  const membersUrl = `/organizations/members`;
+                  const isActive = pathname === membersUrl;
+                  return (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={
+                        isActive
+                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
+                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
+                      }
+                    >
+                      <Link href={membersUrl}>
+                        <Users
+                          size={20}
+                          weight={isActive ? "fill" : "duotone"}
+                          className={isActive ? "text-black" : "text-zinc-400"}
+                        />
+                        <span>Members</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  );
+                })()}
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+
+        {activeProjectId && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">
+              Project Settings
+            </SidebarGroupLabel>
+            <SidebarMenu className="space-y-1">
+              <SidebarMenuItem>
+                {(() => {
+                  const membersUrl = `/projects/${activeProjectId}/members`;
+                  const isActive = pathname === membersUrl;
+                  return (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={
+                        isActive
+                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
+                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
+                      }
+                    >
+                      <Link href={membersUrl}>
+                        <Users
+                          size={20}
+                          weight={isActive ? "fill" : "duotone"}
+                          className={isActive ? "text-black" : "text-zinc-400"}
+                        />
+                        <span>Members</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  );
+                })()}
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/5 pt-4 pb-4">
+      <SidebarFooter className="border-t border-white/5 p-4 space-y-4">
+        <div className="flex flex-col gap-1">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-100">
+                      <Users className="size-4" weight="bold" />
+                    </div>
+                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                      <span className="truncate font-bold text-zinc-200">
+                        {activeOrg?.name || "Select Org"}
+                      </span>
+                      <span className="truncate text-[10px] text-zinc-500 font-mono">
+                        Role: {activeOrg?.role || "..."}
+                      </span>
+                    </div>
+                    <CaretUpDown size={14} className="ml-auto text-zinc-500" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200"
+                  align="start"
+                  side={isMobile ? "bottom" : "right"}
+                  sideOffset={8}
+                >
+                  <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-widest px-2 py-1.5">
+                    Your Organizations
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  {organizations.map((org) => (
+                    <DropdownMenuItem
+                      key={org.id}
+                      onClick={() => dispatch(setActiveOrg(org.id))}
+                      className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white ${
+                        org.id === activeOrgId
+                          ? "bg-white/5 text-primary-foreground font-bold"
+                          : ""
+                      }`}
+                    >
+                      <span className="flex-1 truncate">{org.name}</span>
+                      <span className="text-[9px] px-1 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
+                        {org.role}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-100">
+                      <Database className="size-4" weight="bold" />
+                    </div>
+                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                      <span className="truncate font-bold text-zinc-200">
+                        {activeProject?.name || "Trackly"}
+                      </span>
+                      <span className="truncate text-[10px] text-zinc-500 font-mono">
+                        Env: {activeProject?.environment || "Production"}
+                      </span>
+                    </div>
+                    <CaretUpDown size={14} className="ml-auto text-zinc-500" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200"
+                  align="start"
+                  side={isMobile ? "bottom" : "right"}
+                  sideOffset={8}
+                >
+                  <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-widest px-2 py-1.5">
+                    Your Projects
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  {projects.map((project) => (
+                    <DropdownMenuItem
+                      key={project.id}
+                      onClick={() => dispatch(setActiveProject(project.id))}
+                      className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white ${
+                        project.id === activeProjectId
+                          ? "bg-white/5 text-primary-foreground font-bold"
+                          : ""
+                      }`}
+                    >
+                      <span className="flex-1 truncate">{project.name}</span>
+                      {project.environment && (
+                        <span className="text-[9px] px-1 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
+                          {project.environment}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                  {projects.length === 0 && (
+                    <div className="px-2 py-4 text-center text-xs text-zinc-500 font-mono">
+                      No projects found
+                    </div>
+                  )}
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/organizations"
+                      className="flex items-center w-full px-2 py-2 hover:bg-white/5 cursor-pointer"
+                    >
+                      <Gear size={16} className="mr-2" />
+                      Manage Projects
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

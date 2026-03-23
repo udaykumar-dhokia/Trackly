@@ -7,8 +7,23 @@ import {
   fetchProjects,
   createProject,
   setActiveProject,
+  fetchOrgMembers,
+  addOrgUser,
 } from "@/lib/store/features/projectsSlice";
-import { Plus, CaretRight, Planet, House } from "@phosphor-icons/react";
+import {
+  Plus,
+  CaretRight,
+  Planet,
+  House,
+  Users,
+  UserPlus,
+  CheckCircle,
+  XCircle,
+  ArrowClockwise,
+  Envelope,
+  ShieldCheck,
+  Database,
+} from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -25,19 +40,70 @@ export default function OrganizationsPage() {
     status,
     error,
     activeProjectId,
+    activeOrgId,
+    orgMembers,
+    orgMembersStatus,
   } = useAppSelector((state) => state.projects);
 
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{
+    exists: boolean;
+    inOrg: boolean;
+    name: string | null;
+  } | null>(null);
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeOrgId) {
+      dispatch(fetchOrgMembers(activeOrgId));
+      dispatch(fetchProjects(activeOrgId));
+    }
+  }, [activeOrgId, dispatch]);
+
+  useEffect(() => {
+    const checkEmail = async () => {
+      if (!email || !email.includes("@") || !activeOrgId) {
+        setEmailStatus(null);
+        return;
+      }
+
+      setCheckingEmail(true);
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const response = await fetch(
+          `${apiUrl}/v1/users/check?email=${encodeURIComponent(email)}&org_id=${activeOrgId}`,
+        );
+        const data = await response.json();
+        setEmailStatus({
+          exists: data.exists,
+          inOrg: data.in_org,
+          name: data.name,
+        });
+      } catch (err) {
+        console.error("Check failed", err);
+      } finally {
+        setCheckingEmail(false);
+      }
+    };
+
+    const timer = setTimeout(checkEmail, 500);
+    return () => clearTimeout(timer);
+  }, [email, user?.org_id]);
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProjectName.trim() || !user?.org_id) return;
+    if (!newProjectName.trim() || !activeOrgId) return;
     setIsCreating(true);
     try {
       await dispatch(
-        createProject({ orgId: user.org_id as string, name: newProjectName }),
+        createProject({ orgId: activeOrgId, name: newProjectName }),
       ).unwrap();
       setNewProjectName("");
       setIsDialogOpen(false);
@@ -48,47 +114,39 @@ export default function OrganizationsPage() {
     }
   };
 
+  const handleInviteUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !activeOrgId) return;
+    setIsInviting(true);
+    setInviteError(null);
+    try {
+      await dispatch(
+        addOrgUser({ orgId: activeOrgId, email }),
+      ).unwrap();
+      setEmail("");
+      setEmailStatus(null);
+    } catch (err: any) {
+      setInviteError(err.message || "Failed to invite user");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-12">
       <section className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-          Organization
+          Organization Projects
         </h1>
         <p className="text-zinc-400 font-mono text-sm max-w-2xl leading-relaxed">
-          Manage your top-level organization and underlying projects. Tracking
-          data and API keys are isolated within a Project to keep environments
-          separate.
+          Manage your organization's projects. Tracking data and API keys are
+          isolated within a Project to keep environments separate.
         </p>
-      </section>
-
-      <section>
-        <div className="border border-white/10 bg-[#141418] p-8 relative overflow-hidden shadow-[6px_6px_0_0_#4f46e5]">
-          <div className="flex flex-col gap-4 relative z-10">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-1">
-                Current Organization ID
-              </p>
-              <p className="font-mono text-sm text-indigo-300 break-all bg-indigo-500/10 inline-block px-3 py-1.5 border border-indigo-500/20">
-                {user?.org_id || "Loading..."}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-1">
-                Owner
-              </p>
-              <p className="text-zinc-100 font-medium">{user?.email}</p>
-            </div>
-          </div>
-          <div className="absolute -bottom-16 -right-16 text-indigo-500/5 rotate-12 pointer-events-none">
-            <Planet weight="fill" size={240} />
-          </div>
-        </div>
       </section>
 
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <h2 className="text-2xl font-bold text-white">Projects</h2>
+          <h2 className="text-2xl font-bold text-white">Available Projects</h2>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-2 bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-[3px_3px_0_0_#4338ca] hover:bg-indigo-500 hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_#4338ca] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all border-2 border-transparent">
@@ -139,7 +197,7 @@ export default function OrganizationsPage() {
 
         {status === "loading" && (
           <p className="text-zinc-500 font-mono animate-pulse">
-            Loading active projects...
+            Loading projects...
           </p>
         )}
         {status === "failed" && (
