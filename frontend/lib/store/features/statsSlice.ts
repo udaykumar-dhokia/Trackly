@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 export interface UsageSummary {
   total_events: number;
@@ -18,66 +18,81 @@ export interface UsageByModel {
   avg_latency_ms: number | null;
 }
 
+export interface DailyUsage {
+  date: string;
+  event_count: number;
+  total_tokens: number;
+  total_cost_usd: number;
+}
+
 interface StatsState {
   summary: UsageSummary | null;
   models: UsageByModel[];
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  dailyUsage: DailyUsage[];
+  status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  lastFetchedParams: { projectId: string; provider?: string } | null;
 }
 
 const initialState: StatsState = {
   summary: null,
   models: [],
-  status: 'idle',
+  dailyUsage: [],
+  status: "idle",
   error: null,
+  lastFetchedParams: null,
 };
 
 export const fetchDashboardStats = createAsyncThunk(
-  'stats/fetchDashboardStats',
+  "stats/fetchDashboardStats",
   async ({ projectId, provider }: { projectId: string; provider?: string }) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
-    // Construct query parameters
-    const queryParams = new URLSearchParams()
-    if (provider && provider !== "all") {
-        queryParams.append("provider", provider)
-    }
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : ""
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-    // Fetch summary and model breakdown concurrently
-    const [summaryRes, modelsRes] = await Promise.all([
+    const queryParams = new URLSearchParams();
+    if (provider && provider !== "all") {
+      queryParams.append("provider", provider);
+    }
+    const queryString = queryParams.toString()
+      ? `?${queryParams.toString()}`
+      : "";
+
+    const [summaryRes, modelsRes, dailyRes] = await Promise.all([
       fetch(`${apiUrl}/v1/projects/${projectId}/stats/summary${queryString}`),
-      fetch(`${apiUrl}/v1/projects/${projectId}/stats/by-model${queryString}`)
+      fetch(`${apiUrl}/v1/projects/${projectId}/stats/by-model${queryString}`),
+      fetch(`${apiUrl}/v1/projects/${projectId}/stats/daily${queryString}`),
     ]);
 
-    if (!summaryRes.ok || !modelsRes.ok) {
-      throw new Error('Failed to fetch dashboard stats');
+    if (!summaryRes.ok || !modelsRes.ok || !dailyRes.ok) {
+      throw new Error("Failed to fetch dashboard stats");
     }
 
     const summary = (await summaryRes.json()) as UsageSummary;
     const models = (await modelsRes.json()) as UsageByModel[];
+    const dailyUsage = (await dailyRes.json()) as DailyUsage[];
 
-    return { summary, models };
-  }
+    return { summary, models, dailyUsage };
+  },
 );
 
 export const statsSlice = createSlice({
-  name: 'stats',
+  name: "stats",
   initialState,
   reducers: {},
   extraReducers(builder) {
     builder
       .addCase(fetchDashboardStats.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.summary = action.payload.summary;
         state.models = action.payload.models;
+        state.dailyUsage = action.payload.dailyUsage;
+        state.lastFetchedParams = action.meta.arg;
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || 'Something went wrong';
+        state.status = "failed";
+        state.error = action.error.message || "Something went wrong";
       });
   },
 });

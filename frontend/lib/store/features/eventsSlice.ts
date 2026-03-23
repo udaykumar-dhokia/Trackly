@@ -31,6 +31,7 @@ interface EventsState {
   data: PaginatedEvents;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
+  lastFetchedParams: { projectId: string; page?: number; pageSize?: number; provider?: string } | null;
 }
 
 const initialState: EventsState = {
@@ -43,6 +44,7 @@ const initialState: EventsState = {
   },
   status: 'idle',
   error: null,
+  lastFetchedParams: null,
 };
 
 export const fetchEvents = createAsyncThunk(
@@ -77,6 +79,7 @@ export const eventsSlice = createSlice({
       .addCase(fetchEvents.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.data = action.payload;
+        state.lastFetchedParams = action.meta.arg;
       })
       .addCase(fetchEvents.rejected, (state, action) => {
         state.status = 'failed';

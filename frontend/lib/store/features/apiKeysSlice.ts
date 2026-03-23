@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 export interface ApiKey {
   id: string;
@@ -17,61 +17,76 @@ export interface ApiKeyCreatedResponse extends ApiKey {
 interface ApiKeysState {
   items: ApiKey[];
   newKeyDisplay: ApiKeyCreatedResponse | null;
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  lastFetchedOrgId: string | null;
 }
 
 const initialState: ApiKeysState = {
   items: [],
   newKeyDisplay: null,
-  status: 'idle',
+  status: "idle",
   error: null,
+  lastFetchedOrgId: null,
 };
 
 export const fetchApiKeys = createAsyncThunk(
-  'apiKeys/fetchApiKeys',
+  "apiKeys/fetchApiKeys",
   async (orgId: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const response = await fetch(`${apiUrl}/v1/organizations/${orgId}/api-keys`);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const response = await fetch(
+      `${apiUrl}/v1/organizations/${orgId}/api-keys`,
+    );
     if (!response.ok) {
-      throw new Error('Failed to fetch API keys');
+      throw new Error("Failed to fetch API keys");
     }
     return (await response.json()) as ApiKey[];
-  }
+  },
 );
 
 export const createApiKey = createAsyncThunk(
-  'apiKeys/createApiKey',
-  async ({ orgId, name, projectId }: { orgId: string; name: string; projectId?: string | null }) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const response = await fetch(`${apiUrl}/v1/organizations/${orgId}/api-keys`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, project_id: projectId }),
-    });
+  "apiKeys/createApiKey",
+  async ({
+    orgId,
+    name,
+    projectId,
+  }: {
+    orgId: string;
+    name: string;
+    projectId?: string | null;
+  }) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const response = await fetch(
+      `${apiUrl}/v1/organizations/${orgId}/api-keys`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, project_id: projectId }),
+      },
+    );
     if (!response.ok) {
-        throw new Error('Failed to create API key');
+      throw new Error("Failed to create API key");
     }
     return (await response.json()) as ApiKeyCreatedResponse;
-  }
-)
+  },
+);
 
 export const revokeApiKey = createAsyncThunk(
-  'apiKeys/revokeApiKey',
+  "apiKeys/revokeApiKey",
   async (keyId: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(`${apiUrl}/v1/api-keys/${keyId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
     if (!response.ok) {
-        throw new Error('Failed to revoke API key');
+      throw new Error("Failed to revoke API key");
     }
     return keyId;
-  }
-)
+  },
+);
 
 export const apiKeysSlice = createSlice({
-  name: 'apiKeys',
+  name: "apiKeys",
   initialState,
   reducers: {
     clearNewKeyDisplay: (state) => {
@@ -81,37 +96,36 @@ export const apiKeysSlice = createSlice({
   extraReducers(builder) {
     builder
       .addCase(fetchApiKeys.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchApiKeys.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.items = action.payload;
+        state.lastFetchedOrgId = action.meta.arg;
       })
       .addCase(fetchApiKeys.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || 'Something went wrong';
+        state.status = "failed";
+        state.error = action.error.message || "Something went wrong";
       })
       .addCase(createApiKey.fulfilled, (state, action) => {
-        // Add the generic key metadata to the list
         state.items.unshift({
-            id: action.payload.id,
-            name: action.payload.name,
-            key_prefix: action.payload.key_prefix,
-            project_id: action.payload.project_id,
-            is_active: action.payload.is_active,
-            created_at: action.payload.created_at,
-            last_used_at: action.payload.last_used_at,
+          id: action.payload.id,
+          name: action.payload.name,
+          key_prefix: action.payload.key_prefix,
+          project_id: action.payload.project_id,
+          is_active: action.payload.is_active,
+          created_at: action.payload.created_at,
+          last_used_at: action.payload.last_used_at,
         });
-        // Store the raw response so the UI can display the full key just once
         state.newKeyDisplay = action.payload;
       })
       .addCase(revokeApiKey.fulfilled, (state, action) => {
-          const keyId = action.payload;
-          const existingKey = state.items.find(key => key.id === keyId);
-          if (existingKey) {
-              existingKey.is_active = false;
-          }
-      })
+        const keyId = action.payload;
+        const existingKey = state.items.find((key) => key.id === keyId);
+        if (existingKey) {
+          existingKey.is_active = false;
+        }
+      });
   },
 });
 

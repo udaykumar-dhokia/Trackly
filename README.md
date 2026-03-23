@@ -6,6 +6,8 @@ This repository contains both the **Trackly Python SDK** and the **Trackly Inges
 
 ---
 
+![Trackly Dashboard Preview](frontend/public/demo.png)
+
 ## ⚡ Features
 
 - **Zero Overhead**: Callbacks fire instantly. All events are batched asynchronously off-thread and shipped every 2 seconds.
@@ -94,18 +96,21 @@ trackly.shutdown(timeout=5.0)
 The Trackly backend is built with FastAPI and PostgreSQL/AsyncPG, designed for maximum throughput. It handles instantaneous cost estimations dynamically parsing provider pricing rates over time.
 
 ### Requirements
+
 - Python 3.10+
 - PostgreSQL
 
 ### Local Setup & Development
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourname/trackly.git
    cd trackly
    ```
 
 2. **Virtual Environment & Dependencies**
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -114,14 +119,17 @@ The Trackly backend is built with FastAPI and PostgreSQL/AsyncPG, designed for m
 
 3. **Database Configuration**
    Ensure you have a PostgreSQL server running locally, and define your `DATABASE_URL` in a `.env` file at the root:
+
    ```env
    DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/trackly
    ```
 
 4. **Start the API Server**
+
    ```bash
    uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
+
    > **Note:** Trackly implements auto-table creation on startup, meaning you do not need to hunt for external migration binaries initially. The database will bootstrap itself immediately upon running the application.
 
 5. **Access the API Docs**
