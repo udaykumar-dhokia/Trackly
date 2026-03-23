@@ -112,6 +112,7 @@ class UserResponse(BaseModel):
     auth0_id: str
     email: str
     name: str | None
+    profile_photo: str | None = None
     org_id: uuid.UUID | None = None
     created_at: datetime
 
@@ -122,6 +123,7 @@ class UserRegisterRequest(BaseModel):
     auth0_id: str = Field(..., min_length=1, max_length=255)
     email: str = Field(..., min_length=3, max_length=255)
     name: str | None = Field(None, max_length=255)
+    profile_photo: str | None = None
 
 
 class ProjectMemberResponse(BaseModel):

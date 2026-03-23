@@ -39,6 +39,7 @@ class User(Base):
     auth0_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=True)
+    profile_photo: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     memberships: Mapped[list[OrganizationMember]] = relationship(back_populates="user")
@@ -138,7 +139,8 @@ class LlmEvent(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    api_key_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
+    api_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
+    parent_api_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
 
     # Provider info
     provider: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -177,7 +179,8 @@ class LlmEvent(Base):
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     project: Mapped[Project] = relationship(back_populates="events")
-    api_key: Mapped[ApiKey | None] = relationship(back_populates="events")
+    api_key: Mapped[ApiKey | None] = relationship(back_populates="events", foreign_keys=[api_key_id])
+    parent_api_key: Mapped[ApiKey | None] = relationship(foreign_keys=[parent_api_key_id])
 
     __table_args__ = (
         # Primary query pattern: project + time range
@@ -186,6 +189,8 @@ class LlmEvent(Base):
         Index("ix_llm_events_project_feature", "project_id", "feature"),
         # Per-user cost attribution
         Index("ix_llm_events_project_user", "project_id", "user_id"),
+        # Parent API key filtering
+        Index("ix_llm_events_parent_key", "parent_api_key_id"),
         # Model/provider breakdowns
         Index("ix_llm_events_project_model", "project_id", "model"),
         # BRIN index for append-only time column — cheap and fast for range scans

@@ -8,17 +8,22 @@ export const auth0 = new Auth0Client({
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-      const response = await fetch(`${apiUrl}/v1/users/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          auth0_id: user.sub,
-          email: user.email,
-          name: user.name || user.nickname || 'User',
-        }),
-      });
+      let response = await fetch(`${apiUrl}/v1/users/me?auth0_id=${encodeURIComponent(user.sub)}&profile_photo=${encodeURIComponent(user.picture || '')}`);
+
+      if (response.status === 404) {
+        response = await fetch(`${apiUrl}/v1/users/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            auth0_id: user.sub,
+            email: user.email,
+            name: user.name || user.nickname || 'User',
+            profile_photo: user.picture,
+          }),
+        });
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -27,7 +32,9 @@ export const auth0 = new Auth0Client({
         const data = await response.json();
 
         session.user.app_user_id = data.id;
-        session.user.org_id = data.org_id;
+        if (data.org_id) {
+          session.user.org_id = data.org_id;
+        }
       }
     } catch (error) {
       console.error('Error syncing user with backend:', error);

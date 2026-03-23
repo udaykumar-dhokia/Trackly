@@ -68,7 +68,7 @@ export const fetchUserOrgs = createAsyncThunk(
   async (auth0Id: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/users/organizations?auth0_id=${auth0Id}`,
+      `${apiUrl}/v1/users/organizations?auth0_id=${encodeURIComponent(auth0Id)}`,
     );
     if (!response.ok) {
       throw new Error("Failed to fetch organizations");

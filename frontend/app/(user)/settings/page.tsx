@@ -96,12 +96,12 @@ export default function SettingsPage() {
           </div>
 
           <div className="px-8 py-5 border-t border-white/5 bg-[#1a1a24] flex justify-end">
-            <Link
+            <a
               href="/auth/logout"
               className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-medium py-2 px-6 rounded-none transition-colors text-sm"
             >
               Sign Out
-            </Link>
+            </a>
           </div>
         </div>
       </section>

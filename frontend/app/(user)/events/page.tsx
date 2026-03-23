@@ -18,6 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import Link from "next/link";
 
 export default function EventsPage() {
@@ -314,8 +325,46 @@ export default function EventsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500 truncate max-w-[120px]">
-                      {evt.user_id || "-"}
+                    <td className="px-4 py-3">
+                      {evt.user_id ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 cursor-help group/user">
+                                <Avatar size="sm" className="size-6 border border-white/10 shrink-0">
+                                  {evt.user_photo && (
+                                    <AvatarImage 
+                                      src={evt.user_photo} 
+                                      alt={evt.user_name || evt.user_id} 
+                                    />
+                                  )}
+                                  <AvatarFallback className="bg-fuchsia-500/10 text-fuchsia-400 text-[10px] font-bold">
+                                    {(evt.user_name || evt.user_id).substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-zinc-500 truncate max-w-[100px] group-hover/user:text-zinc-300 transition-colors">
+                                  {evt.user_name || evt.user_id}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              side="top" 
+                              className="bg-[#1a1a24] border-2 border-fuchsia-500/50 text-white font-mono rounded-none shadow-[4px_4px_0_0_rgba(217,70,239,0.2)]"
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-bold text-fuchsia-400">
+                                  {evt.user_name || "Unknown User"}
+                                </span>
+                                <span className="text-[10px] text-zinc-400">
+                                  {evt.user_id}
+                                </span>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-zinc-700">-</span>
+                      )}
                     </td>
                   </tr>
                 ))}

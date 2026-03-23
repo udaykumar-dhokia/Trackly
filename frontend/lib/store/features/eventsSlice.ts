@@ -18,6 +18,8 @@ export interface LlmEvent {
   tags: string[] | null;
   occurred_at: string;
   ingested_at: string;
+  user_name?: string | null;
+  user_photo?: string | null;
 }
 
 export interface PaginatedEvents {

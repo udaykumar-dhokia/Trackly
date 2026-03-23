@@ -1,6 +1,6 @@
 import re
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -45,6 +45,7 @@ async def register_user(
         auth0_id=body.auth0_id,
         email=body.email,
         name=body.name,
+        profile_photo=body.profile_photo,
     )
     db.add(new_user)
     await db.flush()
@@ -58,6 +59,31 @@ async def register_user(
     user_resp = UserResponse.model_validate(new_user)
     user_resp.org_id = org.id
     return user_resp
+
+
+@router.get(
+    "/users/me",
+    response_model=UserResponse,
+    summary="Get user by auth0 ID",
+)
+async def get_user_me(
+    auth0_id: str,
+    profile_photo: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if profile_photo and user.profile_photo != profile_photo:
+        user.profile_photo = profile_photo
+        await db.commit()
+        await db.refresh(user)
+        
+    return UserResponse.model_validate(user)
 
 
 @router.get(

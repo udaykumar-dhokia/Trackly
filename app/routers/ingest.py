@@ -60,6 +60,7 @@ async def ingest_events(
             orm_event = LlmEvent(
                 project_id=api_key.project_id,
                 api_key_id=api_key.id,
+                parent_api_key_id=api_key.parent_key_id,
                 provider=event.provider,
                 model=event.model,
                 prompt_tokens=event.prompt_tokens,
