@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Trackly API",
-    version="0.1.0",
+    version="0.1.2",
     description="AI usage tracking — ingest, query, and manage LLM cost data.",
     lifespan=lifespan,
     redoc_url="/redoc",
@@ -31,7 +31,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://192.168.1.44:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://192.168.1.44:3000",
+        "https://trytrackly.vercel.app",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )

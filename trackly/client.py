@@ -228,7 +228,7 @@ class Trackly:
                 "Pass api_key=... or set TRACKLY_API_KEY."
             )
 
-        url = base_url or os.getenv("TRACKLY_BASE_URL", "http://localhost:8000/v1")
+        url = base_url or os.getenv("TRACKLY_BASE_URL", "https://trackly-backend-fxob.onrender.com/v1")
         self.base_url = url.rstrip("/")
 
         self.debug = debug or os.getenv("TRACKLY_DEBUG", "").strip() == "1"
