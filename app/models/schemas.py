@@ -48,6 +48,7 @@ class IngestResponse(BaseModel):
 class ApiKeyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     project_id: uuid.UUID | None = None
+    created_by_user_id: uuid.UUID | None = None
 
 
 class ApiKeyResponse(BaseModel):
@@ -55,6 +56,8 @@ class ApiKeyResponse(BaseModel):
     name: str
     key_prefix: str
     project_id: uuid.UUID | None
+    created_by_user_id: uuid.UUID | None = None
+    parent_key_id: uuid.UUID | None = None
     is_active: bool
     created_at: datetime
     last_used_at: datetime | None
@@ -65,6 +68,11 @@ class ApiKeyResponse(BaseModel):
 class ApiKeyCreatedResponse(ApiKeyResponse):
     """Returned only once at creation — includes the raw key."""
     raw_key: str
+
+
+class ApiKeyAccessRequest(BaseModel):
+    """Request body for creating a derived access key."""
+    auth0_id: str = Field(..., min_length=1, max_length=255)
 
 
 class UsageSummary(BaseModel):

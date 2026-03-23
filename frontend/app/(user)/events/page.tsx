@@ -38,7 +38,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [providerFilter]);
+  }, [providerFilter, activeProjectId]);
 
   useEffect(() => {
     if (activeProjectId) {

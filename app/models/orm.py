@@ -65,12 +65,17 @@ class ApiKey(Base):
     We never store the raw key — only the bcrypt hash and the visible prefix.
     The prefix (e.g. "tk_live_ab") lets users identify which key it is
     in the dashboard without exposing the secret.
+
+    created_by_user_id — the user who owns/created this key.
+    parent_key_id — if set, this is a derived "access" key linked to a master key.
     """
     __tablename__ = "api_keys"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    parent_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("api_keys.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     key_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     key_prefix: Mapped[str] = mapped_column(String(16), nullable=False)
@@ -80,6 +85,9 @@ class ApiKey(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="api_keys")
     project: Mapped[Project | None] = relationship(back_populates="api_keys")
+    created_by: Mapped[User | None] = relationship()
+    parent_key: Mapped[ApiKey | None] = relationship(remote_side="ApiKey.id", back_populates="derived_keys")
+    derived_keys: Mapped[list[ApiKey]] = relationship(back_populates="parent_key")
     events: Mapped[list[LlmEvent]] = relationship(back_populates="api_key")
 
 

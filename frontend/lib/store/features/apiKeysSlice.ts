@@ -1,10 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { setActiveProject } from "./projectsSlice";
 
 export interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
   project_id: string | null;
+  created_by_user_id: string | null;
+  parent_key_id: string | null;
   is_active: boolean;
   created_at: string;
   last_used_at: string | null;
@@ -71,6 +74,23 @@ export const createApiKey = createAsyncThunk(
   },
 );
 
+export const accessApiKey = createAsyncThunk(
+  "apiKeys/accessApiKey",
+  async ({ keyId, auth0Id }: { keyId: string; auth0Id: string }) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const response = await fetch(`${apiUrl}/v1/api-keys/${keyId}/access`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auth0_id: auth0Id }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to generate access key");
+    }
+    return (await response.json()) as ApiKeyCreatedResponse;
+  },
+);
+
 export const revokeApiKey = createAsyncThunk(
   "apiKeys/revokeApiKey",
   async (keyId: string) => {
@@ -95,6 +115,10 @@ export const apiKeysSlice = createSlice({
   },
   extraReducers(builder) {
     builder
+      .addCase(setActiveProject, (state) => {
+        state.lastFetchedOrgId = null;
+        state.status = "idle";
+      })
       .addCase(fetchApiKeys.pending, (state) => {
         state.status = "loading";
       })
@@ -113,6 +137,22 @@ export const apiKeysSlice = createSlice({
           name: action.payload.name,
           key_prefix: action.payload.key_prefix,
           project_id: action.payload.project_id,
+          created_by_user_id: action.payload.created_by_user_id,
+          parent_key_id: action.payload.parent_key_id,
+          is_active: action.payload.is_active,
+          created_at: action.payload.created_at,
+          last_used_at: action.payload.last_used_at,
+        });
+        state.newKeyDisplay = action.payload;
+      })
+      .addCase(accessApiKey.fulfilled, (state, action) => {
+        state.items.unshift({
+          id: action.payload.id,
+          name: action.payload.name,
+          key_prefix: action.payload.key_prefix,
+          project_id: action.payload.project_id,
+          created_by_user_id: action.payload.created_by_user_id,
+          parent_key_id: action.payload.parent_key_id,
           is_active: action.payload.is_active,
           created_at: action.payload.created_at,
           last_used_at: action.payload.last_used_at,

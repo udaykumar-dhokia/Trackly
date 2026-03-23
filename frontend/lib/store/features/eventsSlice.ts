@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { setActiveProject } from './projectsSlice';
 
 export interface LlmEvent {
   id: string;
@@ -73,6 +74,11 @@ export const eventsSlice = createSlice({
   reducers: {},
   extraReducers(builder) {
     builder
+      .addCase(setActiveProject, (state) => {
+        state.lastFetchedParams = null;
+        state.status = 'idle';
+        state.data = { items: [], total: 0, page: 1, page_size: 50, has_more: false };
+      })
       .addCase(fetchEvents.pending, (state) => {
         state.status = 'loading';
       })

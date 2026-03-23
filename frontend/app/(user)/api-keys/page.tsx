@@ -8,6 +8,7 @@ import {
   createApiKey,
   revokeApiKey,
   clearNewKeyDisplay,
+  accessApiKey,
 } from "@/lib/store/features/apiKeysSlice";
 import {
   Key,
@@ -28,11 +29,15 @@ export default function ApiKeysPage() {
     newKeyDisplay,
     lastFetchedOrgId,
   } = useAppSelector((state) => state.apiKeys);
-  const { items: projects, activeOrgId } = useAppSelector(
+  const { items: projects, activeOrgId, organizations } = useAppSelector(
     (state) => state.projects,
   );
 
+  const activeOrg = organizations.find((o) => o.id === activeOrgId);
+  const isAdminOrOwner = activeOrg?.role === "admin" || activeOrg?.role === "owner";
+
   const [isCreating, setIsCreating] = useState(false);
+  const [accessingKeyId, setAccessingKeyId] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("none");
   const [copied, setCopied] = useState(false);
@@ -65,6 +70,25 @@ export default function ApiKeysPage() {
       console.error("Failed to create key", err);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleAccessKey = async (keyId: string) => {
+    if (!user?.sub) return;
+    setAccessingKeyId(keyId);
+    try {
+      await dispatch(
+        accessApiKey({
+          keyId,
+          auth0Id: user.sub,
+        }),
+      ).unwrap();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("Failed to generate access key", err);
+      alert("Failed to generate access key. Do you already have one for this project?");
+    } finally {
+      setAccessingKeyId(null);
     }
   };
 
@@ -183,6 +207,16 @@ export default function ApiKeysPage() {
                         <h3 className="font-bold text-lg text-white">
                           {key.name}
                         </h3>
+                        {key.parent_key_id && (
+                          <span className="text-[10px] uppercase font-bold text-emerald-400 border border-emerald-500/30 px-2 py-0.5 bg-emerald-500/10">
+                            Derived
+                          </span>
+                        )}
+                        {!key.parent_key_id && (
+                          <span className="text-[10px] uppercase font-bold text-indigo-400 border border-indigo-500/30 px-2 py-0.5 bg-indigo-500/10">
+                            Master
+                          </span>
+                        )}
                         {!key.is_active && (
                           <span className="text-[10px] uppercase font-bold text-red-400 border border-red-500/30 px-2 py-0.5 bg-red-500/10">
                             Revoked
@@ -212,14 +246,26 @@ export default function ApiKeysPage() {
                       </p>
                     </div>
 
-                    {key.is_active && (
-                      <button
-                        onClick={() => handleRevoke(key.id)}
-                        className="text-zinc-500 hover:text-red-400 transition-colors p-2 border border-transparent hover:border-red-500/30"
-                      >
-                        <Trash size={20} />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {!isAdminOrOwner && key.is_active && !key.parent_key_id && key.project_id && (
+                        <button
+                          onClick={() => handleAccessKey(key.id)}
+                          disabled={accessingKeyId === key.id}
+                          className="bg-emerald-500 text-black font-bold px-4 py-2 text-sm border-2 border-transparent hover:border-emerald-400 transition-colors disabled:opacity-50"
+                        >
+                          {accessingKeyId === key.id ? "Working..." : "Access"}
+                        </button>
+                      )}
+
+                      {key.is_active && (isAdminOrOwner || key.created_by_user_id) && (
+                        <button
+                          onClick={() => handleRevoke(key.id)}
+                          className="text-zinc-500 hover:text-red-400 transition-colors p-2 border border-transparent hover:border-red-500/30"
+                        >
+                          <Trash size={20} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -228,9 +274,10 @@ export default function ApiKeysPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="border-2 border-white/10 bg-[#141418] p-6 sticky top-8 shadow-[6px_6px_0_0_rgba(255,255,255,0.05)]">
-            <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">
-              Generate API Key
+          {isAdminOrOwner && (
+            <div className="border-2 border-white/10 bg-[#141418] p-6 sticky top-8 shadow-[6px_6px_0_0_rgba(255,255,255,0.05)]">
+              <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">
+                Generate API Key
             </h3>
             <form onSubmit={handleCreateKey} className="flex flex-col gap-6">
               <div className="space-y-2">
@@ -295,9 +342,10 @@ export default function ApiKeysPage() {
                     className="group-hover:rotate-90 transition-transform"
                   />
                 )}
-              </button>
-            </form>
-          </div>
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

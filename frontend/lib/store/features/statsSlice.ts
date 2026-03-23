@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { setActiveProject } from "./projectsSlice";
 
 export interface UsageSummary {
   total_events: number;
@@ -80,6 +81,10 @@ export const statsSlice = createSlice({
   reducers: {},
   extraReducers(builder) {
     builder
+      .addCase(setActiveProject, (state) => {
+        state.lastFetchedParams = null;
+        state.status = "idle";
+      })
       .addCase(fetchDashboardStats.pending, (state) => {
         state.status = "loading";
       })

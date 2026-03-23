@@ -69,7 +69,7 @@ async def ingest_events(
                 latency_ms=event.latency_ms,
                 finish_reason=event.finish_reason,
                 feature=event.feature,
-                user_id=event.user_id,
+                user_id=str(api_key.created_by_user_id) if api_key.created_by_user_id else event.user_id,
                 session_id=event.session_id,
                 run_id=event.run_id,
                 parent_run_id=event.parent_run_id,
@@ -83,10 +83,8 @@ async def ingest_events(
             accepted += 1
 
         except Exception:
-            # One bad event must not reject the whole batch
             rejected += 1
 
-    # Commit happens in get_db() on exit — no explicit commit needed here
     return IngestResponse(accepted=accepted, rejected=rejected)
 
 
