@@ -89,7 +89,7 @@ class ApiKey(Base):
     created_by: Mapped[User | None] = relationship()
     parent_key: Mapped[ApiKey | None] = relationship(remote_side="ApiKey.id", back_populates="derived_keys")
     derived_keys: Mapped[list[ApiKey]] = relationship(back_populates="parent_key")
-    events: Mapped[list[LlmEvent]] = relationship(back_populates="api_key")
+    events: Mapped[list[LlmEvent]] = relationship(back_populates="api_key", foreign_keys="LlmEvent.api_key_id")
 
 
 class OrganizationMember(Base):
