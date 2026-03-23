@@ -6,7 +6,7 @@ import Link from "next/link";
 const menuItems = [
   {
     label: "Docs",
-    href: "#",
+    href: "/docs",
   },
   {
     label: "Features",
@@ -28,11 +28,10 @@ const menuItems = [
 
 const Header = () => {
   return (
-    <header className="bg-transparent">
+    <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
         <Link className="text-white flex items-center" href="/">
           <span className="sr-only">Home</span>
-          <CoinVerticalIcon size={24} />
           <h1 className="font-bold text-2xl">Trackly</h1>
         </Link>
 
@@ -56,13 +55,13 @@ const Header = () => {
           <div className="flex items-center gap-4">
             <div className="sm:flex sm:gap-4">
               <a href="/auth/login">
-                <Button className="border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
+                <Button className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
                   Login
                 </Button>
               </a>
 
               <Link href="/auth/login?screen_hint=signup">
-                <Button className="border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
+                <Button className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
                   Get Started Free <ArrowUpRightIcon />
                 </Button>
               </Link>

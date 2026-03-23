@@ -1,46 +1,57 @@
-"use client"
-import React, { useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/button'
-import { ArrowUpRightIcon } from '@phosphor-icons/react'
+"use client";
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "../ui/button";
+import { ArrowUpRightIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 
 function useCountUp(target: number, duration = 2400, start = false) {
-    const [value, setValue] = useState(0)
-    useEffect(() => {
-        if (!start) return
-        let startTime: number | null = null
-        const step = (timestamp: number) => {
-            if (!startTime) startTime = timestamp
-            const progress = Math.min((timestamp - startTime) / duration, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            setValue(Math.floor(eased * target))
-            if (progress < 1) requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-    }, [start, target, duration])
-    return value
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let startTime: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [start, target, duration]);
+  return value;
 }
 
-const PROVIDERS = ['OpenAI', 'Anthropic', 'Groq', 'Gemini', 'Mistral', 'Ollama']
+const PROVIDERS = [
+  "OpenAI",
+  "Anthropic",
+  "Groq",
+  "Gemini",
+  "Mistral",
+  "Ollama",
+];
 
 export default function Hero() {
-    const [mounted, setMounted] = useState(false)
-    const [providerIdx, setProviderIdx] = useState(0)
-    const events = useCountUp(4_812_903, 2400, mounted)
-    const cost = useCountUp(29_847, 2400, mounted)
+  const [mounted, setMounted] = useState(false);
+  const [providerIdx, setProviderIdx] = useState(0);
+  const events = useCountUp(4_812_903, 2400, mounted);
+  const cost = useCountUp(29_847, 2400, mounted);
 
-    useEffect(() => {
-        const t = setTimeout(() => setMounted(true), 100)
-        return () => clearTimeout(t)
-    }, [])
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(t);
+  }, []);
 
-    useEffect(() => {
-        const id = setInterval(() => setProviderIdx(i => (i + 1) % PROVIDERS.length), 1800)
-        return () => clearInterval(id)
-    }, [])
+  useEffect(() => {
+    const id = setInterval(
+      () => setProviderIdx((i) => (i + 1) % PROVIDERS.length),
+      1800,
+    );
+    return () => clearInterval(id);
+  }, []);
 
-    return (
-        <>
-            <style>{`
+  return (
+    <>
+      <style>{`
         :root {
           --bg:#09090b; --surface:#111114; --border:rgba(255,255,255,0.07);
           --border-bright:rgba(255,255,255,0.13); --text:#f4f4f5; --muted:#71717a;
@@ -150,71 +161,109 @@ export default function Hero() {
         .d4{transition-delay:.5s}.d5{transition-delay:.65s}.d6{transition-delay:.8s}
       `}</style>
 
-            <div className="hero-root">
-                <div className="orb orb-1" />
-                <div className="orb orb-2" />
+      <div className="hero-root relative pt-12">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
 
-                <section style={{ display: 'grid', placeContent: 'center', minHeight: '100vh', padding: '80px 24px' }}>
-                    <div style={{ maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
+        <section
+          style={{
+            display: "grid",
+            placeContent: "center",
+            minHeight: "100vh",
+            padding: "80px 24px",
+          }}
+        >
+          <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
+            <div
+              className={`reveal d1 ${mounted ? "in" : ""}`}
+              style={{ display: "flex", justifyContent: "center" }}
+            >
+              <span className="badge text-white!">
+                <span className="badge-dot" />
+                Now tracking 6 providers · Open beta
+              </span>
+            </div>
 
-                        {/* Badge */}
-                        <div className={`reveal d1 ${mounted ? 'in' : ''}`} style={{ display: 'flex', justifyContent: 'center' }}>
-                            <span className="badge text-white!">
-                                <span className="badge-dot" />
-                                Now tracking 6 providers · Open beta
-                            </span>
-                        </div>
+            <h1 className={`hero-h1 reveal d2 ${mounted ? "in" : ""}`}>
+              Track every{" "}
+              <span className="provider-word text-primary" key={providerIdx}>
+                {PROVIDERS[providerIdx]}
+              </span>
+              <br />
+              call. Know your costs.
+            </h1>
 
-                        {/* H1 */}
-                        <h1 className={`hero-h1 reveal d2 ${mounted ? 'in' : ''}`}>
-                            Track every{' '}
-                            <span className="provider-word text-primary" key={providerIdx}>{PROVIDERS[providerIdx]}</span>
-                            <br />
-                            call. Know your costs.
-                        </h1>
+            <p className={`hero-sub reveal d3 ${mounted ? "in" : ""}`}>
+              Two lines of code. Automatic token tracking, cost attribution, and
+              latency monitoring — across OpenAI, Anthropic, Groq, Gemini, and
+              more. No proxies, zero added latency.
+            </p>
 
-                        {/* Sub */}
-                        <p className={`hero-sub reveal d3 ${mounted ? 'in' : ''}`}>
-                            Two lines of code. Automatic token tracking, cost attribution,
-                            and latency monitoring — across OpenAI, Anthropic, Groq, Gemini,
-                            and more. No proxies, zero added latency.
-                        </p>
+            <div className={`cta-row reveal d4 ${mounted ? "in" : ""}`}>
+              <Link href="/docs">
+                <Button className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
+                  Read Docs <ArrowUpRightIcon />{" "}
+                </Button>
+              </Link>
+              <a href="#" className="btn-secondary">
+                $ pip install trackly
+              </a>
+            </div>
 
-                        {/* CTAs */}
-                        <div className={`cta-row reveal d4 ${mounted ? 'in' : ''}`}>
-                            <Button className='border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0'>Start for free <ArrowUpRightIcon /> </Button>
-                            <a href="#" className="btn-secondary">$ pip install trackly</a>
-                        </div>
+            <div
+              className={`reveal d5 ${mounted ? "in" : ""}`}
+              style={{ marginTop: 48 }}
+            >
+              <div className="code-card">
+                <div className="code-topbar">
+                  <span className="dot dot-r" />
+                  <span className="dot dot-y" />
+                  <span className="dot dot-g" />
+                  <span className="code-filename">main.py</span>
+                </div>
+                <div className="code-body">
+                  <span className="c-purple">from</span> trackly{" "}
+                  <span className="c-purple">import</span>{" "}
+                  <span className="c-blue">Trackly</span>
+                  {"\n"}
+                  <span className="c-purple">from</span> langchain_groq{" "}
+                  <span className="c-purple">import</span>{" "}
+                  <span className="c-blue">ChatGroq</span>
+                  {"\n"}
+                  {"\n"}
+                  <span className="c-muted"># 1. Init once</span>
+                  {"\n"}
+                  trackly <span className="c-amber">=</span>{" "}
+                  <span className="c-blue">Trackly</span>(api_key
+                  <span className="c-amber">=</span>
+                  <span className="c-green">"tk_live_..."</span>){"\n"}
+                  {"\n"}
+                  <span className="c-muted">
+                    # 2. Attach callback — that's it
+                  </span>
+                  {"\n"}
+                  llm <span className="c-amber">=</span>{" "}
+                  <span className="c-blue">ChatGroq</span>({"\n"}
+                  {"  "}model<span className="c-amber">=</span>
+                  <span className="c-green">"llama-3.3-70b-versatile"</span>,
+                  {"\n"}
+                  {"  "}callbacks<span className="c-amber">=[</span>
+                  trackly.callback({"\n"}
+                  {"    "}feature<span className="c-amber">=</span>
+                  <span className="c-green">"chat"</span>,{"\n"}
+                  {"    "}user_id<span className="c-amber">=</span>user.id,
+                  {"\n"}
+                  {"  "}
+                  <span className="c-amber">)]</span>,{"\n"}){"\n"}
+                  <span className="c-muted">
+                    # Every Groq call is now tracked automatically ✓
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                        {/* Code card */}
-                        <div className={`reveal d5 ${mounted ? 'in' : ''}`} style={{ marginTop: 48 }}>
-                            <div className="code-card">
-                                <div className="code-topbar">
-                                    <span className="dot dot-r" /><span className="dot dot-y" /><span className="dot dot-g" />
-                                    <span className="code-filename">main.py</span>
-                                </div>
-                                <div className="code-body">
-                                    <span className="c-purple">from</span> trackly <span className="c-purple">import</span> <span className="c-blue">Trackly</span>{'\n'}
-                                    <span className="c-purple">from</span> langchain_groq <span className="c-purple">import</span> <span className="c-blue">ChatGroq</span>{'\n'}
-                                    {'\n'}
-                                    <span className="c-muted"># 1. Init once</span>{'\n'}
-                                    trackly <span className="c-amber">=</span> <span className="c-blue">Trackly</span>(api_key<span className="c-amber">=</span><span className="c-green">"tk_live_..."</span>){'\n'}
-                                    {'\n'}
-                                    <span className="c-muted"># 2. Attach callback — that's it</span>{'\n'}
-                                    llm <span className="c-amber">=</span> <span className="c-blue">ChatGroq</span>({'\n'}
-                                    {'  '}model<span className="c-amber">=</span><span className="c-green">"llama-3.3-70b-versatile"</span>,{'\n'}
-                                    {'  '}callbacks<span className="c-amber">=[</span>trackly.callback({'\n'}
-                                    {'    '}feature<span className="c-amber">=</span><span className="c-green">"chat"</span>,{'\n'}
-                                    {'    '}user_id<span className="c-amber">=</span>user.id,{'\n'}
-                                    {'  '}<span className="c-amber">)]</span>,{'\n'}
-                                    ){'\n'}
-                                    <span className="c-muted"># Every Groq call is now tracked automatically ✓</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Stats */}
-                        {/* <div className={`reveal d6 ${mounted ? 'in' : ''}`} style={{ marginTop: 16 }}>
+            {/* Stats */}
+            {/* <div className={`reveal d6 ${mounted ? 'in' : ''}`} style={{ marginTop: 16 }}>
                             <div className="stats-row">
                                 <div className="stat-cell">
                                     <div className="stat-num">{events.toLocaleString()}</div>
@@ -234,10 +283,9 @@ export default function Hero() {
                                 </div>
                             </div>
                         </div> */}
-
-                    </div>
-                </section>
-            </div>
-        </>
-    )
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }

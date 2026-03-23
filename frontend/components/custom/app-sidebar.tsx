@@ -33,6 +33,7 @@ import {
   CaretUpDown,
   UserCircle,
   ActivityIcon,
+  Book,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -74,6 +75,11 @@ const navItems = [
     title: "Settings",
     url: "/settings",
     icon: Gear,
+  },
+  {
+    title: "Docs",
+    url: "/docs",
+    icon: Book,
   },
 ];
 
