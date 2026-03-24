@@ -7,12 +7,14 @@ import Pricing from "@/components/custom/pricing";
 import HowItWorks from "@/components/custom/howItWorks";
 import AboutContact from "@/components/custom/aboutAndContact";
 import Footer from "@/components/custom/footer";
+import Testimonials from "@/components/custom/testimonials";
 
 const page = () => {
   return (
     <div>
       <Header />
       <Hero />
+      <Testimonials />
       <Features />
       <HowItWorks />
       <Pricing />

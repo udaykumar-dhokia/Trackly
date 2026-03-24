@@ -10,6 +10,7 @@ import {
   Buildings,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { FeedbackForm } from "@/components/custom/feedback-form";
 
 export default function SettingsPage() {
   const { user, isLoading } = useUser();
@@ -104,6 +105,10 @@ export default function SettingsPage() {
             </a>
           </div>
         </div>
+      </section>
+
+      <section>
+        <FeedbackForm />
       </section>
     </div>
   );

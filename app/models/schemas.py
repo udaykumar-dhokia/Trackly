@@ -172,9 +172,27 @@ class OrganizationWithRoleResponse(BaseModel):
 class UserOrganizationsResponse(BaseModel):
     organizations: list[OrganizationWithRoleResponse]
 
+
 class OrganizationUsageResponse(BaseModel):
     org_id: uuid.UUID
     plan: str
     current_month_usage: int
     plan_limit: int
     reset_date: datetime
+
+
+class FeedbackCreate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=1000)
+
+
+class FeedbackResponse(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    user_name: str | None
+    user_photo: str | None
+    content: str
+    is_verified: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+

@@ -198,6 +198,7 @@ class LlmEvent(Base):
     )
 
 
+
 class ModelPricing(Base):
     """
     Cost per 1,000 tokens for each model, with time-bounded validity.
@@ -219,3 +220,16 @@ class ModelPricing(Base):
     __table_args__ = (
         Index("ix_model_pricing_lookup", "provider", "model", "effective_from"),
     )
+
+
+class Feedback(Base):
+    __tablename__ = "feedbacks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship()
+
