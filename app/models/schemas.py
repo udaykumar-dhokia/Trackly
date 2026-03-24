@@ -171,3 +171,10 @@ class OrganizationWithRoleResponse(BaseModel):
 
 class UserOrganizationsResponse(BaseModel):
     organizations: list[OrganizationWithRoleResponse]
+
+class OrganizationUsageResponse(BaseModel):
+    org_id: uuid.UUID
+    plan: str
+    current_month_usage: int
+    plan_limit: int
+    reset_date: datetime

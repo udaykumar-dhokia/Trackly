@@ -5,24 +5,8 @@ import Link from "next/link";
 
 const menuItems = [
   {
-    label: "Docs",
+    label: "Documentation",
     href: "/docs",
-  },
-  {
-    label: "Features",
-    href: "#",
-  },
-  {
-    label: "Pricing",
-    href: "#",
-  },
-  {
-    label: "About",
-    href: "#",
-  },
-  {
-    label: "Contact",
-    href: "#",
   },
 ];
 
@@ -30,8 +14,9 @@ const Header = () => {
   return (
     <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
-        <Link className="text-white flex items-center" href="/">
+        <Link className="text-white flex gap-1 items-center" href="/">
           <span className="sr-only">Home</span>
+          <img src="/logo/logo-48.png" className="w-10 h-10" />
           <h1 className="font-bold text-2xl">Trackly</h1>
         </Link>
 

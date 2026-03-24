@@ -10,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.orm import Organization, Project, User, ProjectMember, OrganizationMember
-from app.models.schemas import ProjectMemberResponse, ProjectMemberAdd, UserResponse, OrganizationMemberAdd
+from app.models.schemas import (
+    ProjectMemberResponse, ProjectMemberAdd, UserResponse, 
+    OrganizationMemberAdd, OrganizationUsageResponse
+)
+from app.services.billing import get_organization_usage, PLAN_LIMITS, get_current_month_start
+from datetime import timedelta
 
 router = APIRouter()
 
@@ -394,6 +399,35 @@ async def add_org_user(
     resp = UserResponse.model_validate(user)
     resp.org_id = org_id
     return resp
+
+
+@router.get(
+    "/organizations/{org_id}/usage",
+    response_model=OrganizationUsageResponse,
+    summary="Get monthly usage stats for an organization",
+)
+async def get_org_usage(
+    org_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> OrganizationUsageResponse:
+    org = await _get_org_or_404(db, org_id)
+    usage = await get_organization_usage(db, org_id)
+    
+    current_start = get_current_month_start()
+    if current_start.month == 12:
+        next_reset = current_start.replace(year=current_start.year + 1, month=1)
+    else:
+        next_reset = current_start.replace(month=current_start.month + 1)
+        
+    limit = PLAN_LIMITS.get(org.plan.lower(), PLAN_LIMITS["free"])
+    
+    return OrganizationUsageResponse(
+        org_id=org_id,
+        plan=org.plan,
+        current_month_usage=usage,
+        plan_limit=limit,
+        reset_date=next_reset
+    )
 
 
 async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:

@@ -36,6 +36,7 @@ import {
   Book,
   Users,
   Monitor,
+  ChartLineUp,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -138,6 +139,7 @@ export function AppSidebar({
     >
       <SidebarHeader className="border-b border-white/5 pb-6 pt-6 px-4 space-y-4">
         <div className="flex items-center gap-3 px-2">
+          <img src="/logo/logo-48.png" className="w-10 h-10" />
           <div className="flex flex-col">
             <span className="text-xl font-black tracking-tighter text-white leading-none">
               Trackly
@@ -305,6 +307,31 @@ export function AppSidebar({
                           className={isActive ? "text-black" : "text-zinc-400"}
                         />
                         <span>Members</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  );
+                })()}
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                {(() => {
+                  const usageUrl = `/organizations/usage`;
+                  const isActive = pathname === usageUrl;
+                  return (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={
+                        isActive
+                          ? "border-2 border-foreground bg-foreground text-background px-5 py-3 font-bold shadow-primary shadow-[4px_4px_0_0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none focus:outline-0 h-auto rounded-none transition-all uppercase tracking-wider"
+                          : "hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold py-3 h-auto transition-all rounded-none uppercase tracking-wider"
+                      }
+                    >
+                      <Link href={usageUrl}>
+                        <ChartLineUp
+                          size={20}
+                          weight={isActive ? "bold" : "duotone"}
+                        />
+                        <span>Usage & Billing</span>
                       </Link>
                     </SidebarMenuButton>
                   );
@@ -491,17 +518,6 @@ export function AppSidebar({
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem className="hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">
-                    <UserCircle size={16} className="mr-2" />
-                    Account
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">
-                    <Gear size={16} className="mr-2" />
-                    Preferences
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
