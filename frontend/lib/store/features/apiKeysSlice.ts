@@ -35,11 +35,13 @@ const initialState: ApiKeysState = {
 
 export const fetchApiKeys = createAsyncThunk(
   "apiKeys/fetchApiKeys",
-  async (orgId: string) => {
+  async ({ orgId, auth0Id }: { orgId: string; auth0Id?: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(
-      `${apiUrl}/v1/organizations/${orgId}/api-keys`,
-    );
+    let url = `${apiUrl}/v1/organizations/${orgId}/api-keys`;
+    if (auth0Id) {
+      url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
+    }
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch API keys");
     }
@@ -66,10 +68,10 @@ export const createApiKey = createAsyncThunk(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name, 
+        body: JSON.stringify({
+          name,
           project_id: projectId,
-          created_by_user_id: userId
+          created_by_user_id: userId,
         }),
       },
     );
@@ -99,13 +101,17 @@ export const accessApiKey = createAsyncThunk(
 
 export const revokeApiKey = createAsyncThunk(
   "apiKeys/revokeApiKey",
-  async (keyId: string) => {
+  async ({ keyId, auth0Id }: { keyId: string; auth0Id: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/api-keys/${keyId}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `${apiUrl}/v1/api-keys/${keyId}?auth0_id=${encodeURIComponent(auth0Id)}`,
+      {
+        method: "DELETE",
+      },
+    );
     if (!response.ok) {
-      throw new Error("Failed to revoke API key");
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to revoke API key");
     }
     return keyId;
   },
@@ -131,7 +137,7 @@ export const apiKeysSlice = createSlice({
       .addCase(fetchApiKeys.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.items = action.payload;
-        state.lastFetchedOrgId = action.meta.arg;
+        state.lastFetchedOrgId = action.meta.arg.orgId;
       })
       .addCase(fetchApiKeys.rejected, (state, action) => {
         state.status = "failed";

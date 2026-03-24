@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -231,13 +231,41 @@ async def access_api_key(
 )
 async def list_api_keys(
     org_id: uuid.UUID,
+    auth0_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[ApiKeyResponse]:
-    result = await db.execute(
-        select(ApiKey)
-        .where(ApiKey.org_id == org_id)
-        .order_by(ApiKey.created_at.desc())
-    )
+    """
+    List API keys, filtered by user visibility rules.
+    Org Owners/Admins see everything.
+    Other members see Master keys + their own derived keys.
+    """
+    user = None
+    if auth0_id:
+        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+        user = result.scalar_one_or_none()
+
+    is_org_admin = False
+    if org_id and user:
+        result = await db.execute(
+            select(OrganizationMember.role).where(
+                OrganizationMember.org_id == org_id,
+                OrganizationMember.user_id == user.id
+            )
+        )
+        role = result.scalar_one_or_none()
+        is_org_admin = role in ("owner", "admin")
+
+    stmt = select(ApiKey).where(ApiKey.org_id == org_id)
+    
+    if not is_org_admin:
+        stmt = stmt.where(
+            or_(
+                ApiKey.parent_key_id == None,
+                ApiKey.created_by_user_id == (user.id if user else None)
+            )
+        )
+
+    result = await db.execute(stmt.order_by(ApiKey.created_at.desc()))
     return result.scalars().all()
 
 
@@ -248,12 +276,11 @@ async def list_api_keys(
 )
 async def revoke_api_key(
     key_id: uuid.UUID,
+    auth0_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
-    Soft-deletes by setting is_active=False.
-    Also deactivates all derived keys if this is a master key.
-    Events logged by this key are preserved — only future auth is blocked.
+    Revoke a key. Only Org Admins or the key's creator can do this.
     """
     result = await db.execute(
         select(ApiKey).where(ApiKey.id == key_id)
@@ -261,6 +288,26 @@ async def revoke_api_key(
     key = result.scalar_one_or_none()
     if not key:
         raise HTTPException(status_code=404, detail="API key not found.")
+
+    # Check permission
+    result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+    user = result.scalar_one_or_none()
+    if not user:
+         raise HTTPException(status_code=403, detail="Unauthorized.")
+
+    # Check org role
+    result = await db.execute(
+        select(OrganizationMember.role).where(
+            OrganizationMember.org_id == key.org_id,
+            OrganizationMember.user_id == user.id
+        )
+    )
+    role = result.scalar_one_or_none()
+    is_org_admin = role in ("owner", "admin")
+    
+    # Permission: org admin OR key creator
+    if not is_org_admin and key.created_by_user_id != user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to revoke this key.")
 
     await db.execute(
         update(ApiKey)

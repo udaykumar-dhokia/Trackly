@@ -26,6 +26,16 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ProjectMembersPage() {
   const params = useParams();
@@ -40,8 +50,16 @@ export default function ProjectMembersPage() {
     orgMembers,
     orgMembersStatus,
     activeProjectId,
+    organizations,
+    activeOrgId,
   } = useAppSelector((state) => state.projects);
   const project = projects.find((p) => p.id === projectId);
+  const activeOrg = organizations.find((o) => o.id === activeOrgId);
+  const isOrgAdmin = activeOrg?.role === "admin" || activeOrg?.role === "owner";
+  
+  const currentProjectMember = members.find((m) => m.email === authUser?.email);
+  const isProjectAdmin = currentProjectMember?.role === "admin" || isOrgAdmin;
+
   const router = useRouter();
 
   useEffect(() => {
@@ -61,6 +79,9 @@ export default function ProjectMembersPage() {
     inOrg: boolean;
     name: string | null;
   } | null>(null);
+
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [memberIdToRemove, setMemberIdToRemove] = useState<string | null>(null);
 
   useEffect(() => {
     const checkEmail = async () => {
@@ -111,7 +132,14 @@ export default function ProjectMembersPage() {
     setIsAdding(true);
     setAddError(null);
     try {
-      await dispatch(addProjectMember({ projectId, email, role })).unwrap();
+      await dispatch(
+        addProjectMember({
+          projectId,
+          email,
+          role,
+          auth0Id: authUser?.sub || undefined,
+        }),
+      ).unwrap();
       setEmail("");
       setEmailStatus(null);
       toast.success("Member added to project", {
@@ -126,16 +154,21 @@ export default function ProjectMembersPage() {
     }
   };
 
-  const handleRemoveMember = async (userId: string) => {
-    if (
-      confirm("Are you sure you want to remove this member from the project?")
-    ) {
-      try {
-        await dispatch(removeProjectMember({ projectId, userId })).unwrap();
-        toast.success("Member removed");
-      } catch (err: any) {
-        toast.error("Failed to remove member");
-      }
+  const handleRemoveMember = async () => {
+    if (!memberIdToRemove || !authUser?.sub) return;
+    try {
+      await dispatch(
+        removeProjectMember({
+          projectId,
+          userId: memberIdToRemove,
+          auth0Id: authUser.sub,
+        }),
+      ).unwrap();
+      toast.success("Member removed");
+      setIsRemoveDialogOpen(false);
+      setMemberIdToRemove(null);
+    } catch (err: any) {
+      toast.error("Failed to remove member");
     }
   };
 
@@ -230,9 +263,12 @@ export default function ProjectMembersPage() {
                     <ShieldCheck size={14} className="text-emerald-400" />
                     {member.role}
                   </div>
-                  {authUser?.email !== member.email && (
+                  {authUser?.email !== member.email && isProjectAdmin && (
                     <button
-                      onClick={() => handleRemoveMember(member.user_id)}
+                      onClick={() => {
+                        setMemberIdToRemove(member.user_id);
+                        setIsRemoveDialogOpen(true);
+                      }}
                       className="cursor-pointer text-zinc-600 hover:text-red-400 transition-colors p-2"
                       title="Remove Member"
                     >
@@ -245,171 +281,197 @@ export default function ProjectMembersPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-1">
-          <div className="border-4 border-indigo-500 bg-[#141418] p-8 sticky top-8 shadow-[12px_12px_0_0_#4f46e5] space-y-6">
-            <h3 className="text-xl font-bold text-white uppercase tracking-tighter">
-              Add Collaborator
-            </h3>
+        {isProjectAdmin && (
+          <div className="lg:col-span-1">
+            <div className="border-4 border-indigo-500 bg-[#141418] p-8 sticky top-8 shadow-[12px_12px_0_0_#4f46e5] space-y-6">
+              <h3 className="text-xl font-bold text-white uppercase tracking-tighter">
+                Add Collaborator
+              </h3>
 
-            {/* Org Member Dropdown */}
-            {orgMembers.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                  <User size={14} /> Quick Add (Org Member)
-                </label>
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setEmail(e.target.value);
-                    }
-                  }}
-                  value={orgMembers.find((m) => m.email === email)?.email || ""}
-                  className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
-                >
-                  <option value="">Select a teammate...</option>
-                  {orgMembers
-                    .filter(
-                      (m) =>
-                        !members.some((pm) => pm.email === m.email) &&
-                        m.email !== authUser?.email,
-                    )
-                    .map((member) => (
-                      <option key={member.id} value={member.email}>
-                        {member.name || member.email}
-                      </option>
-                    ))}
-                </select>
-                <div className="flex justify-between items-center px-1">
-                  <p className="text-[9px] text-zinc-500 font-mono italic">
-                    Choose from existing organization members
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="relative flex items-center gap-4 py-2">
-              <div className="flex-1 h-px bg-white/5" />
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                or
-              </span>
-              <div className="flex-1 h-px bg-white/5" />
-            </div>
-
-            <form onSubmit={handleAddMember} className="flex flex-col gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                  <Envelope size={14} /> User Email
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full bg-[#0f0f12] border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
-                      ${
-                        emailStatus?.inOrg
-                          ? "border-emerald-500/50"
-                          : emailStatus?.exists
-                            ? "border-indigo-500/50"
-                            : emailStatus?.exists === false &&
-                                email.includes("@")
-                              ? "border-amber-500/50"
-                              : "border-white/10 focus:border-indigo-500"
-                      }`}
-                    required
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                    {checkingEmail && (
-                      <ArrowClockwise
-                        className="animate-spin text-zinc-500"
-                        size={16}
-                      />
-                    )}
-                    {!checkingEmail && emailStatus?.inOrg && (
-                      <CheckCircle
-                        className="text-emerald-500"
-                        weight="fill"
-                        size={18}
-                      />
-                    )}
-                    {!checkingEmail &&
-                      emailStatus?.exists &&
-                      !emailStatus.inOrg && (
-                        <UserPlus
-                          className="text-indigo-500"
-                          weight="fill"
-                          size={18}
-                        />
-                      )}
-                    {!checkingEmail &&
-                      emailStatus?.exists === false &&
-                      email.includes("@") && (
-                        <XCircle
-                          className="text-amber-500"
-                          weight="fill"
-                          size={18}
-                        />
-                      )}
+              {/* Org Member Dropdown */}
+              {orgMembers.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <User size={14} /> Quick Add (Org Member)
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setEmail(e.target.value);
+                      }
+                    }}
+                    value={orgMembers.find((m) => m.email === email)?.email || ""}
+                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
+                  >
+                    <option value="">Select a teammate...</option>
+                    {orgMembers
+                      .filter(
+                        (m) =>
+                          !members.some((pm) => pm.email === m.email) &&
+                          m.email !== authUser?.email,
+                      )
+                      .map((member) => (
+                        <option key={member.id} value={member.email}>
+                          {member.name || member.email}
+                        </option>
+                      ))}
+                  </select>
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-[9px] text-zinc-500 font-mono italic">
+                      Choose from existing organization members
+                    </p>
                   </div>
-                </div>
-                {emailStatus?.inOrg && (
-                  <p className="text-[10px] text-emerald-500 font-mono mt-1 italic">
-                    Member found: {emailStatus.name}
-                  </p>
-                )}
-                {emailStatus?.exists && !emailStatus.inOrg && (
-                  <p className="text-[10px] text-indigo-400 font-mono mt-1 italic">
-                    External user: {emailStatus.name} (Will be added to org)
-                  </p>
-                )}
-                {emailStatus?.exists === false && email.includes("@") && (
-                  <p className="text-[10px] text-amber-500 font-mono mt-1 italic">
-                    New user (will be invited).
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                  <IdentificationBadge size={14} /> Role
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
-                >
-                  <option value="member">Project Member</option>
-                  <option value="admin">Project Admin</option>
-                  <option value="viewer">Viewer Only</option>
-                </select>
-              </div>
-
-              {addError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-mono flex gap-2">
-                  <WarningCircle size={14} className="shrink-0" />
-                  {addError}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={isAdding || !email.trim()}
-                className="group flex items-center justify-center gap-2 bg-indigo-500 text-white font-bold py-4 border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-y-px active:shadow-[2px_2px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-tighter"
-              >
-                {isAdding ? "Inviting..." : "Grant Access"}
-              </button>
-            </form>
+              <div className="relative flex items-center gap-4 py-2">
+                <div className="flex-1 h-px bg-white/5" />
+                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                  or
+                </span>
+                <div className="flex-1 h-px bg-white/5" />
+              </div>
 
-            <div className="pt-4 border-t border-white/5">
-              <p className="text-[10px] text-zinc-500 leading-relaxed font-mono italic">
-                Note: Users must already be registered within your organization
-                to be added to specific projects.
-              </p>
+              <form onSubmit={handleAddMember} className="flex flex-col gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Envelope size={14} /> User Email
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      placeholder="name@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full bg-[#0f0f12] border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
+                        ${
+                          emailStatus?.inOrg
+                            ? "border-emerald-500/50"
+                            : emailStatus?.exists
+                              ? "border-indigo-500/50"
+                              : emailStatus?.exists === false &&
+                                  email.includes("@")
+                                ? "border-amber-500/50"
+                                : "border-white/10 focus:border-indigo-500"
+                        }`}
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                      {checkingEmail && (
+                        <ArrowClockwise
+                          className="animate-spin text-zinc-500"
+                          size={16}
+                        />
+                      )}
+                      {!checkingEmail && emailStatus?.inOrg && (
+                        <CheckCircle
+                          className="text-emerald-500"
+                          weight="fill"
+                          size={18}
+                        />
+                      )}
+                      {!checkingEmail &&
+                        emailStatus?.exists &&
+                        !emailStatus.inOrg && (
+                          <UserPlus
+                            className="text-indigo-500"
+                            weight="fill"
+                            size={18}
+                          />
+                        )}
+                      {!checkingEmail &&
+                        emailStatus?.exists === false &&
+                        email.includes("@") && (
+                          <XCircle
+                            className="text-amber-500"
+                            weight="fill"
+                            size={18}
+                          />
+                        )}
+                    </div>
+                  </div>
+                  {emailStatus?.inOrg && (
+                    <p className="text-[10px] text-emerald-500 font-mono mt-1 italic">
+                      Member found: {emailStatus.name}
+                    </p>
+                  )}
+                  {emailStatus?.exists && !emailStatus.inOrg && (
+                    <p className="text-[10px] text-indigo-400 font-mono mt-1 italic">
+                      External user: {emailStatus.name} (Will be added to org)
+                    </p>
+                  )}
+                  {emailStatus?.exists === false && email.includes("@") && (
+                    <p className="text-[10px] text-amber-500 font-mono mt-1 italic">
+                      New user (will be invited).
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <IdentificationBadge size={14} /> Role
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
+                  >
+                    <option value="member">Project Member</option>
+                    <option value="admin">Project Admin</option>
+                    <option value="viewer">Viewer Only</option>
+                  </select>
+                </div>
+
+                {addError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-mono flex gap-2">
+                    <WarningCircle size={14} className="shrink-0" />
+                    {addError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isAdding || !email.trim()}
+                  className="group flex items-center justify-center gap-2 bg-indigo-500 text-white font-bold py-4 border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-y-px active:shadow-[2px_2px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-tighter"
+                >
+                  {isAdding ? "Inviting..." : "Grant Access"}
+                </button>
+              </form>
+
+              <div className="pt-4 border-t border-white/5">
+                <p className="text-[10px] text-zinc-500 leading-relaxed font-mono italic">
+                  Note: Users must already be registered within your organization
+                  to be added to specific projects.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+      <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <AlertDialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 rounded-none shadow-[12px_12px_0_0_#4f46e5]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold uppercase tracking-tight text-white">
+              Remove Member?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 font-mono text-xs">
+              This will immediately revoke their access to this project. They
+              will no longer be able to view dashboards or manage API keys here.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="bg-transparent border-2 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-none font-bold transition-all">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveMember}
+              className="bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-none shadow-[4px_4px_0_0_#4338ca] active:translate-y-px active:shadow-none transition-all"
+            >
+              Remove Member
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -99,6 +99,7 @@ export function AppSidebar({
     activeProjectId,
     organizations,
     activeOrgId,
+    status: projectsStatus,
   } = useAppSelector((state) => state.projects);
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const activeOrg = organizations.find((o) => o.id === activeOrgId);
@@ -129,18 +130,89 @@ export function AppSidebar({
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/10" {...props}>
-      <SidebarHeader className="border-b border-white/5 pb-6 pt-6 px-4">
-        <div className="flex items-center gap-3 px-2 space-y-1">
+    <Sidebar
+      collapsible="offcanvas"
+      className="border-r border-white/10"
+      {...props}
+      variant="floating"
+    >
+      <SidebarHeader className="border-b border-white/5 pb-6 pt-6 px-4 space-y-4">
+        <div className="flex items-center gap-3 px-2">
           <div className="flex flex-col">
             <span className="text-xl font-black tracking-tighter text-white leading-none">
               Trackly
             </span>
-            <span className="text-[9px] text-zinc-500 font-mono tracking-[0.2em] mt-1">
-              Zero-overhead AI tracking
+            <span className="text-[9px] text-zinc-500 font-mono tracking-[0.2em] mt-1 uppercase">
+              AI Observability
             </span>
           </div>
         </div>
+
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-none h-14"
+                >
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-indigo-500 text-white shadow-[2px_2px_0_0_#000]">
+                    <Users className="size-4" weight="bold" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight ml-3">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">
+                      Workspace
+                    </span>
+                    <span className="truncate text-white group-data-[collapsible=icon]:hidden">
+                      {activeOrg?.name || "Select Org"}
+                    </span>
+                  </div>
+                  <CaretUpDown
+                    size={14}
+                    className="ml-auto text-zinc-500 group-data-[collapsible=icon]:hidden"
+                  />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200 p-2 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)]"
+                align="start"
+                side={isMobile ? "bottom" : "right"}
+                sideOffset={12}
+              >
+                <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] px-2 py-1.5 font-black">
+                  Switch Workspace
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10 mb-2" />
+                <div className="space-y-1">
+                  {organizations.map((org) => (
+                    <DropdownMenuItem
+                      key={org.id}
+                      onClick={() => {
+                        dispatch(setActiveOrg(org.id));
+                        if (pathname.includes("/projects/")) {
+                          router.push("/dashboard");
+                        }
+                      }}
+                      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-none border border-transparent transition-all focus:bg-indigo-500/10 focus:border-indigo-500/30 focus:text-white ${
+                        org.id === activeOrgId
+                          ? "bg-indigo-500/10 border-indigo-500/30 text-white font-bold"
+                          : ""
+                      }`}
+                    >
+                      <div
+                        className={`size-2 rounded-full ${org.id === activeOrgId ? "bg-indigo-500 animate-pulse" : "bg-zinc-700"}`}
+                      />
+                      <span className="flex-1 truncate">{org.name}</span>
+                      <span className="text-[8px] px-1.5 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
+                        {org.role}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -245,7 +317,10 @@ export function AppSidebar({
         {activeProjectId && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">
-              Project Settings
+              Project Context:{" "}
+              <span className="text-indigo-400 ml-1">
+                {activeProject?.name}
+              </span>
             </SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
@@ -268,7 +343,7 @@ export function AppSidebar({
                           weight={isActive ? "fill" : "duotone"}
                           className={isActive ? "text-black" : "text-zinc-400"}
                         />
-                        <span>Members</span>
+                        <span>Project Members</span>
                       </Link>
                     </SidebarMenuButton>
                   );
@@ -287,116 +362,74 @@ export function AppSidebar({
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                    disabled={projectsStatus === "loading"}
+                    className="bg-[#0c0c0e] border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-none disabled:opacity-50"
                   >
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-100">
-                      <Users className="size-4" weight="bold" />
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
-                      <span className="truncate font-bold text-zinc-200">
-                        {activeOrg?.name || "Select Org"}
-                      </span>
-                      <span className="truncate text-[10px] text-zinc-500 font-mono">
-                        Role: {activeOrg?.role || "..."}
-                      </span>
-                    </div>
-                    <CaretUpDown size={14} className="ml-auto text-zinc-500" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200"
-                  align="start"
-                  side={isMobile ? "bottom" : "right"}
-                  sideOffset={8}
-                >
-                  <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-widest px-2 py-1.5">
-                    Your Organizations
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  {organizations.map((org) => (
-                    <DropdownMenuItem
-                      key={org.id}
-                      onClick={() => dispatch(setActiveOrg(org.id))}
-                      className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white ${
-                        org.id === activeOrgId
-                          ? "bg-white/5 text-primary-foreground font-bold"
-                          : ""
-                      }`}
-                    >
-                      <span className="flex-1 truncate">{org.name}</span>
-                      <span className="text-[9px] px-1 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
-                        {org.role}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton
-                    size="lg"
-                    className="data-[state=open]:bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                  >
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-100">
-                      <Database className="size-4" weight="bold" />
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
-                      <span className="truncate font-bold text-zinc-200">
-                        {activeProject?.name || "Trackly"}
-                      </span>
-                      <span className="truncate text-[10px] text-zinc-500 font-mono">
-                        Env: {activeProject?.environment || "Production"}
-                      </span>
-                    </div>
-                    <CaretUpDown size={14} className="ml-auto text-zinc-500" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200"
-                  align="start"
-                  side={isMobile ? "bottom" : "right"}
-                  sideOffset={8}
-                >
-                  <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-widest px-2 py-1.5">
-                    Your Projects
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  {projects.map((project) => (
-                    <DropdownMenuItem
-                      key={project.id}
-                      onClick={() => handleProjectSwitch(project.id)}
-                      className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white ${
-                        project.id === activeProjectId
-                          ? "bg-white/5 text-primary-foreground font-bold"
-                          : ""
-                      }`}
-                    >
-                      <span className="flex-1 truncate">{project.name}</span>
-                      {project.environment && (
-                        <span className="text-[9px] px-1 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
-                          {project.environment}
-                        </span>
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-400">
+                      {projectsStatus === "loading" ? (
+                        <div className="size-4 border-2 border-zinc-500 border-t-transparent animate-spin" />
+                      ) : (
+                        <Database className="size-4" weight="bold" />
                       )}
-                    </DropdownMenuItem>
-                  ))}
-                  {projects.length === 0 && (
-                    <div className="px-2 py-4 text-center text-xs text-zinc-500 font-mono">
-                      No projects found
                     </div>
-                  )}
+                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                      <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">
+                        {projectsStatus === "loading"
+                          ? "Fetching..."
+                          : "Active Project"}
+                      </span>
+                      <span className="truncate font-bold text-zinc-200">
+                        {projectsStatus === "loading"
+                          ? "Loading Projects..."
+                          : activeProject?.name || "No Project Selected"}
+                      </span>
+                    </div>
+                    <CaretUpDown size={14} className="ml-auto text-zinc-600" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200 p-2"
+                  align="start"
+                  side={isMobile ? "bottom" : "right"}
+                  sideOffset={8}
+                >
+                  <DropdownMenuLabel className="text-zinc-500 text-[10px] uppercase tracking-widest px-2 py-1.5 font-bold">
+                    Switch Project
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-white/10" />
+                  <div className="max-h-60 overflow-y-auto space-y-1 mt-1">
+                    {projects.map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => handleProjectSwitch(project.id)}
+                        className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white border border-transparent ${
+                          project.id === activeProjectId
+                            ? "bg-white/5 border-white/10 text-white font-bold"
+                            : ""
+                        }`}
+                      >
+                        <span className="flex-1 truncate">{project.name}</span>
+                        {project.environment && (
+                          <span className="text-[8px] px-1 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
+                            {project.environment}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                    {projects.length === 0 && (
+                      <div className="px-2 py-8 text-center text-[10px] text-zinc-600 font-mono italic">
+                        No projects found in this workspace.
+                      </div>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator className="bg-white/10 mt-2" />
                   <DropdownMenuItem asChild>
                     <Link
                       href="/organizations"
-                      className="flex items-center w-full px-2 py-2 hover:bg-white/5 cursor-pointer"
+                      className="flex items-center w-full px-2 py-2 hover:bg-white/5 cursor-pointer text-xs font-bold text-indigo-400"
                     >
                       <Gear size={16} className="mr-2" />
-                      Manage Projects
+                      Project Settings
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

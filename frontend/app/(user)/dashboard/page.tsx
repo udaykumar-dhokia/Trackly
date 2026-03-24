@@ -136,27 +136,6 @@ export default function DashboardPage() {
             <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
               Overview
             </h1>
-            <div className="bg-[#1a1a24] border-2 border-indigo-500/30 px-3 py-1 self-start md:self-auto min-w-[180px]">
-              <Select
-                value={activeProjectId || ""}
-                onValueChange={(val) => dispatch(setActiveProject(val))}
-              >
-                <SelectTrigger className="border-none w-full bg-none text-indigo-300 font-bold font-mono text-[10px] uppercase focus:ring-0 px-0 h-auto shadow-none data-[state=open]:bg-transparent">
-                  <SelectValue placeholder="Select Project" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1a1a24] border-2 border-white/10 text-white font-mono rounded-none">
-                  {projects.map((project) => (
-                    <SelectItem
-                      key={project.id}
-                      value={project.id}
-                      className="focus:bg-white/10 focus:text-white cursor-pointer"
-                    >
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <p className="text-zinc-400 font-mono text-sm max-w-3xl leading-relaxed">
             Aggregated analytics covering the last 30 days of LLM execution

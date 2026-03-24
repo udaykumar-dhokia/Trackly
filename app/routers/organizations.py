@@ -190,12 +190,38 @@ async def list_project_members(
 async def add_project_member(
     project_id: uuid.UUID,
     body: ProjectMemberAdd,
+    auth0_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> ProjectMemberResponse:
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+
+    if auth0_id:
+        # Check if requester is org admin or project admin
+        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+        requester = result.scalar_one_or_none()
+        if not requester:
+             raise HTTPException(status_code=403, detail="Requester not found.")
+        
+        # Check org role
+        result = await db.execute(select(OrganizationMember).where(
+            OrganizationMember.org_id == project.org_id,
+            OrganizationMember.user_id == requester.id
+        ))
+        org_mem = result.scalar_one_or_none()
+        
+        # Check project role
+        result = await db.execute(select(ProjectMember).where(
+            ProjectMember.project_id == project_id,
+            ProjectMember.user_id == requester.id
+        ))
+        proj_mem = result.scalar_one_or_none()
+        
+        is_admin = (org_mem and org_mem.role in ["admin", "owner"]) or (proj_mem and proj_mem.role == "admin")
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Only admins can manage project members.")
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -251,8 +277,39 @@ async def add_project_member(
 async def remove_project_member(
     project_id: uuid.UUID,
     user_id: uuid.UUID,
+    auth0_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    if auth0_id:
+        # Check if requester is org admin or project admin
+        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+        requester = result.scalar_one_or_none()
+        if not requester:
+             raise HTTPException(status_code=403, detail="Requester not found.")
+        
+        # Check org role
+        result = await db.execute(select(OrganizationMember).where(
+            OrganizationMember.org_id == project.org_id,
+            OrganizationMember.user_id == requester.id
+        ))
+        org_mem = result.scalar_one_or_none()
+        
+        # Check project role
+        result = await db.execute(select(ProjectMember).where(
+            ProjectMember.project_id == project_id,
+            ProjectMember.user_id == requester.id
+        ))
+        proj_mem = result.scalar_one_or_none()
+        
+        is_admin = (org_mem and org_mem.role in ["admin", "owner"]) or (proj_mem and proj_mem.role == "admin")
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Only admins can manage project members.")
+
     result = await db.execute(
         select(ProjectMember).where(
             ProjectMember.project_id == project_id, ProjectMember.user_id == user_id

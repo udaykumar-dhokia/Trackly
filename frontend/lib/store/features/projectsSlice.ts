@@ -137,13 +137,19 @@ export const addProjectMember = createAsyncThunk(
     projectId,
     email,
     role = "member",
+    auth0Id,
   }: {
     projectId: string;
     email: string;
     role?: string;
+    auth0Id?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/projects/${projectId}/members`, {
+    let url = `${apiUrl}/v1/projects/${projectId}/members`;
+    if (auth0Id) {
+      url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
+    }
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, role }),
@@ -158,16 +164,26 @@ export const addProjectMember = createAsyncThunk(
 
 export const removeProjectMember = createAsyncThunk(
   "projects/removeProjectMember",
-  async ({ projectId, userId }: { projectId: string; userId: string }) => {
+  async ({
+    projectId,
+    userId,
+    auth0Id,
+  }: {
+    projectId: string;
+    userId: string;
+    auth0Id?: string;
+  }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(
-      `${apiUrl}/v1/projects/${projectId}/members/${userId}`,
-      {
-        method: "DELETE",
-      },
-    );
+    let url = `${apiUrl}/v1/projects/${projectId}/members/${userId}`;
+    if (auth0Id) {
+      url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
+    }
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
     if (!response.ok) {
-      throw new Error("Failed to remove member");
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to remove member");
     }
     return userId;
   },

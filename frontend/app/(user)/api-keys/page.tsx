@@ -21,6 +21,24 @@ import {
   Copy,
   ArrowClockwise,
 } from "@phosphor-icons/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export default function ApiKeysPage() {
   const { user } = useUser();
@@ -31,40 +49,58 @@ export default function ApiKeysPage() {
     newKeyDisplay,
     lastFetchedOrgId,
   } = useAppSelector((state) => state.apiKeys);
-  const { 
-    items: projects, 
-    activeOrgId, 
+  const {
+    items: projects,
+    activeOrgId,
+    activeProjectId,
     organizations,
-    orgMembers 
-  } = useAppSelector(
-    (state) => state.projects,
-  );
+    orgMembers,
+  } = useAppSelector((state) => state.projects);
 
   const activeOrg = organizations.find((o) => o.id === activeOrgId);
-  const isAdminOrOwner = activeOrg?.role === "admin" || activeOrg?.role === "owner";
+  const isAdminOrOwner =
+    activeOrg?.role === "admin" || activeOrg?.role === "owner";
+  const currentUser = orgMembers.find((m) => m.auth0_id === user?.sub);
 
   const [isCreating, setIsCreating] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
+  const [keyIdToRevoke, setKeyIdToRevoke] = useState<string | null>(null);
   const [accessingKeyId, setAccessingKeyId] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("none");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (activeOrgId) {
+    if (activeOrgId && user?.sub) {
       if (lastFetchedOrgId !== activeOrgId) {
-        dispatch(fetchApiKeys(activeOrgId));
+        dispatch(fetchApiKeys({ orgId: activeOrgId, auth0Id: user.sub }));
         dispatch(fetchOrgMembers(activeOrgId));
       }
     }
-  }, [activeOrgId, dispatch, lastFetchedOrgId]);
+  }, [activeOrgId, dispatch, lastFetchedOrgId, user?.sub]);
+
+  useEffect(() => {
+    if (activeProjectId && activeProjectId !== "none") {
+      setSelectedProjectId(activeProjectId);
+    }
+  }, [activeProjectId]);
+
+  const filteredMasterKeys = keys.filter(
+    (k) =>
+      !k.parent_key_id &&
+      (k.project_id === activeProjectId || k.project_id === null),
+  );
+
+  const filteredDerivedKeys = keys.filter(
+    (k) => k.parent_key_id && k.project_id === activeProjectId,
+  );
 
   const handleCreateKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyName.trim() || !activeOrgId) return;
     setIsCreating(true);
     try {
-      const currentUser = orgMembers.find(m => m.auth0_id === user?.sub);
-      
       const payloadProjectId =
         selectedProjectId === "none" ? null : selectedProjectId;
       await dispatch(
@@ -76,9 +112,10 @@ export default function ApiKeysPage() {
         }),
       ).unwrap();
       setNewKeyName("");
-      setSelectedProjectId("none");
+      setSelectedProjectId(activeProjectId || "none");
+      setIsDialogOpen(false);
       toast.success("API Key Created", {
-        description: "Your new key is ready to use."
+        description: "Your new key is ready to use.",
       });
     } catch (err: any) {
       toast.error(err.message || "Failed to create key");
@@ -106,18 +143,17 @@ export default function ApiKeysPage() {
     }
   };
 
-  const handleRevoke = async (keyId: string) => {
-    if (
-      confirm(
-        "Are you sure you want to revoke this key? It will immediately stop working.",
-      )
-    ) {
-      try {
-        await dispatch(revokeApiKey(keyId)).unwrap();
-        toast.success("Key revoked successfully");
-      } catch (err: any) {
-        toast.error("Failed to revoke key");
-      }
+  const handleRevoke = async () => {
+    if (!keyIdToRevoke || !user?.sub) return;
+    try {
+      await dispatch(
+        revokeApiKey({ keyId: keyIdToRevoke, auth0Id: user.sub }),
+      ).unwrap();
+      toast.success("Key revoked successfully");
+      setIsRevokeDialogOpen(false);
+      setKeyIdToRevoke(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to revoke key");
     }
   };
 
@@ -130,17 +166,230 @@ export default function ApiKeysPage() {
     }
   };
 
+  const renderKeyTable = (
+    keys: any[],
+    title: string,
+    type: "master" | "access",
+  ) => {
+    if (keys.length === 0) {
+      return (
+        <div className="p-8 border-2 border-dashed border-white/5 bg-white/5 text-center text-zinc-600 text-xs font-mono italic">
+          No {type === "master" ? "master" : "access"} keys found for this
+          project scope.
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full overflow-x-auto border-2 border-white/10 bg-[#141418]">
+        <table className="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr className="border-b-2 border-white/10 bg-white/5 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+              <th className="px-4 py-3 font-black">Name</th>
+              <th className="px-4 py-3 font-black hidden sm:table-cell">
+                Scope
+              </th>
+              <th className="px-4 py-3 font-black hidden md:table-cell">
+                Prefix
+              </th>
+              <th className="px-4 py-3 font-black hidden lg:table-cell">
+                Created
+              </th>
+              <th className="px-4 py-3 font-black text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {keys.map((key) => {
+              const linkedProject = projects.find(
+                (p) => p.id === key.project_id,
+              );
+              return (
+                <tr
+                  key={key.id}
+                  className={`group transition-colors ${key.is_active ? "hover:bg-white/5" : "opacity-50 grayscale bg-red-500/5"}`}
+                >
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-white text-sm">
+                        {key.name}
+                      </span>
+                      {!key.is_active && (
+                        <span className="text-[8px] uppercase font-bold text-red-400 mt-1">
+                          Revoked
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 hidden sm:table-cell">
+                    {key.project_id ? (
+                      <span className="text-[10px] uppercase font-bold text-indigo-400 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 whitespace-nowrap">
+                        {linkedProject ? linkedProject.name : "Project"}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 px-2 py-0.5 bg-white/5 border border-white/10 whitespace-nowrap">
+                        Org-Level
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 hidden md:table-cell">
+                    <code className="text-[10px] text-amber-300/80 font-mono">
+                      {key.key_prefix}...
+                    </code>
+                  </td>
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {new Date(key.created_at).toLocaleDateString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {!isAdminOrOwner &&
+                        key.is_active &&
+                        key.project_id &&
+                        !key.parent_key_id &&
+                        !keys.some(
+                          (k) =>
+                            k.parent_key_id === key.id &&
+                            k.created_by_user_id === currentUser?.id &&
+                            k.is_active,
+                        ) && (
+                          <button
+                            onClick={() => handleAccessKey(key.id)}
+                            disabled={accessingKeyId === key.id}
+                            className="bg-emerald-500 cursor-pointer text-black font-bold px-3 py-1.5 text-[10px] uppercase tracking-tighter border-2 border-transparent hover:border-emerald-400 transition-colors disabled:opacity-50 shadow-[2px_2px_0_0_#065f46] active:translate-y-px active:shadow-none whitespace-nowrap"
+                          >
+                            {accessingKeyId === key.id
+                              ? "Working..."
+                              : "Get Access"}
+                          </button>
+                        )}
+
+                      {key.is_active &&
+                        (isAdminOrOwner ||
+                          (currentUser &&
+                            key.created_by_user_id === currentUser.id)) && (
+                          <button
+                            onClick={() => {
+                              setKeyIdToRevoke(key.id);
+                              setIsRevokeDialogOpen(true);
+                            }}
+                            className="text-zinc-500 hover:text-red-400 transition-colors p-2 border border-transparent hover:border-red-500/30 cursor-pointer"
+                            title="Revoke Key"
+                          >
+                            <Trash size={18} />
+                          </button>
+                        )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-10">
-      <section className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-          API Keys
-        </h1>
-        <p className="text-zinc-400 font-mono text-sm max-w-3xl leading-relaxed">
-          Manage organizational API keys used to authenticate requests to the
-          Trackly ingest API. Keys can be scoped to specific projects to cleanly
-          separate traffic.
-        </p>
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+            API Keys
+          </h1>
+          <p className="text-zinc-400 font-mono text-sm max-w-2xl leading-relaxed">
+            Manage organizational API keys used to authenticate requests to the
+            Trackly ingest API. Keys can be scoped to specific projects to
+            cleanly separate traffic.
+          </p>
+        </div>
+
+        {isAdminOrOwner && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-black px-6 py-3 shadow-[4px_4px_0_0_#b45309] active:translate-y-px active:shadow-none transition-all cursor-pointer">
+                <Plus weight="bold" />
+                Create API Key
+              </button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 max-w-md p-8 rounded-none">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-white mb-4">
+                  Generate API Key
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateKey} className="flex flex-col gap-6">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="keyName"
+                    className="text-xs font-black text-zinc-500 uppercase tracking-widest"
+                  >
+                    Key Name
+                  </label>
+                  <input
+                    id="keyName"
+                    type="text"
+                    placeholder="e.g. Production Worker"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors rounded-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="projectScope"
+                    className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center justify-between"
+                  >
+                    Scope
+                    <span className="text-[10px] text-zinc-600 font-normal normal-case">
+                      Optional
+                    </span>
+                  </label>
+                  <select
+                    id="projectScope"
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors appearance-none cursor-pointer rounded-none"
+                  >
+                    <option value="none">Organization Wide (Default)</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="text-[10px] text-zinc-600 pt-1 flex gap-2 leading-relaxed">
+                    <WarningCircle size={14} className="shrink-0 mt-0.5" />
+                    <p>
+                      Keys without a project scope cannot log events, they can
+                      only manage Top-Level models.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsDialogOpen(false)}
+                    className="flex-1 px-4 py-3 font-bold text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating || !newKeyName.trim()}
+                    className="flex-1 group cursor-pointer flex items-center justify-center gap-2 border-2 border-transparent bg-amber-500 px-5 py-3 font-black text-black hover:bg-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[4px_4px_0_0_#b45309] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0_0_#b45309]"
+                  >
+                    {isCreating ? "Generating..." : "Generate"}
+                    {!isCreating && <Key weight="bold" size={16} />}
+                  </button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </section>
 
       {newKeyDisplay && (
@@ -174,200 +423,91 @@ export default function ApiKeysPage() {
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-            <h2 className="text-2xl font-bold text-white">Active Keys</h2>
-            <button
-              onClick={() => {
-                if (activeOrgId) dispatch(fetchApiKeys(activeOrgId));
-              }}
-              disabled={status === "loading"}
-              className="flex items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
-              title="Refresh API Keys"
-            >
-              <ArrowClockwise
-                weight="bold"
-                size={20}
-                className={status === "loading" ? "animate-spin" : ""}
-              />
-            </button>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+          <h2 className="text-2xl font-bold text-white">Active Keys</h2>
+          <button
+            onClick={() => {
+              if (activeOrgId && user?.sub) {
+                dispatch(
+                  fetchApiKeys({ orgId: activeOrgId, auth0Id: user.sub }),
+                );
+              }
+            }}
+            disabled={status === "loading"}
+            className="flex items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Refresh API Keys"
+          >
+            <ArrowClockwise
+              weight="bold"
+              size={20}
+              className={status === "loading" ? "animate-spin" : ""}
+            />
+          </button>
+        </div>
+
+        {status === "loading" && (
+          <div className="text-zinc-500 font-mono animate-pulse">
+            Loading secure keys...
           </div>
+        )}
 
-          {status === "loading" && (
-            <div className="text-zinc-500 font-mono animate-pulse">
-              Loading secure keys...
-            </div>
-          )}
+        {status === "succeeded" && keys.length === 0 && (
+          <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center text-center bg-[#141418]/50">
+            <p className="text-zinc-300 mb-2">No API keys found.</p>
+            <p className="text-zinc-500 text-sm max-w-sm mb-6">
+              Create an API key to start authenticating your backend traffic.
+            </p>
+          </div>
+        )}
 
-          {status === "succeeded" && keys.length === 0 && (
-            <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center text-center bg-[#141418]/50">
-              <p className="text-zinc-300 mb-2">No API keys found.</p>
-              <p className="text-zinc-500 text-sm max-w-sm mb-6">
-                Create an API key to start authenticating your backend traffic.
-              </p>
-            </div>
-          )}
-
-          {status === "succeeded" && keys.length > 0 && (
+        {status === "succeeded" && keys.length > 0 && (
+          <div className="space-y-12">
             <div className="space-y-4">
-              {keys.map((key) => {
-                const linkedProject = projects.find(
-                  (p) => p.id === key.project_id,
-                );
-                return (
-                  <div
-                    key={key.id}
-                    className={`p-6 border-2 transition-all flex items-center justify-between
-                              ${key.is_active ? "border-white/10 bg-[#141418] hover:border-white/30" : "border-red-500/20 bg-red-500/5 opacity-50"}
-                          `}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-bold text-lg text-white">
-                          {key.name}
-                        </h3>
-                        {key.parent_key_id && (
-                          <span className="text-[10px] uppercase font-bold text-emerald-400 border border-emerald-500/30 px-2 py-0.5 bg-emerald-500/10">
-                            Derived
-                          </span>
-                        )}
-                        {!key.parent_key_id && (
-                          <span className="text-[10px] uppercase font-bold text-indigo-400 border border-indigo-500/30 px-2 py-0.5 bg-indigo-500/10">
-                            Master
-                          </span>
-                        )}
-                        {!key.is_active && (
-                          <span className="text-[10px] uppercase font-bold text-red-400 border border-red-500/30 px-2 py-0.5 bg-red-500/10">
-                            Revoked
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-xs font-mono">
-                        <span className="text-amber-300/80 tracking-wider">
-                          Prefix: {key.key_prefix}...
-                        </span>
-
-                        {key.project_id ? (
-                          <span className="text-indigo-400 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20">
-                            Project:{" "}
-                            {linkedProject
-                              ? linkedProject.name
-                              : key.project_id.split("-")[0]}
-                          </span>
-                        ) : (
-                          <span className="text-zinc-500 px-2 py-0.5 bg-white/5 border border-white/10">
-                            Org-Level
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-zinc-500">
-                        Created: {new Date(key.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {!isAdminOrOwner && key.is_active && key.project_id && (
-                        <button
-                          onClick={() => handleAccessKey(key.id)}
-                          disabled={accessingKeyId === key.id}
-                          className="bg-emerald-500 text-black font-bold px-4 py-2 text-sm border-2 border-transparent hover:border-emerald-400 transition-colors disabled:opacity-50"
-                        >
-                          {accessingKeyId === key.id ? "Working..." : "Access"}
-                        </button>
-                      )}
-
-                      {key.is_active && (isAdminOrOwner || key.created_by_user_id) && (
-                        <button
-                          onClick={() => handleRevoke(key.id)}
-                          className="text-zinc-500 hover:text-red-400 transition-colors p-2 border border-transparent hover:border-red-500/30"
-                        >
-                          <Trash size={20} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="lg:col-span-1">
-          {isAdminOrOwner && (
-            <div className="border-2 border-white/10 bg-[#141418] p-6 sticky top-8 shadow-[6px_6px_0_0_rgba(255,255,255,0.05)]">
-              <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">
-                Generate API Key
-            </h3>
-            <form onSubmit={handleCreateKey} className="flex flex-col gap-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="keyName"
-                  className="text-sm font-bold text-zinc-300 uppercase tracking-widest"
-                >
-                  Key Name
-                </label>
-                <input
-                  id="keyName"
-                  type="text"
-                  placeholder="e.g. Production Worker"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
-                  required
-                />
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-500">
+                  Master Keys
+                </h3>
               </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="projectScope"
-                  className="text-sm font-bold text-zinc-300 uppercase tracking-widest flex items-center justify-between"
-                >
-                  Scope
-                  <span className="text-[10px] text-zinc-500 font-normal normal-case">
-                    Optional
-                  </span>
-                </label>
-                <select
-                  id="projectScope"
-                  value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="none">Organization Wide (Default)</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="text-xs text-zinc-500 pt-1 flex gap-2">
-                  <WarningCircle size={14} className="shrink-0 mt-0.5" />
-                  <p>
-                    Keys without a project scope cannot log events, they can
-                    only manage Top-Level models.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isCreating || !newKeyName.trim()}
-                className="mt-4 group flex items-center justify-center gap-2 border-2 border-transparent bg-amber-500 px-5 py-4 font-bold text-black hover:bg-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[4px_4px_0_0_#b45309] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0_0_#b45309]"
-              >
-                {isCreating ? "Generating..." : "Generate Secure Key"}
-                {!isCreating && (
-                  <Plus
-                    weight="bold"
-                    className="group-hover:rotate-90 transition-transform"
-                  />
-                )}
-                </button>
-              </form>
+              {renderKeyTable(filteredMasterKeys, "Master Keys", "master")}
             </div>
-          )}
-        </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-500">
+                  Access Keys
+                </h3>
+              </div>
+              {renderKeyTable(filteredDerivedKeys, "Access Keys", "access")}
+            </div>
+          </div>
+        )}
       </div>
+
+      <AlertDialog open={isRevokeDialogOpen} onOpenChange={setIsRevokeDialogOpen}>
+        <AlertDialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 rounded-none shadow-[12px_12px_0_0_#000]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold uppercase tracking-tight text-white">
+              Confirm Key Revocation
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 font-mono text-xs">
+              This action is irreversible. Once revoked, any application using this
+              API key will immediately lose access to the Trackly ingest API.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="bg-transparent border-2 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-none font-bold transition-all">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevoke}
+              className="bg-red-500 hover:bg-red-400 text-white font-bold rounded-none shadow-[4px_4px_0_0_#991b1b] active:translate-y-px active:shadow-none transition-all"
+            >
+              Revoke Key
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
