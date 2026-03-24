@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import {
   fetchApiKeys,
@@ -10,6 +11,7 @@ import {
   clearNewKeyDisplay,
   accessApiKey,
 } from "@/lib/store/features/apiKeysSlice";
+import { fetchOrgMembers } from "@/lib/store/features/projectsSlice";
 import {
   Key,
   Plus,
@@ -29,7 +31,12 @@ export default function ApiKeysPage() {
     newKeyDisplay,
     lastFetchedOrgId,
   } = useAppSelector((state) => state.apiKeys);
-  const { items: projects, activeOrgId, organizations } = useAppSelector(
+  const { 
+    items: projects, 
+    activeOrgId, 
+    organizations,
+    orgMembers 
+  } = useAppSelector(
     (state) => state.projects,
   );
 
@@ -46,6 +53,7 @@ export default function ApiKeysPage() {
     if (activeOrgId) {
       if (lastFetchedOrgId !== activeOrgId) {
         dispatch(fetchApiKeys(activeOrgId));
+        dispatch(fetchOrgMembers(activeOrgId));
       }
     }
   }, [activeOrgId, dispatch, lastFetchedOrgId]);
@@ -55,6 +63,8 @@ export default function ApiKeysPage() {
     if (!newKeyName.trim() || !activeOrgId) return;
     setIsCreating(true);
     try {
+      const currentUser = orgMembers.find(m => m.auth0_id === user?.sub);
+      
       const payloadProjectId =
         selectedProjectId === "none" ? null : selectedProjectId;
       await dispatch(
@@ -62,12 +72,16 @@ export default function ApiKeysPage() {
           orgId: activeOrgId,
           name: newKeyName,
           projectId: payloadProjectId,
+          userId: currentUser?.id,
         }),
       ).unwrap();
       setNewKeyName("");
       setSelectedProjectId("none");
-    } catch (err) {
-      console.error("Failed to create key", err);
+      toast.success("API Key Created", {
+        description: "Your new key is ready to use."
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create key");
     } finally {
       setIsCreating(false);
     }
@@ -84,9 +98,9 @@ export default function ApiKeysPage() {
         }),
       ).unwrap();
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      console.error("Failed to generate access key", err);
-      alert("Failed to generate access key. Do you already have one for this project?");
+      toast.success("Access key generated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate access key");
     } finally {
       setAccessingKeyId(null);
     }
@@ -98,7 +112,12 @@ export default function ApiKeysPage() {
         "Are you sure you want to revoke this key? It will immediately stop working.",
       )
     ) {
-      dispatch(revokeApiKey(keyId));
+      try {
+        await dispatch(revokeApiKey(keyId)).unwrap();
+        toast.success("Key revoked successfully");
+      } catch (err: any) {
+        toast.error("Failed to revoke key");
+      }
     }
   };
 
@@ -106,6 +125,7 @@ export default function ApiKeysPage() {
     if (newKeyDisplay) {
       navigator.clipboard.writeText(newKeyDisplay.raw_key);
       setCopied(true);
+      toast.success("Key copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -247,7 +267,7 @@ export default function ApiKeysPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {!isAdminOrOwner && key.is_active && !key.parent_key_id && key.project_id && (
+                      {!isAdminOrOwner && key.is_active && key.project_id && (
                         <button
                           onClick={() => handleAccessKey(key.id)}
                           disabled={accessingKeyId === key.id}

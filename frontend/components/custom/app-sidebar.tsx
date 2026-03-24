@@ -23,7 +23,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChartBar,
   Key,
@@ -91,6 +91,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & UserProps) {
   const { isMobile } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
 
   const dispatch = useAppDispatch();
   const {
@@ -113,6 +114,19 @@ export function AppSidebar({
       dispatch(fetchProjects(activeOrgId));
     }
   }, [activeOrgId, dispatch]);
+
+  const handleProjectSwitch = (newProjectId: string) => {
+    dispatch(setActiveProject(newProjectId));
+
+    if (pathname.includes("/projects/")) {
+      const segments = pathname.split("/");
+      const projectIndex = segments.indexOf("projects");
+      if (projectIndex !== -1 && segments[projectIndex + 1]) {
+        segments[projectIndex + 1] = newProjectId;
+        router.push(segments.join("/"));
+      }
+    }
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/10" {...props}>
@@ -355,7 +369,7 @@ export function AppSidebar({
                   {projects.map((project) => (
                     <DropdownMenuItem
                       key={project.id}
-                      onClick={() => dispatch(setActiveProject(project.id))}
+                      onClick={() => handleProjectSwitch(project.id)}
                       className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white ${
                         project.id === activeProjectId
                           ? "bg-white/5 text-primary-foreground font-bold"

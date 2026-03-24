@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   description: "Track your LLM costs and usage in real-time",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +52,7 @@ export default function RootLayout({
             <TooltipProvider>
               {children}
               <Analytics />
+              <Toaster position="bottom-right" theme="dark" />
             </TooltipProvider>
           </StoreProvider>
         </Auth0Provider>

@@ -34,7 +34,13 @@ interface EventsState {
   data: PaginatedEvents;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
-  lastFetchedParams: { projectId: string; page?: number; pageSize?: number; provider?: string } | null;
+  lastFetchedParams: { 
+    projectId: string; 
+    page?: number; 
+    pageSize?: number; 
+    provider?: string;
+    userId?: string;
+  } | null;
 }
 
 const initialState: EventsState = {
@@ -52,7 +58,19 @@ const initialState: EventsState = {
 
 export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
-  async ({ projectId, page = 1, pageSize = 50, provider }: { projectId: string; page?: number; pageSize?: number; provider?: string }) => {
+  async ({ 
+    projectId, 
+    page = 1, 
+    pageSize = 50, 
+    provider,
+    userId 
+  }: { 
+    projectId: string; 
+    page?: number; 
+    pageSize?: number; 
+    provider?: string;
+    userId?: string;
+  }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     
     const queryParams = new URLSearchParams()
@@ -60,6 +78,9 @@ export const fetchEvents = createAsyncThunk(
     queryParams.append("page_size", pageSize.toString())
     if (provider && provider !== "all") {
         queryParams.append("provider", provider)
+    }
+    if (userId && userId !== "all") {
+        queryParams.append("user_id", userId)
     }
 
     const response = await fetch(`${apiUrl}/v1/projects/${projectId}/events?${queryParams.toString()}`);

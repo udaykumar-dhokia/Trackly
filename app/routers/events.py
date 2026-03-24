@@ -10,7 +10,7 @@ from sqlalchemy import select, func, or_, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.models.orm import LlmEvent
+from app.models.orm import LlmEvent, User, ApiKey
 
 router = APIRouter()
 
@@ -73,7 +73,24 @@ async def list_events(
     if feature:
         filters.append(LlmEvent.feature == feature)
     if user_id:
-        filters.append(LlmEvent.user_id == user_id)
+        try:
+            u_uuid = uuid.UUID(user_id)
+            user_stmt = select(User).where(User.id == u_uuid)
+            user_res = await db.execute(user_stmt)
+            user_obj = user_res.scalar_one_or_none()
+            if user_obj:
+                filters.append(
+                    or_(
+                        LlmEvent.user_id == str(user_obj.id),
+                        LlmEvent.user_id == user_obj.auth0_id,
+                        ApiKey.created_by_user_id == user_obj.id
+                    )
+                )
+            else:
+                filters.append(LlmEvent.user_id == user_id)
+        except ValueError:
+            filters.append(LlmEvent.user_id == user_id)
+
     if model:
         filters.append(LlmEvent.model == model)
     if provider:
@@ -90,17 +107,21 @@ async def list_events(
     if end:
         filters.append(LlmEvent.occurred_at < end)
 
-    count_stmt = select(func.count(LlmEvent.id)).where(*filters)
+    count_stmt = (
+        select(func.count(LlmEvent.id))
+        .outerjoin(ApiKey, LlmEvent.api_key_id == ApiKey.id)
+        .where(*filters)
+    )
     total = (await db.execute(count_stmt)).scalar_one()
 
     offset = (page - 1) * page_size
-    from app.models.orm import User
     stmt = (
         select(
             LlmEvent,
             User.name.label("user_name"),
             User.profile_photo.label("user_photo")
         )
+        .outerjoin(ApiKey, LlmEvent.api_key_id == ApiKey.id)
         .outerjoin(
             User, 
             or_(

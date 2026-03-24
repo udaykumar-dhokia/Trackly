@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import {
   fetchProjectMembers,
@@ -38,8 +39,16 @@ export default function ProjectMembersPage() {
     membersStatus,
     orgMembers,
     orgMembersStatus,
+    activeProjectId,
   } = useAppSelector((state) => state.projects);
   const project = projects.find((p) => p.id === projectId);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (activeProjectId && activeProjectId !== projectId) {
+      router.push(`/projects/${activeProjectId}/members`);
+    }
+  }, [activeProjectId, projectId, router]);
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("member");
@@ -105,8 +114,13 @@ export default function ProjectMembersPage() {
       await dispatch(addProjectMember({ projectId, email, role })).unwrap();
       setEmail("");
       setEmailStatus(null);
+      toast.success("Member added to project", {
+        description: `${email} has been granted ${role} access.`,
+      });
     } catch (err: any) {
-      setAddError(err.message || "Failed to add member");
+      const msg = err.message || "Failed to add member";
+      setAddError(msg);
+      toast.error(msg);
     } finally {
       setIsAdding(false);
     }
@@ -116,7 +130,12 @@ export default function ProjectMembersPage() {
     if (
       confirm("Are you sure you want to remove this member from the project?")
     ) {
-      dispatch(removeProjectMember({ projectId, userId }));
+      try {
+        await dispatch(removeProjectMember({ projectId, userId })).unwrap();
+        toast.success("Member removed");
+      } catch (err: any) {
+        toast.error("Failed to remove member");
+      }
     }
   };
 
@@ -214,7 +233,7 @@ export default function ProjectMembersPage() {
                   {authUser?.email !== member.email && (
                     <button
                       onClick={() => handleRemoveMember(member.user_id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors p-2"
+                      className="cursor-pointer text-zinc-600 hover:text-red-400 transition-colors p-2"
                       title="Remove Member"
                     >
                       <Trash size={18} />
@@ -244,7 +263,7 @@ export default function ProjectMembersPage() {
                       setEmail(e.target.value);
                     }
                   }}
-                  value={orgMembers.find(m => m.email === email)?.email || ""}
+                  value={orgMembers.find((m) => m.email === email)?.email || ""}
                   className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
                 >
                   <option value="">Select a teammate...</option>
@@ -270,7 +289,9 @@ export default function ProjectMembersPage() {
 
             <div className="relative flex items-center gap-4 py-2">
               <div className="flex-1 h-px bg-white/5" />
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">or</span>
+              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                or
+              </span>
               <div className="flex-1 h-px bg-white/5" />
             </div>
 
@@ -374,10 +395,9 @@ export default function ProjectMembersPage() {
               <button
                 type="submit"
                 disabled={isAdding || !email.trim()}
-                className="group flex items-center justify-center gap-2 bg-indigo-500 text-white font-bold py-4 border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-y-px active:shadow-[2px_2px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase italic tracking-tighter"
+                className="group flex items-center justify-center gap-2 bg-indigo-500 text-white font-bold py-4 border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-y-px active:shadow-[2px_2px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-tighter"
               >
                 {isAdding ? "Inviting..." : "Grant Access"}
-                <UserPlus weight="bold" size={20} />
               </button>
             </form>
 

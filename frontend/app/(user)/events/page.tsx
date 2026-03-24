@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { fetchEvents } from "@/lib/store/features/eventsSlice";
+import { fetchProjectMembers } from "@/lib/store/features/projectsSlice";
 import {
   CaretLeft,
   CaretRight,
@@ -10,6 +11,7 @@ import {
   Funnel,
   ChartBar,
   ArrowClockwise,
+  Users,
 } from "@phosphor-icons/react";
 import {
   Select,
@@ -18,11 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -34,9 +32,12 @@ import Link from "next/link";
 export default function EventsPage() {
   const dispatch = useAppDispatch();
 
-  const { activeProjectId, status: projectsStatus } = useAppSelector(
-    (state) => state.projects,
-  );
+  const {
+    activeProjectId,
+    status: projectsStatus,
+    members,
+    membersStatus,
+  } = useAppSelector((state) => state.projects);
   const {
     data: { items: events, page, has_more, total },
     status,
@@ -46,10 +47,18 @@ export default function EventsPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [providerFilter, setProviderFilter] = useState("all");
+  const [memberFilter, setMemberFilter] = useState("all");
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [providerFilter, activeProjectId]);
+  }, [providerFilter, memberFilter, activeProjectId]);
+
+  useEffect(() => {
+    if (activeProjectId) {
+      dispatch(fetchProjectMembers(activeProjectId));
+      setMemberFilter("all");
+    }
+  }, [activeProjectId, dispatch]);
 
   useEffect(() => {
     if (activeProjectId) {
@@ -57,7 +66,8 @@ export default function EventsPage() {
         !lastFetchedParams ||
         lastFetchedParams.projectId !== activeProjectId ||
         lastFetchedParams.page !== currentPage ||
-        lastFetchedParams.provider !== providerFilter;
+        lastFetchedParams.provider !== providerFilter ||
+        lastFetchedParams.userId !== memberFilter;
 
       if (needsFetch) {
         dispatch(
@@ -66,6 +76,7 @@ export default function EventsPage() {
             page: currentPage,
             pageSize: 50,
             provider: providerFilter,
+            userId: memberFilter,
           }),
         );
       }
@@ -182,6 +193,32 @@ export default function EventsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="flex items-center gap-3 bg-[#1a1a24] border-2 border-fuchsia-500/50 px-4 py-2 self-start md:self-auto shadow-[4px_4px_0_0_rgba(217,70,239,0.15)] min-w-[220px]">
+            <Users size={20} className="text-fuchsia-400" />
+            <Select value={memberFilter} onValueChange={setMemberFilter}>
+              <SelectTrigger className="border-none w-full bg-transparent text-white font-bold font-mono text-sm focus:ring-0 px-0 h-auto shadow-none data-[state=open]:bg-transparent">
+                <SelectValue placeholder="All Members" />
+              </SelectTrigger>
+              <SelectContent className="border-2 border-fuchsia-500/50 text-white font-mono rounded-none bg-[#1a1a24]">
+                <SelectItem
+                  value="all"
+                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer font-bold"
+                >
+                  All Members
+                </SelectItem>
+                {members.map((m) => (
+                  <SelectItem
+                    key={m.user_id}
+                    value={m.user_id}
+                    className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
+                  >
+                    {m.name || m.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <button
             onClick={() =>
               dispatch(
@@ -190,6 +227,7 @@ export default function EventsPage() {
                   page: currentPage,
                   pageSize: 50,
                   provider: providerFilter,
+                  userId: memberFilter,
                 }),
               )
             }
@@ -331,15 +369,20 @@ export default function EventsPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 cursor-help group/user">
-                                <Avatar size="sm" className="size-6 border border-white/10 shrink-0">
+                                <Avatar
+                                  size="sm"
+                                  className="size-6 border border-white/10 shrink-0"
+                                >
                                   {evt.user_photo && (
-                                    <AvatarImage 
-                                      src={evt.user_photo} 
-                                      alt={evt.user_name || evt.user_id} 
+                                    <AvatarImage
+                                      src={evt.user_photo}
+                                      alt={evt.user_name || evt.user_id}
                                     />
                                   )}
                                   <AvatarFallback className="bg-fuchsia-500/10 text-fuchsia-400 text-[10px] font-bold">
-                                    {(evt.user_name || evt.user_id).substring(0, 2).toUpperCase()}
+                                    {(evt.user_name || evt.user_id)
+                                      .substring(0, 2)
+                                      .toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-zinc-500 truncate max-w-[100px] group-hover/user:text-zinc-300 transition-colors">
@@ -347,8 +390,8 @@ export default function EventsPage() {
                                 </span>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent 
-                              side="top" 
+                            <TooltipContent
+                              side="top"
                               className="bg-[#1a1a24] border-2 border-fuchsia-500/50 text-white font-mono rounded-none shadow-[4px_4px_0_0_rgba(217,70,239,0.2)]"
                             >
                               <div className="flex flex-col gap-0.5">

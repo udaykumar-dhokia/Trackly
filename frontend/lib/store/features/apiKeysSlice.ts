@@ -53,10 +53,12 @@ export const createApiKey = createAsyncThunk(
     orgId,
     name,
     projectId,
+    userId,
   }: {
     orgId: string;
     name: string;
     projectId?: string | null;
+    userId?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
@@ -64,7 +66,11 @@ export const createApiKey = createAsyncThunk(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, project_id: projectId }),
+        body: JSON.stringify({ 
+          name, 
+          project_id: projectId,
+          created_by_user_id: userId
+        }),
       },
     );
     if (!response.ok) {
