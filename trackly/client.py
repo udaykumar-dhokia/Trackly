@@ -9,25 +9,6 @@ from typing import Optional, Dict, Any, List
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
-
-# Layer 1 — serialized["id"] (most reliable)
-#   LangChain passes a serialized dict to on_llm_start that contains an "id"
-#   list built from the LLM class's lc_namespace + class name, e.g.:
-#     ChatGroq     → ["langchain_groq", "chat_models", "ChatGroq"]
-#     ChatOpenAI   → ["langchain", "chat_models", "openai", "ChatOpenAI"]
-#     ChatAnthropic→ ["langchain", "chat_models", "anthropic", "ChatAnthropic"]
-#     ChatGoogleGenerativeAI → ["langchain_google_genai", ...]
-#     OllamaChat   → ["langchain_ollama", ...]
-#   Joining the id list into a single string and doing substring checks is fast
-#   and works regardless of what model name the user passes.
-
-# Layer 2 — model name substring (fallback)
-#   For cases where serialized is missing or the namespace is unrecognised,
-#   fall back to model-name heuristics. This catches direct API wrappers and
-#   custom LLM classes that expose a recognisable model string.
-#   Note: Groq CANNOT be detected this way — llama/mixtral/gemma model names
-#   are shared across many providers (Together, Fireworks, Replicate, etc.).
-
 _NAMESPACE_MAP: list[tuple[str, str]] = [
     ("langchain_groq",          "groq"),
     ("langchain_anthropic",     "anthropic"),
@@ -55,8 +36,6 @@ _MODEL_NAME_MAP: list[tuple[str, str]] = [
     ("o1-",      "openai"),
     ("o3-",      "openai"),
     ("o4-",      "openai"),
-    # NOTE: llama / gemma / qwen / deepseek are intentionally omitted here
-    # because they are hosted on too many platforms to guess from name alone.
 ]
 
 
@@ -77,19 +56,131 @@ def _detect_provider(serialized: Dict[str, Any], model: str) -> str:
     return "unknown"
 
 
-class TracklyCallback(BaseCallbackHandler):
+class _TracklyWorker:
     def __init__(
         self,
-        trackly_instance,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        debug: bool = False,
+        max_queue_size: int = 5000,
+    ):
+        self.api_key = api_key or os.getenv("TRACKLY_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Trackly API key is required. "
+                "Pass api_key=... or set TRACKLY_API_KEY."
+            )
+
+        url = base_url or os.getenv("TRACKLY_BASE_URL", "https://trackly-backend-fxob.onrender.com/v1")
+        self.base_url = url.rstrip("/")
+
+        self.debug = debug or os.getenv("TRACKLY_DEBUG", "").strip() == "1"
+
+        self._queue: list = []
+        self._max_queue_size = max_queue_size
+        self._lock = threading.Lock()
+
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(
+            target=self._worker, daemon=True, name="trackly-flusher"
+        )
+        self._thread.start()
+        atexit.register(self.shutdown)
+
+    def _enqueue(self, event: Dict[str, Any]):
+        with self._lock:
+            if len(self._queue) >= self._max_queue_size:
+                # Drop oldest event if queue is full
+                self._queue.pop(0)
+            self._queue.append(event)
+        if self.debug:
+            print(f"[Trackly] enqueued: provider={event['provider']} "
+                  f"model={event['model']} tokens={event.get('total_tokens')}")
+
+    def _worker(self):
+        while not self._stop_event.is_set():
+            self._stop_event.wait(timeout=2.0)
+            self._flush()
+
+    def _flush(self):
+        with self._lock:
+            if not self._queue:
+                return
+            batch = self._queue[:]
+            self._queue.clear()
+
+        endpoint = self.base_url
+        if not endpoint.endswith("/events"):
+            endpoint = f"{endpoint}/events"
+
+        for attempt in range(3):
+            try:
+                res = requests.post(
+                    endpoint,
+                    json={"events": batch},
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    timeout=5.0,
+                )
+                if self.debug:
+                    print(f"[Trackly] sent {len(batch)} events → HTTP {res.status_code}")
+                return
+            except Exception as exc:
+                if self.debug:
+                    print(f"[Trackly] send failed (attempt {attempt + 1}/3): {exc}")
+                if attempt < 2:
+                    time.sleep(1.0)
+
+        if self.debug:
+            print(f"[Trackly] dropped {len(batch)} events after 3 failed attempts")
+
+    def shutdown(self, timeout: float = 5.0):
+        """Flush remaining events and stop the background thread."""
+        if self._stop_event.is_set():
+            return
+        self._stop_event.set()
+        if self.debug:
+            print("[Trackly] shutting down, flushing...")
+        self._flush()
+        self._thread.join(timeout=timeout)
+
+
+class Trackly(BaseCallbackHandler):
+    def __init__(
+        self,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        debug: bool = False,
         feature: Optional[str] = None,
         environment: Optional[str] = None,
     ):
-        self.trackly = trackly_instance
+        self.provider = provider
         self.feature = feature
         self.environment = environment
+        
+        # Internal worker handles the queue and flushing
+        self._worker = _TracklyWorker(api_key, base_url, debug)
+        
+        # Ollama clients (lazy loaded)
+        self._ollama_async_client = None
+
+        # LangChain specific state
         self._start_times: Dict[Any, float] = {}
         self._serialized: Dict[Any, Dict] = {}
         self._model_names: Dict[Any, str] = {}
+
+    def _get_ollama_async_client(self):
+        """Lazy load and reuse the Ollama AsyncClient."""
+        if self._ollama_async_client is None:
+            from ollama import AsyncClient
+            self._ollama_async_client = AsyncClient()
+        return self._ollama_async_client
+
+    def callback(self):
+        """Backward compatibility: return self as the LangChain callback handler."""
+        return self
+
+    # --- LangChain Callback Implementation ---
 
     def on_llm_start(
         self,
@@ -204,7 +295,7 @@ class TracklyCallback(BaseCallbackHandler):
             "timestamp":         datetime.now(timezone.utc).isoformat(),
         }
 
-        self.trackly._enqueue(event)
+        self._worker._enqueue(event)
 
     def on_llm_error(self, error: BaseException, **kwargs: Any):
         """Clean up run state on failure — don't log a cost event."""
@@ -213,93 +304,166 @@ class TracklyCallback(BaseCallbackHandler):
         self._serialized.pop(run_id, None)
         self._model_names.pop(run_id, None)
 
+    # --- Ollama Implementation ---
 
-class Trackly:
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        debug: bool = False,
-    ):
-        self.api_key = api_key or os.getenv("TRACKLY_API_KEY")
-        if not self.api_key:
-            raise ValueError(
-                "Trackly API key is required. "
-                "Pass api_key=... or set TRACKLY_API_KEY."
-            )
+    def chat(self, *args, **kwargs):
+        """Wrap ollama.chat and log the usage."""
+        if self.provider != "ollama":
+            raise ValueError("Trackly instance not configured for Ollama provider.")
+        
+        import ollama
+        if kwargs.get('stream'):
+            return self._ollama_stream_wrapper(ollama.chat(*args, **kwargs))
+        
+        response = ollama.chat(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
 
-        url = base_url or os.getenv("TRACKLY_BASE_URL", "https://trackly-backend-fxob.onrender.com/v1")
-        self.base_url = url.rstrip("/")
+    def generate(self, *args, **kwargs):
+        """Wrap ollama.generate and log the usage."""
+        if self.provider != "ollama":
+            raise ValueError("Trackly instance not configured for Ollama provider.")
+        
+        import ollama
+        if kwargs.get('stream'):
+            return self._ollama_stream_wrapper(ollama.generate(*args, **kwargs))
+        
+        response = ollama.generate(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
 
-        self.debug = debug or os.getenv("TRACKLY_DEBUG", "").strip() == "1"
+    def list(self):
+        """List local models via ollama."""
+        import ollama
+        return ollama.list()
 
-        self._queue: list = []
-        self._lock = threading.Lock()
+    def show(self, model):
+        """Show model information via ollama."""
+        import ollama
+        return ollama.show(model)
 
-        self._stop_event = threading.Event()
-        self._thread = threading.Thread(
-            target=self._worker, daemon=True, name="trackly-flusher"
-        )
-        self._thread.start()
-        atexit.register(self.shutdown)
+    def ps(self):
+        """List running models via ollama."""
+        import ollama
+        return ollama.ps()
 
-    def callback(
-        self,
-        feature: Optional[str] = None,
-        environment: Optional[str] = None,
-    ) -> TracklyCallback:
-        """Return a LangChain callback handler for this Trackly instance."""
-        return TracklyCallback(self, feature=feature, environment=environment)
+    def create(self, **kwargs):
+        """Create a model via ollama."""
+        import ollama
+        return ollama.create(**kwargs)
 
-    def _enqueue(self, event: Dict[str, Any]):
-        with self._lock:
-            self._queue.append(event)
-        if self.debug:
-            print(f"[Trackly] enqueued: provider={event['provider']} "
-                  f"model={event['model']} tokens={event.get('total_tokens')}")
+    def copy(self, source, destination):
+        """Copy a model via ollama."""
+        import ollama
+        return ollama.copy(source, destination)
 
-    def _worker(self):
-        while not self._stop_event.is_set():
-            self._stop_event.wait(timeout=2.0)
-            self._flush()
+    def delete(self, model):
+        """Delete a model via ollama."""
+        import ollama
+        return ollama.delete(model)
 
-    def _flush(self):
-        with self._lock:
-            if not self._queue:
-                return
-            batch = self._queue[:]
-            self._queue.clear()
+    def pull(self, model, **kwargs):
+        """Pull a model via ollama."""
+        import ollama
+        return ollama.pull(model, **kwargs)
 
-        endpoint = self.base_url
-        if not endpoint.endswith("/events"):
-            endpoint = f"{endpoint}/events"
+    def push(self, model, **kwargs):
+        """Push a model via ollama."""
+        import ollama
+        return ollama.push(model, **kwargs)
 
-        for attempt in range(3):
-            try:
-                res = requests.post(
-                    endpoint,
-                    json={"events": batch},
-                    headers={"Authorization": f"Bearer {self.api_key}"},
-                    timeout=5.0,
-                )
-                if self.debug:
-                    print(f"[Trackly] sent {len(batch)} events → HTTP {res.status_code}")
-                return
-            except Exception as exc:
-                if self.debug:
-                    print(f"[Trackly] send failed (attempt {attempt + 1}/3): {exc}")
-                if attempt < 2:
-                    time.sleep(1.0)
+    def embed(self, *args, **kwargs):
+        """Generate embeddings via ollama and log usage."""
+        import ollama
+        response = ollama.embed(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
 
-        if self.debug:
-            print(f"[Trackly] dropped {len(batch)} events after 3 failed attempts")
+    # --- Ollama Async Methods ---
+
+    async def chat_async(self, *args, **kwargs):
+        """Wrap ollama.AsyncClient.chat and log usage."""
+        if self.provider != "ollama":
+            raise ValueError("Trackly instance not configured for Ollama provider.")
+        client = self._get_ollama_async_client()
+        if kwargs.get('stream'):
+            return self._ollama_async_stream_wrapper(await client.chat(*args, **kwargs))
+        response = await client.chat(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
+
+    async def generate_async(self, *args, **kwargs):
+        """Wrap ollama.AsyncClient.generate and log usage."""
+        if self.provider != "ollama":
+            raise ValueError("Trackly instance not configured for Ollama provider.")
+        client = self._get_ollama_async_client()
+        if kwargs.get('stream'):
+            return self._ollama_async_stream_wrapper(await client.generate(*args, **kwargs))
+        response = await client.generate(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
+
+    async def embed_async(self, *args, **kwargs):
+        """Wrap ollama.AsyncClient.embed and log usage."""
+        if self.provider != "ollama":
+            raise ValueError("Trackly instance not configured for Ollama provider.")
+        client = self._get_ollama_async_client()
+        response = await client.embed(*args, **kwargs)
+        self._log_ollama_event(response)
+        return response
+
+    # --- Ollama Helpers ---
+
+    def _ollama_stream_wrapper(self, stream):
+        for chunk in stream:
+            if chunk.get('done'):
+                self._log_ollama_event(chunk)
+            yield chunk
+
+    async def _ollama_async_stream_wrapper(self, async_gen):
+        async for chunk in async_gen:
+            if chunk.get('done'):
+                self._log_ollama_event(chunk)
+            yield chunk
+
+    def _log_ollama_event(self, response: Dict[str, Any]):
+        try:
+            total_duration = response.get("total_duration", 0)
+            prompt_eval_count = response.get("prompt_eval_count", 0)
+            eval_count = response.get("eval_count", 0)
+            
+            is_embedding = "embeddings" in response or "embedding" in response
+            
+            latency_ms = int(total_duration / 1_000_000)
+            
+            event = {
+                "provider": "ollama",
+                "model": response.get("model", "unknown"),
+                "prompt_tokens": prompt_eval_count if not is_embedding else None,
+                "completion_tokens": eval_count if not is_embedding else None,
+                "total_tokens": (prompt_eval_count + eval_count) if not is_embedding else None,
+                "latency_ms": latency_ms,
+                "feature": self.feature,
+                "environment": self.environment,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            
+            if is_embedding:
+                event["finish_reason"] = "embedding"
+
+            prompt_eval_duration = response.get("prompt_eval_duration")
+            eval_duration = response.get("eval_duration")
+            if prompt_eval_duration is not None or eval_duration is not None:
+                event["metadata"] = {
+                    "prompt_eval_duration_ms": int(prompt_eval_duration / 1_000_000) if prompt_eval_duration else None,
+                    "eval_duration_ms": int(eval_duration / 1_000_000) if eval_duration else None,
+                }
+
+            self._worker._enqueue(event)
+        except Exception as exc:
+            if self._worker.debug:
+                print(f"[Trackly] warning: failed to process Ollama event: {exc}")
 
     def shutdown(self, timeout: float = 5.0):
         """Flush remaining events and stop the background thread."""
-        if self._stop_event.is_set():
-            return
-        self._stop_event.set()
-        if self.debug:
-            print("[Trackly] shutting down, flushing...")
-        self._flush()
-        self._thread.join(timeout=timeout)
+        self._worker.shutdown(timeout)

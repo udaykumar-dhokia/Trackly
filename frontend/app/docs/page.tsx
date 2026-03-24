@@ -6,91 +6,89 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Header from "@/components/custom/header";
 import Footer from "@/components/custom/footer";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fab } from "@fortawesome/free-brands-svg-icons";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+library.add(fab, fas);
+
+const createProxy = (lib: any) =>
+  new Proxy(lib, {
+    get: (target, prop: string) => {
+      if (typeof prop !== "string") return target[prop];
+      const pascal = prop
+        .split("-")
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join("");
+      const key = `fa${pascal}`;
+      return target[key] || target[prop];
+    },
+  });
+
+const byPrefixAndName = {
+  fab: createProxy(fab),
+  fas: createProxy(fas),
+};
 
 const NAV = [
   {
     group: "Getting started",
-    items: ["Introduction", "Installation", "Quickstart"],
+    items: [
+      { name: "Introduction", icon: "circle-info" },
+      { name: "Installation", icon: "download" },
+      { name: "Quickstart", icon: "bolt" },
+    ],
+  },
+  {
+    group: "Ollama (Native)",
+    items: [
+      { name: "Ollama Setup", icon: "linux", prefix: "fab" },
+      { name: "Ollama Streaming", icon: "stream" },
+      { name: "Ollama Async", icon: "bolt" },
+    ],
+  },
+  {
+    group: "LangChain",
+    items: [
+      { name: "OpenAI", icon: "openai", prefix: "fab" },
+      { name: "Anthropic", icon: "claude", prefix: "fab" },
+      { name: "Google Gemini", icon: "google", prefix: "fab" },
+      { name: "Groq", icon: "meta", prefix: "fab" },
+      { name: "Mistral", icon: "codiepie", prefix: "fab" },
+      { name: "Ollama (LC)", icon: "linux", prefix: "fab" },
+    ],
   },
   {
     group: "SDK",
-    items: ["Trackly client", "Callbacks", "Debug mode"],
-  },
-  {
-    group: "Providers",
-    items: ["OpenAI", "Anthropic", "Google Gemini", "Groq", "Ollama"],
+    items: [
+      { name: "Trackly client", icon: "box-archive" },
+      { name: "Callbacks", icon: "code" },
+      { name: "Debug mode", icon: "bug" },
+    ],
   },
   {
     group: "Backend API",
     items: [
-      "Authentication",
-      "Ingest events",
-      "Stats & analytics",
-      "API reference",
+      { name: "Authentication", icon: "lock" },
+      { name: "Ingest events", icon: "cloud-upload" },
+      { name: "Stats & analytics", icon: "chart-line" },
+      { name: "API reference", icon: "book" },
     ],
   },
   {
     group: "Deployment",
-    items: ["Self-hosting"],
+    items: [{ name: "Self-hosting", icon: "server" }],
   },
 ];
 
 const PROVIDERS_CODE: Record<string, string> = {
-  OpenAI: `from langchain_openai import ChatOpenAI
-from trackly import Trackly
-
-t = Trackly(api_key="tk_live_...")
-
-llm = ChatOpenAI(
-    model="gpt-4o",
-    callbacks=[t.callback(feature="chatbot", environment="prod")],
-)
-
-llm.invoke("Hello, world!")`,
-  Anthropic: `from langchain_anthropic import ChatAnthropic
-from trackly import Trackly
-
-t = Trackly(api_key="tk_live_...")
-
-llm = ChatAnthropic(
-    model="claude-3-5-sonnet-latest",
-    callbacks=[t.callback(feature="chat")],
-)
-
-llm.invoke("What is cost tracking?")`,
-  "Google Gemini": `from langchain_google_genai import ChatGoogleGenerativeAI
-from trackly import Trackly
-
-t = Trackly(api_key="tk_live_...")
-
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-pro",
-    callbacks=[t.callback(feature="summarizer")],
-)
-
-llm.invoke("Explain cost tracking.")`,
-  Groq: `from langchain_groq import ChatGroq
-from trackly import Trackly
-
-t = Trackly(api_key="tk_live_...")
-
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    callbacks=[t.callback(feature="rag-pipeline")],
-)
-
-llm.invoke("Hello from Groq!")`,
-  Ollama: `from langchain_ollama import ChatOllama
-from trackly import Trackly
-
-t = Trackly(api_key="tk_live_...")
-
-llm = ChatOllama(
-    model="llama3.2",
-    callbacks=[t.callback(feature="local-dev")],
-)
-
-llm.invoke("Local tracking with Ollama!")`,
+  OpenAI: `from trackly import Trackly, providers\nfrom langchain_openai import ChatOpenAI\n\n# Initialize with LANGCHAIN provider and metadata\nt = Trackly(provider=providers.LANGCHAIN, feature="chatbot", environment="prod")\n\nllm = ChatOpenAI(\n    model="gpt-4o",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello, world!")`,
+  Anthropic: `from trackly import Trackly, providers\nfrom langchain_anthropic import ChatAnthropic\n\nt = Trackly(provider=providers.LANGCHAIN, feature="chat")\n\nllm = ChatAnthropic(\n    model="claude-3-5-sonnet-latest",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("What is cost tracking?")`,
+  "Google Gemini": `from trackly import Trackly, providers\nfrom langchain_google_genai import ChatGoogleGenerativeAI\n\nt = Trackly(provider=providers.LANGCHAIN, feature="summarizer")\n\nllm = ChatGoogleGenerativeAI(\n    model="gemini-1.5-pro",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Explain cost tracking.")`,
+  Groq: `from trackly import Trackly, providers\nfrom langchain_groq import ChatGroq\n\nt = Trackly(provider=providers.LANGCHAIN, feature="rag-pipeline")\n\nllm = ChatGroq(\n    model="llama-3.3-70b-versatile",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello from Groq!")`,
+  Mistral: `from trackly import Trackly, providers\nfrom langchain_mistralai import ChatMistralAI\n\nt = Trackly(provider=providers.LANGCHAIN, feature="mistral-app")\n\nllm = ChatMistralAI(\n    model="mistral-large-latest",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello from Mistral!")`,
+  "Ollama (LC)": `from trackly import Trackly, providers\nfrom langchain_ollama import ChatOllama\n\nt = Trackly(provider=providers.LANGCHAIN, feature="local-dev")\n\nllm = ChatOllama(\n    model="llama3.2",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Local tracking with Ollama!")`,
 };
 
 function Ic({ children }: { children: React.ReactNode }) {
@@ -123,11 +121,10 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
         </div>
         <button
           onClick={copy}
-          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${
-            copied
-              ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
-              : "text-zinc-400 border-zinc-700 bg-[#141418] hover:text-white hover:border-white"
-          }`}
+          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${copied
+            ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
+            : "text-zinc-400 border-zinc-700 bg-[#141418] hover:text-white hover:border-white"
+            }`}
         >
           {copied ? "COPIED" : "COPY"}
         </button>
@@ -317,7 +314,7 @@ export default function DocsPage() {
               <CodeBlock lang=".env">{`TRACKLY_API_KEY=tk_live_your_key_here`}</CodeBlock>
             </Step>
             <Step n={3} label="Start Tracking">
-              <CodeBlock lang="python">{`from trackly import Trackly\nfrom langchain_openai import ChatOpenAI\n\n# Initialize\nt = Trackly()\n\n# Create callbacks for a specific feature/env\ncb = t.callback(feature="summarizer", environment="prod")\n\n# Pass to LangChain\nllm = ChatOpenAI(callbacks=[cb])\nllm.invoke("You are now being tracked.")`}</CodeBlock>
+              <CodeBlock lang="python">{`from trackly import Trackly, providers\nfrom langchain_openai import ChatOpenAI\n\n# Initialize with your provider and metadata\nt = Trackly(\n    provider=providers.LANGCHAIN, \n    feature="summarizer", \n    environment="prod"\n)\n\n# Pass to LangChain\nllm = ChatOpenAI(model="gpt-4o", callbacks=[t.callback()])\nllm.invoke("You are now being tracked.")`}</CodeBlock>
             </Step>
 
             <SectionTitle accentColor="#34d399">
@@ -399,6 +396,48 @@ export default function DocsPage() {
             </Callout>
           </>
         );
+      case "Ollama Setup":
+        return (
+          <>
+            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
+              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              Ollama Setup
+            </h1>
+            <p className="text-zinc-400 mb-6">
+              Trackly provides a native wrapper for the Ollama library. It shares the same API as the official SDK, making it zero-config.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers\n\n# Initialize with OLLAMA provider and metadata\nt = Trackly(\n    provider=providers.OLLAMA,\n    feature="chatbot",\n    environment="prod"\n)\n\n# Use it exactly like the ollama library\nresponse = t.chat(\n    model='llama3',\n    messages=[{'role': 'user', 'content': 'Hi'}]\n)\n\nprint(response['message']['content'])`}</CodeBlock>
+            <Callout type="info">
+              Embedding support is also included: <Ic>t.embed(model='llama3', input='...')</Ic> is tracked automatically.
+            </Callout>
+          </>
+        );
+      case "Ollama Streaming":
+        return (
+          <>
+            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
+              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              Ollama Streaming
+            </h1>
+            <p className="text-zinc-400 mb-6">
+              Streaming responses are fully supported. Trackly captures the total usage from the final chunk of the stream.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers\n\nt = Trackly(provider=providers.OLLAMA)\n\n# Streaming works as expected\nstream = t.chat(\n    model='llama3', \n    messages=[{'role': 'user', 'content': 'Tell me a story'}], \n    stream=True\n)\n\nfor chunk in stream:\n    print(chunk['message']['content'], end='', flush=True)`}</CodeBlock>
+          </>
+        );
+      case "Ollama Async":
+        return (
+          <>
+            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
+              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              Ollama Async
+            </h1>
+            <p className="text-zinc-400 mb-6">
+              For high-concurrency applications, use the async variants which wrap the Ollama AsyncClient.
+            </p>
+            <CodeBlock lang="python">{`import asyncio\nfrom trackly import Trackly, providers\n\nasync def main():\n    t = Trackly(provider=providers.OLLAMA)\n    \n    response = await t.chat_async(\n        model='llama3', \n        messages=[{'role': 'user', 'content': 'Async hello'}]\n    )\n    print(response['message']['content'])\n\nasyncio.run(main())`}</CodeBlock>
+          </>
+        );
       case "Trackly client":
         return (
           <>
@@ -409,7 +448,7 @@ export default function DocsPage() {
               The <Ic>Trackly</Ic> class is the entry point for all
               interactions.
             </p>
-            <CodeBlock lang="python">{`from trackly import Trackly\n\nt = Trackly(\n    api_key="...",    # Defaults to os.getenv("TRACKLY_API_KEY")\n    base_url="...",   # Defaults to api.trackly.ai\n    debug=False       # Enable for verbose logs\n)`}</CodeBlock>
+            <CodeBlock lang="python">{`from trackly import Trackly\n\nt = Trackly(\n    api_key="...",    # Defaults to os.getenv("TRACKLY_API_KEY")\n    base_url="...",   # Defaults to api.trackly.ai\n    feature="chatbot", # Default feature name\n    environment="prod",# Default environment\n    debug=False       # Enable for verbose logs\n)`}</CodeBlock>
             <Callout type="info">
               If no API key is provided during initialization, the client will
               look for the `TRACKLY_API_KEY` environment variable.
@@ -426,7 +465,7 @@ export default function DocsPage() {
               Callbacks allow you to attach rich metadata to your LLM
               observability data.
             </p>
-            <CodeBlock lang="python">{`# Generate a callback with metadata\ncb = t.callback(\n    feature="retrieval",      # Feature name (e.g. chat, rag, summary)\n    environment="production", # Env (e.g. dev, staging, prod)\n)`}</CodeBlock>
+            <CodeBlock lang="python">{`# Initialize Trackly with metadata\nt = Trackly(\n    feature="retrieval",      # Feature name (e.g. chat, rag, summary)\n    environment="production", # Env (e.g. dev, staging, prod)\n)\n\n# Generate a callback for LangChain\ncb = t.callback()`}</CodeBlock>
             <SectionTitle>Fields</SectionTitle>
             <ul className="space-y-4 text-[.85rem] text-zinc-400">
               <li>
@@ -576,9 +615,27 @@ export default function DocsPage() {
         );
       default:
         if (PROVIDERS_CODE[activeNav]) {
+          const iconMap: Record<string, any> = {
+            OpenAI: byPrefixAndName.fab["openai"],
+            Anthropic: byPrefixAndName.fab["claude"],
+            "Google Gemini": byPrefixAndName.fab["google"],
+            Groq: byPrefixAndName.fab["meta"],
+            Mistral: byPrefixAndName.fab["codiepie"],
+            "Ollama (LC)": byPrefixAndName.fab["linux"],
+          };
+
+          // Special case for Anthropic/Claude if available in fab
+          if (activeNav === "Anthropic") {
+            // In free-brands, claude might not be present, but some versions have it.
+            // If not, we use a generic AI icon or similar.
+          }
+
           return (
             <>
-              <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
+              <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
+                {iconMap[activeNav] && (
+                  <FontAwesomeIcon icon={iconMap[activeNav]} className="text-primary size-10" />
+                )}
                 {activeNav}
               </h1>
               <p className="text-zinc-400 mb-6 ">
@@ -588,7 +645,7 @@ export default function DocsPage() {
               <Callout type="success">
                 Ensure you have the required provider package installed via{" "}
                 <Ic>
-                  pip install "trackly[{activeNav.toLowerCase().split(" ")[0]}]"
+                  pip install "trackly[{activeNav.toLowerCase().split(" ")[0].replace("(", "").replace(")", "")}]"
                 </Ic>
                 .
               </Callout>
@@ -634,25 +691,33 @@ export default function DocsPage() {
                 {group.group}
               </h4>
               <nav className="flex flex-col gap-1.5">
-                {group.items.map((item) => {
-                  const isActive = activeNav === item;
+                {group.items.map((item: any) => {
+                  const isActive = activeNav === item.name;
+                  const icon = (byPrefixAndName as any)[item.prefix || "fas"][
+                    item.icon
+                  ];
                   return (
                     <button
-                      key={item}
+                      key={item.name}
                       onClick={() => {
-                        setActiveNav(item);
+                        setActiveNav(item.name);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
                       className={`
-                        text-left px-4 py-2.5 text-[0.85rem] transition-all duration-200 group relative cursor-pointer
-                        ${
-                          isActive
-                            ? "border-2 border-black bg-white font-bold text-black shadow-primary shadow-[4px_4px_0_0] z-10"
-                            : "text-zinc-400 hover:text-zinc-200 hover:translate-x-1"
+                        text-left px-4 py-2.5 text-[0.85rem] transition-all duration-200 group relative cursor-pointer flex items-center gap-3
+                        ${isActive
+                          ? "border-2 border-black bg-white font-bold text-black shadow-primary shadow-[4px_4px_0_0] z-10"
+                          : "text-zinc-400 hover:text-zinc-200 hover:translate-x-1"
                         }
                       `}
                     >
-                      {item}
+                      {icon && (
+                        <FontAwesomeIcon
+                          icon={icon}
+                          className={`size-3.5 ${isActive ? "text-primary" : "text-zinc-500 group-hover:text-zinc-300"}`}
+                        />
+                      )}
+                      {item.name}
                     </button>
                   );
                 })}

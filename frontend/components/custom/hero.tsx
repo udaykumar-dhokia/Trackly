@@ -30,12 +30,36 @@ const PROVIDERS = [
   "Ollama",
 ];
 
+const PROVIDER_LOGOS = [
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQVRSNCZKUcvSYkmDLtSNNaRwRDh8rz5HxHA&s", // OpenAI
+  "https://www.digitalmarketingcommunity.com/wp-content/uploads/2025/06/Claude-logo.jpeg",            // Anthropic
+  "https://static.vecteezy.com/system/resources/previews/055/687/055/non_2x/rectangle-gemini-google-icon-symbol-logo-free-png.png", // Gemini
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s",    // Groq
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s",    // Mistral
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s",    // Ollama
+];
+
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
   const [providerIdx, setProviderIdx] = useState(0);
   const [copied, setCopied] = useState(false);
-  const events = useCountUp(4_812_903, 2400, mounted);
-  const cost = useCountUp(29_847, 2400, mounted);
+  const [totalEvents, setTotalEvents] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/stats/global`);
+        const data = await res.json();
+        setTotalEvents(data.total_events);
+      } catch (err) {
+        console.error("Failed to fetch global stats:", err);
+        setTotalEvents(4_812_903); // Fallback
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const events = useCountUp(totalEvents || 4_812_903, 2400, mounted);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 100);
@@ -86,6 +110,16 @@ export default function Hero() {
           box-shadow:0 0 6px var(--green); animation:pulse-dot 2s ease-in-out infinite;
         }
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+        
+        .logo-pulse {
+          animation: logo-fade 1.8s ease-in-out infinite;
+          width: 14px; height: 14px; border-radius: 2px; object-fit: cover;
+          filter: grayscale(1) brightness(1.5);
+        }
+        @keyframes logo-fade {
+          0%, 100% { opacity: 0; transform: scale(0.8); }
+          20%, 80% { opacity: 1; transform: scale(1); }
+        }
 
         .hero-h1 {
           font-size:clamp(2.4rem,5.5vw,4rem); font-weight:800;
@@ -161,12 +195,18 @@ export default function Hero() {
           <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
             <div
               className={`reveal d1 ${mounted ? "in" : ""}`}
-              style={{ display: "flex", justifyContent: "center" }}
+              style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}
             >
-              <span className="badge text-white!">
-                <span className="badge-dot" />
-                Now tracking 6 providers · Open beta
-              </span>
+              <div className="rounded-full flex items-center -space-x-2 transition-opacity duration-800">
+                {PROVIDER_LOGOS.map((logo, i) => (
+                  <img
+                    key={i}
+                    src={logo}
+                    alt="Provider Logo"
+                    className="h-10 w-auto rounded-full object-contain transition-all hover:scale-110 hover:mx-2"
+                  />
+                ))}
+              </div>
             </div>
 
             <h1 className={`hero-h1 reveal d2 ${mounted ? "in" : ""}`}>
@@ -226,63 +266,58 @@ export default function Hero() {
                   <span className="c-purple">import</span>{" "}
                   <span className="c-blue">Trackly</span>
                   {"\n"}
-                  <span className="c-purple">from</span> langchain_groq{" "}
+                  <span className="c-purple">from</span> langchain_anthropic{" "}
                   <span className="c-purple">import</span>{" "}
-                  <span className="c-blue">ChatGroq</span>
+                  <span className="c-blue">ChatAnthropic</span>
                   {"\n"}
                   {"\n"}
-                  <span className="c-muted"># 1. Init once</span>
+                  <span className="c-muted"># 1. Init with metadata</span>
                   {"\n"}
                   trackly <span className="c-amber">=</span>{" "}
-                  <span className="c-blue">Trackly</span>(api_key
-                  <span className="c-amber">=</span>
-                  <span className="c-green">"tk_live_..."</span>){"\n"}
+                  <span className="c-blue">Trackly</span>(
+                  {"\n"}
+                  {"  "}feature<span className="c-amber">=</span>
+                  <span className="c-green">"chatbot"</span>,
+                  {"\n"}
+                  {"  "}environment<span className="c-amber">=</span>
+                  <span className="c-green">"prod"</span>
+                  {"\n"}
+                  ){"\n"}
                   {"\n"}
                   <span className="c-muted">
                     # 2. Attach callback — that's it
                   </span>
                   {"\n"}
                   llm <span className="c-amber">=</span>{" "}
-                  <span className="c-blue">ChatGroq</span>({"\n"}
+                  <span className="c-blue">ChatAnthropic</span>({"\n"}
                   {"  "}model<span className="c-amber">=</span>
-                  <span className="c-green">"llama-3.3-70b-versatile"</span>,
+                  <span className="c-green">"claude-3-5-sonnet-latest"</span>,
                   {"\n"}
                   {"  "}callbacks<span className="c-amber">=[</span>
-                  trackly.callback({"\n"}
-                  {"    "}feature<span className="c-amber">=</span>
-                  <span className="c-green">"chat"</span>,{"\n"}
-                  {"    "}user_id<span className="c-amber">=</span>user.id,
-                  {"\n"}
-                  {"  "}
-                  <span className="c-amber">)]</span>,{"\n"}){"\n"}
+                  trackly.callback()<span className="c-amber">]</span>,{"\n"}){"\n"}
                   <span className="c-muted">
-                    # Every Groq call is now tracked automatically ✓
+                    # Every Claude call is now tracked automatically ✓
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Stats */}
-            {/* <div className={`reveal d6 ${mounted ? 'in' : ''}`} style={{ marginTop: 16 }}>
-                            <div className="stats-row">
-                                <div className="stat-cell">
-                                    <div className="stat-num">{events.toLocaleString()}</div>
-                                    <div className="stat-label">Events tracked</div>
-                                </div>
-                                <div className="stat-cell">
-                                    <div className="stat-num" style={{ color: 'var(--green)' }}>${cost.toLocaleString()}</div>
-                                    <div className="stat-label">Cost saved</div>
-                                </div>
-                                <div className="stat-cell">
-                                    <div className="stat-num">6</div>
-                                    <div className="stat-label">Providers</div>
-                                </div>
-                                <div className="stat-cell">
-                                    <div className="stat-num" style={{ color: 'var(--accent)' }}>2</div>
-                                    <div className="stat-label">Lines of code</div>
-                                </div>
-                            </div>
-                        </div> */}
+            <div className={`reveal d6 ${mounted ? 'in' : ''}`} style={{ marginTop: 16 }}>
+              <div className="stats-row">
+                <div className="stat-cell">
+                  <div className="stat-num">{events.toLocaleString()}</div>
+                  <div className="stat-label">Events tracked</div>
+                </div>
+                <div className="stat-cell">
+                  <div className="stat-num">6</div>
+                  <div className="stat-label">Providers</div>
+                </div>
+                <div className="stat-cell">
+                  <div className="stat-num" style={{ color: 'var(--accent)' }}>2</div>
+                  <div className="stat-label">Lines of code</div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>

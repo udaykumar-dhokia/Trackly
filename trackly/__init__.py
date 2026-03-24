@@ -1,3 +1,4 @@
 from .client import Trackly
+from .providers import providers
 
-__all__ = ["Trackly"]
+__all__ = ["Trackly", "providers"]

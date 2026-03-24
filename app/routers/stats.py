@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.models.orm import LlmEvent
 from app.models.schemas import (
     DailyUsage,
+    GlobalStats,
     UsageByFeature,
     UsageByModel,
     UsageSummary,
@@ -213,6 +214,20 @@ async def get_daily(
         )
         for r in rows
     ]
+
+
+@router.get(
+    "/global",
+    response_model=GlobalStats,
+    summary="Get global platform stats for hero section",
+)
+async def get_global_stats(
+    db: AsyncSession = Depends(get_db),
+) -> GlobalStats:
+    stmt = select(func.count(LlmEvent.id))
+    result = await db.execute(stmt)
+    count = result.scalar_one()
+    return GlobalStats(total_events=count)
 
 
 def _resolve_window(

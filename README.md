@@ -26,46 +26,117 @@ This repository contains both the **Trackly Python SDK** and the **Trackly Inges
 # Install the core Trackly package
 pip install trackly
 
-# Or install with your exact LangChain provider tools
-pip install "trackly[openai]"      # OpenAI / Azure OpenAI
-pip install "trackly[anthropic]"   # Anthropic Claude
+# Optional: Install with your exact provider tools
+pip install "trackly[openai]"      # OpenAI
+pip install "trackly[anthropic]"   # Anthropic
 pip install "trackly[gemini]"      # Google Gemini
-pip install "trackly[all]"         # All of the above
+pip install "trackly[ollama]"      # Ollama
 ```
 
 ### Quickstart
 
+Initialize Trackly by selecting your provider.
+
 ```python
-from trackly import Trackly
-from langchain_openai import ChatOpenAI
+from trackly import Trackly, providers
 
-# 1. Initialize the client (Reads TRACKLY_API_KEY from environment)
-trackly = Trackly(api_key="tk_live_...")
+# For Native Ollama
+trackly = Trackly(provider=providers.OLLAMA)
 
-# 2. Attach the callback to your existing LLM
-llm = ChatOpenAI(
-    model="gpt-4o",
-    callbacks=[trackly.callback(feature="chat")],
-)
-
-# 3. Use your LLM as normal
-response = llm.invoke("Summarise the following contract...")
+# For LangChain (Multi-provider)
+trackly = Trackly(provider=providers.LANGCHAIN)
 ```
 
-Every call now automatically logs to your Trackly dashboard.
+---
+
+### 1. Ollama (Native Support)
+
+Trackly provides a native wrapper for the `ollama` library. The interface is identical to the official SDK, making integration zero-effort while adding automatic tracking.
+
+```python
+from trackly import Trackly, providers
+
+trackly = Trackly(provider=providers.OLLAMA)
+
+# chat() - same as ollama.chat()
+response = trackly.chat(
+    model='llama3',
+    messages=[{'role': 'user', 'content': 'Why is the sky blue?'}]
+)
+
+# generate() - same as ollama.generate()
+response = trackly.generate(model='llama3', prompt='Explain recursion.')
+
+# embed() - tracked automatically
+response = trackly.embed(model='llama3', input='Trackly is awesome.')
+
+# Streaming support
+for chunk in trackly.chat(model='llama3', messages=[...], stream=True):
+    print(chunk['message']['content'], end='', flush=True)
+
+# Async support
+async def main():
+    await trackly.chat_async(model='llama3', messages=[...])
+```
+
+### 2. LangChain (Callback Support)
+
+Use Trackly as a callback handler for LangChain. It supports all major providers and automatically detects the provider/model.
+
+#### OpenAI
+```python
+from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4o", callbacks=[trackly.callback()])
+```
+
+#### Anthropic
+```python
+from langchain_anthropic import ChatAnthropic
+llm = ChatAnthropic(model="claude-3-5-sonnet", callbacks=[trackly.callback()])
+```
+
+#### Google Gemini
+```python
+from langchain_google_genai import ChatGoogleGenerativeAI
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", callbacks=[trackly.callback()])
+```
+
+#### Groq
+```python
+from langchain_groq import ChatGroq
+llm = ChatGroq(model="llama3-70b-8192", callbacks=[trackly.callback()])
+```
+
+#### Mistral
+```python
+from langchain_mistralai import ChatMistralAI
+llm = ChatMistralAI(model="mistral-large-latest", callbacks=[trackly.callback()])
+```
+
+#### Ollama (via LangChain)
+```python
+from langchain_ollama import ChatOllama
+llm = ChatOllama(model="llama3", callbacks=[trackly.callback()])
+```
+
+---
 
 ### Annotating Calls with Metadata
 
-Register a callback with default tags to track metadata across components easily:
+Initialize the client with default tags to track metadata across components:
 
 ```python
-# All calls from this model instance share these defaults
+# Initialize with project-level defaults
+trackly = Trackly(
+    provider=providers.LANGCHAIN,
+    feature="docs-qa",
+    environment="prod",
+)
+
+# Use the callback without arguments
 llm = ChatOpenAI(
     model="gpt-4o",
-    callbacks=[trackly.callback(
-        feature="docs-qa",
-        environment="prod",
-    )],
+    callbacks=[trackly.callback()],
 )
 ```
 
@@ -76,14 +147,16 @@ You can configure the SDK programmatically or via environment variables:
 ```python
 trackly = Trackly(
     api_key="tk_live_...",                   # Or TRACKLY_API_KEY
-    base_url="http://localhost:8000/v1",   # Or TRACKLY_BASE_URL (Self-hosting)
-    debug=True,                              # Or TRACKLY_DEBUG=1 (Outputs console logs)
+    base_url="https://api.trackly.ai/v1",   # Or TRACKLY_BASE_URL
+    feature="summarizer",                    # Default feature
+    environment="production",               # Default environment
+    debug=True,                              # Or TRACKLY_DEBUG=1
 )
 ```
 
 ### Graceful Shutdown
 
-In long-running servers, the background thread and `atexit` handler manage flush events automatically. In short-lived scripts (like AWS Lambdas or testing), call `shutdown()` to guarantee pending queues execute before stopping:
+In short-lived scripts (like AWS Lambdas or CLI tools), call `shutdown()` to guarantee pending events are sent:
 
 ```python
 trackly.shutdown(timeout=5.0)
