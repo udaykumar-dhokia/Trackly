@@ -62,13 +62,13 @@ export default function Features() {
 
         .feat-card {
           background: #0f0f12; border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 14px; padding: 28px;
+          padding: 28px;
           transition: border-color 0.2s, transform 0.2s;
           position: relative; overflow: hidden;
         }
         .feat-card:hover { border-color: rgba(255,255,255,0.11); transform: translateY(-2px); }
         .feat-card::after {
-          content: ''; position: absolute; inset: 0; border-radius: 14px;
+          content: ''; position: absolute; inset: 0;
           opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
         .feat-card:hover::after { opacity: 1; }
@@ -78,7 +78,7 @@ export default function Features() {
         .glow-blue::after   { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(96,165,250,0.06), transparent); }
 
         .icon-badge {
-          width: 38px; height: 38px; border-radius: 10px;
+          width: 38px; height: 38px;
           display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
         }
         .ib-purple { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); }
@@ -90,10 +90,10 @@ export default function Features() {
 
         .meta-code {
           background: #141418; border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 8px; padding: 12px 14px;
+          padding: 12px 14px;
           line-height: 1.7; color: #a1a1aa; white-space: pre;
         }
-        .spark-bar { border-radius: 3px 3px 0 0; background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.15); transition: background 0.2s; }
+        .spark-bar { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.15); transition: background 0.2s; }
         .spark-bar:hover, .spark-bar.hi { background: rgba(167,139,250,0.3); border-color: rgba(167,139,250,0.4); }
 
         .feat-reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.55s ease, transform 0.55s ease; }
@@ -203,7 +203,7 @@ export default function Features() {
                                 {BARS.map(bar => (
                                     <div key={bar.label} className="flex items-center gap-2.5">
                                         <span className=" text-[10px] text-zinc-500 w-20 shrink-0">{bar.label}</span>
-                                        <div className="flex-1 h-[6px] bg-[#141418] rounded-none overflow-hidden">
+                                        <div className="flex-1 h-[6px] bg-[#141418] overflow-hidden">
                                             <div
                                                 className="bar-fill h-full rounded-none"
                                                 style={{ width: barsGo ? `${bar.pct}%` : '0%', background: bar.color }}
@@ -232,7 +232,7 @@ export default function Features() {
                             <p className=" text-[10px] text-[#34d399] tracking-[.04em] mt-1.5 mb-4">▲ P95 · gpt-4o · last 24h</p>
                             <div className="flex gap-2.5">
                                 {[{ label: 'P50', val: '198ms', color: '#34d399' }, { label: 'P95', val: '312ms', color: '#fbbf24' }].map(m => (
-                                    <div key={m.label} className="flex-1 bg-[#141418] rounded-none p-2.5 border border-white/6">
+                                    <div key={m.label} className="flex-1 bg-[#141418] p-2.5 border border-white/6">
                                         <p className=" text-[9.5px] text-zinc-500 tracking-[.04em] uppercase">{m.label}</p>
                                         <p className=" text-[1rem] mt-0.5" style={{ color: m.color }}>{m.val}</p>
                                     </div>

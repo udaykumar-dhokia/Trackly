@@ -33,6 +33,7 @@ const PROVIDERS = [
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
   const [providerIdx, setProviderIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
   const events = useCountUp(4_812_903, 2400, mounted);
   const cost = useCountUp(29_847, 2400, mounted);
 
@@ -101,22 +102,6 @@ export default function Hero() {
           line-height:1.7; max-width:600px; margin:0 auto 36px;
         }
         .cta-row { display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap; }
-        .btn-primary {
-          display:inline-flex;align-items:center;gap:8px;background:var(--accent);
-          color:#09090b;font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;
-          padding:12px 24px;border-radius:8px;border:none;cursor:pointer;
-          text-decoration:none;transition:transform .15s,box-shadow .15s,background .15s;
-          box-shadow:0 0 24px rgba(167,139,250,.35);
-        }
-        .btn-primary:hover { background:#c4b5fd;transform:translateY(-1px);box-shadow:0 0 36px rgba(167,139,250,.5); }
-        .btn-secondary {
-          display:inline-flex;align-items:center;gap:8px;background:transparent;
-          color:var(--muted);font-family:'DM Mono',monospace;font-size:.8rem;
-          padding:12px 20px;border-radius:8px;border:1px solid var(--border-bright);
-          cursor:pointer;text-decoration:none;transition:color .15s,border-color .15s,background .15s;
-          letter-spacing:.03em;
-        }
-        .btn-secondary:hover { color:var(--text);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.03); }
 
         .code-card {
           background:var(--surface);border:1px solid var(--border);border-radius:12px;
@@ -205,9 +190,24 @@ export default function Hero() {
                   Read Docs <ArrowUpRightIcon />{" "}
                 </Button>
               </Link>
-              <a href="#" className="btn-secondary">
-                $ pip install trackly
-              </a>
+              <div className="flex items-center border-2 border-black bg-[#141418] shadow-primary shadow-[4px_4px_0_0] font-mono text-[.8rem] h-[32px]">
+                <div className="flex items-center flex-1 px-4 gap-2">
+                  <span className="text-zinc-500">$</span>
+                  <span className="text-zinc-100 font-bold">
+                    pip install trackly
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText("pip install trackly");
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="h-full px-5 bg-white text-black font-bold border-l-2 border-black hover:bg-indigo-300 transition-colors cursor-pointer"
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
             </div>
 
             <div

@@ -319,6 +319,84 @@ export default function DocsPage() {
             <Step n={3} label="Start Tracking">
               <CodeBlock lang="python">{`from trackly import Trackly\nfrom langchain_openai import ChatOpenAI\n\n# Initialize\nt = Trackly()\n\n# Create callbacks for a specific feature/env\ncb = t.callback(feature="summarizer", environment="prod")\n\n# Pass to LangChain\nllm = ChatOpenAI(callbacks=[cb])\nllm.invoke("You are now being tracked.")`}</CodeBlock>
             </Step>
+
+            <SectionTitle accentColor="#34d399">
+              Visual Setup Guide
+            </SectionTitle>
+            <p className="text-[.88rem] text-zinc-400 leading-[1.7] mb-6">
+              Follow along with these screenshots to set up your first project
+              and API key in the Trackly dashboard.
+            </p>
+
+            <div className="space-y-8">
+              {[
+                {
+                  n: 1,
+                  title: "Sign in & view your Dashboard",
+                  desc: "After signing in, you'll land on the Trackly Dashboard. If you don't have any projects yet, you'll be prompted to create one.",
+                  img: "/flow/1.png",
+                },
+                {
+                  n: 2,
+                  title: "Navigate to Projects",
+                  desc: "Go to Organization Settings → Projects to see all your tracking environments.",
+                  img: "/flow/2.png",
+                },
+                {
+                  n: 3,
+                  title: "Create a new Project",
+                  desc: 'Click "+ New Project", enter a name, and hit Launch Project.',
+                  img: "/flow/3.png",
+                },
+                {
+                  n: 4,
+                  title: "Go to API Keys",
+                  desc: "Navigate to API Keys from the sidebar. You need a key to authenticate SDK calls.",
+                  img: "/flow/4.png",
+                },
+                {
+                  n: 5,
+                  title: "Generate an API Key",
+                  desc: 'Click "+ Create API Key", give it a name, and optionally scope it to a project.',
+                  img: "/flow/5.png",
+                },
+                {
+                  n: 6,
+                  title: "Copy your API Key",
+                  desc: "Your key is generated! Copy it immediately — you won't see it again. Use it in your SDK config.",
+                  img: "/flow/6.png",
+                },
+              ].map((step) => (
+                <div key={step.n}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-7 h-7 rounded-none bg-primary text-black font-bold text-[11px] flex items-center justify-center shrink-0">
+                      {step.n}
+                    </span>
+                    <h3 className="text-[.9rem] font-bold text-zinc-100 uppercase tracking-wide">
+                      {step.title}
+                    </h3>
+                  </div>
+                  <div className="pl-10">
+                    <p className="text-[.84rem] text-zinc-400 leading-[1.7] mb-3">
+                      {step.desc}
+                    </p>
+                    <div className="border border-white/8 rounded-[10px] overflow-hidden bg-[#0a0a0c] hover:border-primary/25 transition-all duration-200">
+                      <img
+                        src={step.img}
+                        alt={`Step ${step.n}: ${step.title}`}
+                        className="w-full block"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Callout type="success">
+              You're all set! Head back to your code and pass the API key to
+              the Trackly SDK to start tracking your LLM costs.
+            </Callout>
           </>
         );
       case "Trackly client":
@@ -348,7 +426,7 @@ export default function DocsPage() {
               Callbacks allow you to attach rich metadata to your LLM
               observability data.
             </p>
-            <CodeBlock lang="python">{`# Generate a callback with metadata\ncb = t.callback(\n    feature="retrieval",      # Feature name (e.g. chat, rag, summary)\n    environment="production", # Env (e.g. dev, staging, prod)\n    user_id="user_123",       # Attribute cost to a web user\n    session_id="sess_abc"     # Group calls by conversation\n)`}</CodeBlock>
+            <CodeBlock lang="python">{`# Generate a callback with metadata\ncb = t.callback(\n    feature="retrieval",      # Feature name (e.g. chat, rag, summary)\n    environment="production", # Env (e.g. dev, staging, prod)\n)`}</CodeBlock>
             <SectionTitle>Fields</SectionTitle>
             <ul className="space-y-4 text-[.85rem] text-zinc-400">
               <li>

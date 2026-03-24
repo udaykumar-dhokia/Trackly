@@ -57,12 +57,34 @@ const TAGS = [
 ];
 
 export default function AboutContact() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSending(true);
+
+    const mailtoString = `mailto:udaykumar.dhokia@gmail.com?subject=${encodeURIComponent(
+      formData.subject
+    )}&body=${encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+    )}`;
+
+    window.location.href = mailtoString;
+
     setTimeout(() => {
       setSending(false);
       setSubmitted(true);
@@ -100,9 +122,6 @@ export default function AboutContact() {
         }
         .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .btn-send { transition: background 0.15s, transform 0.15s, box-shadow 0.15s; }
-        .btn-send:hover:not(:disabled) { background: #c4b5fd !important; transform: translateY(-1px); box-shadow: 0 0 30px rgba(167,139,250,0.45) !important; }
-        .btn-send:active { transform: translateY(0) !important; }
       `}</style>
 
       <section className="ac-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100">
@@ -245,6 +264,9 @@ export default function AboutContact() {
                   </label>
                   <input
                     type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     required
                     placeholder="Jane Smith"
                     className="form-input w-full bg-[#141418] border border-white/10 rounded-[9px] px-3.5 py-2.5 text-[.85rem] text-zinc-100 placeholder-zinc-600"
@@ -256,6 +278,9 @@ export default function AboutContact() {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     required
                     placeholder="jane@acme.com"
                     className="form-input w-full bg-[#141418] border border-white/10 rounded-[9px] px-3.5 py-2.5 text-[.85rem] text-zinc-100 placeholder-zinc-600"
@@ -269,6 +294,9 @@ export default function AboutContact() {
                 </label>
                 <input
                   type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
                   required
                   placeholder="Feature request · Bug report · Partnership"
                   className="form-input w-full bg-[#141418] border border-white/10 rounded-[9px] px-3.5 py-2.5 text-[.85rem] text-zinc-100 placeholder-zinc-600"
@@ -280,6 +308,9 @@ export default function AboutContact() {
                   Message
                 </label>
                 <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   required
                   rows={4}
                   placeholder="Tell me what's on your mind..."
@@ -288,7 +319,7 @@ export default function AboutContact() {
               </div>
 
               {!submitted ? (
-                <Button type="submit" disabled={sending} className="w-full">
+                <Button type="submit" disabled={sending} className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed w-full">
                   {sending ? (
                     <>
                       <svg

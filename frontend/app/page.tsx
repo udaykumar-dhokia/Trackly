@@ -4,6 +4,7 @@ import Header from "@/components/custom/header";
 import Hero from "@/components/custom/hero";
 import Features from "@/components/custom/features";
 import Pricing from "@/components/custom/pricing";
+import HowItWorks from "@/components/custom/howItWorks";
 import AboutContact from "@/components/custom/aboutAndContact";
 import Footer from "@/components/custom/footer";
 
@@ -13,6 +14,7 @@ const page = () => {
       <Header />
       <Hero />
       <Features />
+      <HowItWorks />
       <Pricing />
       <AboutContact />
       <Footer />
