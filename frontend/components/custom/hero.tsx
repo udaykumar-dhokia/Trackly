@@ -256,6 +256,15 @@ export default function Hero() {
               </div>
             </div>
 
+            <div className={`reveal d4 ${mounted ? "in" : ""}`} style={{ marginTop: 24 }}>
+              <p className="text-[11px] text-zinc-500 font-mono">
+                Questions? Reach out at{" "}
+                <a href="mailto:support@tracklyai.in" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-400/30 transition-colors">
+                  support@tracklyai.in
+                </a>
+              </p>
+            </div>
+
             <div
               className={`reveal d5 ${mounted ? "in" : ""}`}
               style={{ marginTop: 48 }}

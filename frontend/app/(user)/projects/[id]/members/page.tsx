@@ -95,7 +95,7 @@ export default function ProjectMembersPage() {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await fetch(
-          `${apiUrl}/v1/users/check?email=${encodeURIComponent(email)}&org_id=${project.org_id}`,
+          `${apiUrl}/api/v1/users/check?email=${encodeURIComponent(email)}&org_id=${project.org_id}`,
         );
         const data = await response.json();
         setEmailStatus({

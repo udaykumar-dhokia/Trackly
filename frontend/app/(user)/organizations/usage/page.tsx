@@ -36,7 +36,7 @@ export default function UsagePage() {
     if (activeOrgId) {
       setLoading(true);
       fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v1/organizations/${activeOrgId}/usage`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/organizations/${activeOrgId}/usage`,
       )
         .then((res) => res.json())
         .then((data) => {

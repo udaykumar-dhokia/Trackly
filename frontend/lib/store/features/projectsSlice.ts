@@ -68,7 +68,7 @@ export const fetchUserOrgs = createAsyncThunk(
   async (auth0Id: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/users/organizations?auth0_id=${encodeURIComponent(auth0Id)}`,
+      `${apiUrl}/api/v1/users/organizations?auth0_id=${encodeURIComponent(auth0Id)}`,
     );
     if (!response.ok) {
       throw new Error("Failed to fetch organizations");
@@ -83,7 +83,7 @@ export const fetchProjects = createAsyncThunk(
   async (orgId: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/organizations/${orgId}/projects`,
+      `${apiUrl}/api/v1/organizations/${orgId}/projects`,
     );
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
@@ -105,7 +105,7 @@ export const createProject = createAsyncThunk(
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/organizations/${orgId}/projects`,
+      `${apiUrl}/api/v1/organizations/${orgId}/projects`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +123,7 @@ export const fetchProjectMembers = createAsyncThunk(
   "projects/fetchProjectMembers",
   async (projectId: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/projects/${projectId}/members`);
+    const response = await fetch(`${apiUrl}/api/v1/projects/${projectId}/members`);
     if (!response.ok) {
       throw new Error("Failed to fetch members");
     }
@@ -145,7 +145,7 @@ export const addProjectMember = createAsyncThunk(
     auth0Id?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    let url = `${apiUrl}/v1/projects/${projectId}/members`;
+    let url = `${apiUrl}/api/v1/projects/${projectId}/members`;
     if (auth0Id) {
       url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
     }
@@ -174,7 +174,7 @@ export const removeProjectMember = createAsyncThunk(
     auth0Id?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    let url = `${apiUrl}/v1/projects/${projectId}/members/${userId}`;
+    let url = `${apiUrl}/api/v1/projects/${projectId}/members/${userId}`;
     if (auth0Id) {
       url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
     }
@@ -193,7 +193,7 @@ export const fetchOrgMembers = createAsyncThunk(
   "projects/fetchOrgMembers",
   async (orgId: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/organizations/${orgId}/users`);
+    const response = await fetch(`${apiUrl}/api/v1/organizations/${orgId}/users`);
     if (!response.ok) {
       throw new Error("Failed to fetch organization members");
     }
@@ -213,7 +213,7 @@ export const addOrgUser = createAsyncThunk(
     name?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/organizations/${orgId}/users`, {
+    const response = await fetch(`${apiUrl}/api/v1/organizations/${orgId}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, name }),

@@ -83,7 +83,7 @@ export const fetchEvents = createAsyncThunk(
         queryParams.append("user_id", userId)
     }
 
-    const response = await fetch(`${apiUrl}/v1/projects/${projectId}/events?${queryParams.toString()}`);
+    const response = await fetch(`${apiUrl}/api/v1/projects/${projectId}/events?${queryParams.toString()}`);
     if (!response.ok) {
       throw new Error('Failed to fetch events');
     }

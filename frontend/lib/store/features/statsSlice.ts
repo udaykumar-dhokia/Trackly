@@ -58,9 +58,13 @@ export const fetchDashboardStats = createAsyncThunk(
       : "";
 
     const [summaryRes, modelsRes, dailyRes] = await Promise.all([
-      fetch(`${apiUrl}/v1/projects/${projectId}/stats/summary${queryString}`),
-      fetch(`${apiUrl}/v1/projects/${projectId}/stats/by-model${queryString}`),
-      fetch(`${apiUrl}/v1/projects/${projectId}/stats/daily${queryString}`),
+      fetch(
+        `${apiUrl}/api/v1/projects/${projectId}/stats/summary${queryString}`,
+      ),
+      fetch(
+        `${apiUrl}/api/v1/projects/${projectId}/stats/by-model${queryString}`,
+      ),
+      fetch(`${apiUrl}/api/v1/projects/${projectId}/stats/daily${queryString}`),
     ]);
 
     if (!summaryRes.ok || !modelsRes.ok || !dailyRes.ok) {

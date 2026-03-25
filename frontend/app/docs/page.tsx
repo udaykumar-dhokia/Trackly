@@ -508,7 +508,7 @@ export default function DocsPage() {
             <p className="text-zinc-400 mb-4">
               The Backend API uses Bearer authentication via API Keys.
             </p>
-            <CodeBlock lang="bash">{`curl -H "Authorization: Bearer tk_live_..." \\\n     https://api.trackly.ai/v1/health`}</CodeBlock>
+            <CodeBlock lang="bash">{`curl -H "Authorization: Bearer tk_live_..." \\\n     https://api.trackly.ai/api/v1/health`}</CodeBlock>
             <p className="text-zinc-500 text-[.8rem]  mt-2">
               API Keys are generated per project and provide access to both
               ingestion and stats endpoints for that project.
@@ -522,7 +522,7 @@ export default function DocsPage() {
               Ingest Events
             </h1>
             <p className="text-zinc-400 mb-4 font-mono text-sm underline group-hover:text-primary transition-colors">
-              POST /v1/events/ingest
+              POST /api/v1/events/ingest
             </p>
             <p className="text-[.85rem] text-zinc-500 mb-4 ">
               Accepts a batch of LLM events. The SDK handles this automatically,
@@ -541,10 +541,10 @@ export default function DocsPage() {
               Query your data programmatically to build custom cost-dashboards.
             </p>
             <Step n={1} label="Daily Stats">
-              <Ic>GET /v1/stats/daily?project_id=...</Ic>
+              <Ic>GET /api/v1/stats/daily?project_id=...</Ic>
             </Step>
             <Step n={2} label="Model Usage">
-              <Ic>GET /v1/stats/models?project_id=...</Ic>
+              <Ic>GET /api/v1/stats/models?project_id=...</Ic>
             </Step>
           </>
         );
@@ -564,7 +564,7 @@ export default function DocsPage() {
                 </h3>
                 <ul className="space-y-2 text-[.85rem] text-zinc-500">
                   <li>
-                    <Ic>POST /v1/events/ingest</Ic> - Bulk upload of LLM events.
+                    <Ic>POST /api/v1/events/ingest</Ic> - Bulk upload of LLM events.
                   </li>
                 </ul>
               </div>
@@ -574,13 +574,13 @@ export default function DocsPage() {
                 </h3>
                 <ul className="space-y-2 text-[.85rem] text-zinc-500">
                   <li>
-                    <Ic>GET /v1/stats/daily</Ic> - Daily cost & token usage.
+                    <Ic>GET /api/v1/stats/daily</Ic> - Daily cost & token usage.
                   </li>
                   <li>
-                    <Ic>GET /v1/stats/models</Ic> - Usage breakdown by model.
+                    <Ic>GET /api/v1/stats/models</Ic> - Usage breakdown by model.
                   </li>
                   <li>
-                    <Ic>GET /v1/stats/providers</Ic> - Usage breakdown by
+                    <Ic>GET /api/v1/stats/providers</Ic> - Usage breakdown by
                     provider.
                   </li>
                 </ul>

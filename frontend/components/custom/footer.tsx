@@ -6,6 +6,7 @@ const NAV_LINKS = [
     { label: 'Changelog', href: '#' },
     { label: 'Privacy', href: '#' },
     { label: 'Terms', href: '#' },
+    { label: 'Support', href: 'mailto:support@tracklyai.in' },
 ]
 
 export default function Footer() {

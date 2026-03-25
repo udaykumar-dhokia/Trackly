@@ -37,7 +37,7 @@ export const fetchApiKeys = createAsyncThunk(
   "apiKeys/fetchApiKeys",
   async ({ orgId, auth0Id }: { orgId: string; auth0Id?: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    let url = `${apiUrl}/v1/organizations/${orgId}/api-keys`;
+    let url = `${apiUrl}/api/v1/organizations/${orgId}/api-keys`;
     if (auth0Id) {
       url += `?auth0_id=${encodeURIComponent(auth0Id)}`;
     }
@@ -64,7 +64,7 @@ export const createApiKey = createAsyncThunk(
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/organizations/${orgId}/api-keys`,
+      `${apiUrl}/api/v1/organizations/${orgId}/api-keys`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,7 +86,7 @@ export const accessApiKey = createAsyncThunk(
   "apiKeys/accessApiKey",
   async ({ keyId, auth0Id }: { keyId: string; auth0Id: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/v1/api-keys/${keyId}/access`, {
+    const response = await fetch(`${apiUrl}/api/v1/api-keys/${keyId}/access`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ auth0_id: auth0Id }),
@@ -104,7 +104,7 @@ export const revokeApiKey = createAsyncThunk(
   async ({ keyId, auth0Id }: { keyId: string; auth0Id: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/v1/api-keys/${keyId}?auth0_id=${encodeURIComponent(auth0Id)}`,
+      `${apiUrl}/api/v1/api-keys/${keyId}?auth0_id=${encodeURIComponent(auth0Id)}`,
       {
         method: "DELETE",
       },
