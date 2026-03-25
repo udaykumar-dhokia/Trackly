@@ -8,3 +8,4 @@ scripts
 scripts/*.py
 DEPLOYMENT.md
 .pypirc
+admin/

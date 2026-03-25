@@ -44,6 +44,7 @@ export default function Hero() {
   const [providerIdx, setProviderIdx] = useState(0);
   const [copied, setCopied] = useState(false);
   const [totalEvents, setTotalEvents] = useState(0);
+  const [totalTokens, setTotalTokens] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -53,15 +54,18 @@ export default function Hero() {
         );
         const data = await res.json();
         setTotalEvents(data.total_events);
+        setTotalTokens(data.total_tokens);
       } catch (err) {
         console.error("Failed to fetch global stats:", err);
         setTotalEvents(4_812_903);
+        setTotalTokens(183_450_281);
       }
     };
     fetchStats();
   }, []);
 
   const events = useCountUp(totalEvents || 4_812_903, 2400, mounted);
+  const tokens = useCountUp(totalTokens || 183_450_281, 2400, mounted);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 100);
@@ -325,6 +329,10 @@ export default function Hero() {
                 <div className="stat-cell">
                   <div className="stat-num">{events.toLocaleString()}</div>
                   <div className="stat-label">Events tracked</div>
+                </div>
+                <div className="stat-cell">
+                  <div className="stat-num">{tokens.toLocaleString()}</div>
+                  <div className="stat-label">Tokens consumed</div>
                 </div>
                 <div className="stat-cell">
                   <div className="stat-num">6</div>

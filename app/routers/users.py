@@ -8,8 +8,22 @@ from sqlalchemy.orm import joinedload
 from app.db.session import get_db
 from app.models.orm import Organization, User, OrganizationMember
 from app.models.schemas import UserRegisterRequest, UserResponse, UserOrganizationsResponse, OrganizationWithRoleResponse
+from app.services.email import ensure_welcome_email_sent
 
 router = APIRouter()
+
+
+async def _get_first_org_id_for_user(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> uuid.UUID | None:
+    membership_result = await db.execute(
+        select(OrganizationMember.org_id)
+        .where(OrganizationMember.user_id == user_id)
+        .order_by(OrganizationMember.created_at.asc())
+        .limit(1)
+    )
+    return membership_result.scalar_one_or_none()
 
 @router.post(
     "/users/register",
@@ -25,7 +39,10 @@ async def register_user(
     user = result.scalar_one_or_none()
     
     if user:
-        return user
+        await ensure_welcome_email_sent(db, user)
+        user_resp = UserResponse.model_validate(user)
+        user_resp.org_id = await _get_first_org_id_for_user(db, user.id)
+        return user_resp
 
     base_name = body.name or body.email.split("@")[0] or "User"
     org_name = f"{base_name}'s Org"
@@ -55,6 +72,8 @@ async def register_user(
 
     await db.commit()
     await db.refresh(new_user)
+    await ensure_welcome_email_sent(db, new_user)
+    await db.commit()
 
     user_resp = UserResponse.model_validate(new_user)
     user_resp.org_id = org.id

@@ -227,10 +227,16 @@ async def get_global_stats(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> GlobalStats:
-    stmt = select(func.count(LlmEvent.id))
+    stmt = select(
+        func.count(LlmEvent.id).label("total_events"),
+        func.coalesce(func.sum(LlmEvent.total_tokens), 0).label("total_tokens"),
+    )
     result = await db.execute(stmt)
-    count = result.scalar_one()
-    return GlobalStats(total_events=count)
+    row = result.one()
+    return GlobalStats(
+        total_events=row.total_events,
+        total_tokens=row.total_tokens,
+    )
 
 
 def _resolve_window(

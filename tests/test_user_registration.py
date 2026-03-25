@@ -69,8 +69,10 @@ class TestUserRegistration:
             "email": "test@example.com",
             "name": "Test User"
         }
-        
-        resp = client.post("/v1/users/register", json=payload)
+
+        from unittest.mock import AsyncMock, patch
+        with patch("app.routers.users.ensure_welcome_email_sent", new=AsyncMock(return_value=True)) as welcome_mock:
+            resp = client.post("/v1/users/register", json=payload)
         _clear()
         
         assert resp.status_code == 201
@@ -79,6 +81,7 @@ class TestUserRegistration:
         assert data["email"] == "test@example.com"
         assert "id" in data
         assert "org_id" in data
+        assert welcome_mock.await_count == 1
 
     def test_register_existing_user(self):
         user = MagicMock(spec=User)
@@ -97,11 +100,17 @@ class TestUserRegistration:
             "email": "dup@example.com",
             "name": "Dup User"
         }
-        
-        resp = client.post("/v1/users/register", json=payload)
+
+        from unittest.mock import AsyncMock, patch
+        first_org_result = MagicMock()
+        first_org_result.scalar_one_or_none.return_value = user.org_id
+        db.execute = AsyncMock(side_effect=[MagicMock(scalar_one_or_none=MagicMock(return_value=user)), first_org_result])
+        with patch("app.routers.users.ensure_welcome_email_sent", new=AsyncMock(return_value=False)) as welcome_mock:
+            resp = client.post("/v1/users/register", json=payload)
         _clear()
         
         assert resp.status_code == 201
         data = resp.json()
         assert data["id"] == str(user.id)
         assert data["org_id"] == str(user.org_id)
+        assert welcome_mock.await_count == 1

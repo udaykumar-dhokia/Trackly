@@ -96,7 +96,7 @@ export function FeedbackDialog() {
                   weight={showTooltip ? "fill" : "bold"}
                 />
                 {showTooltip && (
-                  <span className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
+                  <span className="absolute inset-0 rounded-full bg-indigo-500/20" />
                 )}
               </Button>
             </DialogTrigger>

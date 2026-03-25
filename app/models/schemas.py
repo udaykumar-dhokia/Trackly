@@ -199,4 +199,5 @@ class FeedbackResponse(BaseModel):
 
 class GlobalStats(BaseModel):
     total_events: int
+    total_tokens: int
 

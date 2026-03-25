@@ -10,6 +10,8 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { fab } from "@fortawesome/free-brands-svg-icons";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { List } from "@phosphor-icons/react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 library.add(fab, fas);
 
@@ -121,10 +123,11 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
         </div>
         <button
           onClick={copy}
-          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${copied
-            ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
-            : "text-zinc-400 border-zinc-700 bg-[#141418] hover:text-white hover:border-white"
-            }`}
+          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${
+            copied
+              ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
+              : "text-zinc-400 border-zinc-700 bg-[#141418] hover:text-white hover:border-white"
+          }`}
         >
           {copied ? "COPIED" : "COPY"}
         </button>
@@ -225,8 +228,65 @@ function Step({
   );
 }
 
+const DocsNav = ({
+  activeNav,
+  setActiveNav,
+  onItemSelected,
+}: {
+  activeNav: string;
+  setActiveNav: (name: string) => void;
+  onItemSelected?: () => void;
+}) => {
+  return (
+    <div className="flex flex-col gap-8">
+      {NAV.map((group) => (
+        <div key={group.group} className="mb-8 last:mb-0">
+          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-200 mb-4 px-2">
+            {group.group}
+          </h4>
+          <nav className="flex flex-col gap-1.5">
+            {group.items.map((item: any) => {
+              const isActive = activeNav === item.name;
+              const icon = (byPrefixAndName as any)[item.prefix || "fas"][
+                item.icon
+              ];
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => {
+                    setActiveNav(item.name);
+                    onItemSelected?.();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={`
+                    text-left px-4 py-2.5 text-[0.85rem] transition-all duration-200 group relative cursor-pointer flex items-center gap-3
+                    ${
+                      isActive
+                        ? "border-2 border-black bg-white font-bold text-black shadow-primary shadow-[4px_4px_0_0] z-10"
+                        : "text-zinc-400 hover:text-zinc-200 hover:translate-x-1"
+                    }
+                  `}
+                >
+                  {icon && (
+                    <FontAwesomeIcon
+                      icon={icon}
+                      className={`size-3.5 ${isActive ? "text-primary" : "text-zinc-500 group-hover:text-zinc-300"}`}
+                    />
+                  )}
+                  {item.name}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function DocsPage() {
   const [activeNav, setActiveNav] = useState("Introduction");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const renderContent = () => {
     switch (activeNav) {
@@ -391,8 +451,8 @@ export default function DocsPage() {
             </div>
 
             <Callout type="success">
-              You're all set! Head back to your code and pass the API key to
-              the Trackly SDK to start tracking your LLM costs.
+              You're all set! Head back to your code and pass the API key to the
+              Trackly SDK to start tracking your LLM costs.
             </Callout>
           </>
         );
@@ -400,15 +460,21 @@ export default function DocsPage() {
         return (
           <>
             <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              <FontAwesomeIcon
+                icon={byPrefixAndName.fab["linux"]}
+                className="text-primary size-10"
+              />
               Ollama Setup
             </h1>
             <p className="text-zinc-400 mb-6">
-              Trackly provides a native wrapper for the Ollama library. It shares the same API as the official SDK, making it zero-config.
+              Trackly provides a native wrapper for the Ollama library. It
+              shares the same API as the official SDK, making it zero-config.
             </p>
             <CodeBlock lang="python">{`from trackly import Trackly, providers\n\n# Initialize with OLLAMA provider and metadata\nt = Trackly(\n    provider=providers.OLLAMA,\n    feature="chatbot",\n    environment="prod"\n)\n\n# Use it exactly like the ollama library\nresponse = t.chat(\n    model='llama3',\n    messages=[{'role': 'user', 'content': 'Hi'}]\n)\n\nprint(response['message']['content'])`}</CodeBlock>
             <Callout type="info">
-              Embedding support is also included: <Ic>t.embed(model='llama3', input='...')</Ic> is tracked automatically.
+              Embedding support is also included:{" "}
+              <Ic>t.embed(model='llama3', input='...')</Ic> is tracked
+              automatically.
             </Callout>
           </>
         );
@@ -416,11 +482,15 @@ export default function DocsPage() {
         return (
           <>
             <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              <FontAwesomeIcon
+                icon={byPrefixAndName.fab["linux"]}
+                className="text-primary size-10"
+              />
               Ollama Streaming
             </h1>
             <p className="text-zinc-400 mb-6">
-              Streaming responses are fully supported. Trackly captures the total usage from the final chunk of the stream.
+              Streaming responses are fully supported. Trackly captures the
+              total usage from the final chunk of the stream.
             </p>
             <CodeBlock lang="python">{`from trackly import Trackly, providers\n\nt = Trackly(provider=providers.OLLAMA)\n\n# Streaming works as expected\nstream = t.chat(\n    model='llama3', \n    messages=[{'role': 'user', 'content': 'Tell me a story'}], \n    stream=True\n)\n\nfor chunk in stream:\n    print(chunk['message']['content'], end='', flush=True)`}</CodeBlock>
           </>
@@ -429,11 +499,15 @@ export default function DocsPage() {
         return (
           <>
             <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon icon={byPrefixAndName.fab["linux"]} className="text-primary size-10" />
+              <FontAwesomeIcon
+                icon={byPrefixAndName.fab["linux"]}
+                className="text-primary size-10"
+              />
               Ollama Async
             </h1>
             <p className="text-zinc-400 mb-6">
-              For high-concurrency applications, use the async variants which wrap the Ollama AsyncClient.
+              For high-concurrency applications, use the async variants which
+              wrap the Ollama AsyncClient.
             </p>
             <CodeBlock lang="python">{`import asyncio\nfrom trackly import Trackly, providers\n\nasync def main():\n    t = Trackly(provider=providers.OLLAMA)\n    \n    response = await t.chat_async(\n        model='llama3', \n        messages=[{'role': 'user', 'content': 'Async hello'}]\n    )\n    print(response['message']['content'])\n\nasyncio.run(main())`}</CodeBlock>
           </>
@@ -564,7 +638,8 @@ export default function DocsPage() {
                 </h3>
                 <ul className="space-y-2 text-[.85rem] text-zinc-500">
                   <li>
-                    <Ic>POST /api/v1/events/ingest</Ic> - Bulk upload of LLM events.
+                    <Ic>POST /api/v1/events/ingest</Ic> - Bulk upload of LLM
+                    events.
                   </li>
                 </ul>
               </div>
@@ -577,7 +652,8 @@ export default function DocsPage() {
                     <Ic>GET /api/v1/stats/daily</Ic> - Daily cost & token usage.
                   </li>
                   <li>
-                    <Ic>GET /api/v1/stats/models</Ic> - Usage breakdown by model.
+                    <Ic>GET /api/v1/stats/models</Ic> - Usage breakdown by
+                    model.
                   </li>
                   <li>
                     <Ic>GET /api/v1/stats/providers</Ic> - Usage breakdown by
@@ -634,7 +710,10 @@ export default function DocsPage() {
             <>
               <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
                 {iconMap[activeNav] && (
-                  <FontAwesomeIcon icon={iconMap[activeNav]} className="text-primary size-10" />
+                  <FontAwesomeIcon
+                    icon={iconMap[activeNav]}
+                    className="text-primary size-10"
+                  />
                 )}
                 {activeNav}
               </h1>
@@ -645,7 +724,13 @@ export default function DocsPage() {
               <Callout type="success">
                 Ensure you have the required provider package installed via{" "}
                 <Ic>
-                  pip install "trackly[{activeNav.toLowerCase().split(" ")[0].replace("(", "").replace(")", "")}]"
+                  pip install "trackly[
+                  {activeNav
+                    .toLowerCase()
+                    .split(" ")[0]
+                    .replace("(", "")
+                    .replace(")", "")}
+                  ]"
                 </Ic>
                 .
               </Callout>
@@ -683,47 +768,42 @@ export default function DocsPage() {
       <div className="orb orb-2" />
       <Header />
 
-      <div className="flex-1 flex max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-12 gap-12 relative z-10">
+      <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-12 gap-6 md:gap-12 relative z-10">
+        <div className="md:hidden sticky top-20 z-30 flex items-center gap-2 px-4 py-3 bg-[#0a0a0c]/80 backdrop-blur-md border-2 border-white/5 mb-4 shadow-[4px_4px_0_0_#000]">
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetTrigger asChild>
+              <button className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer">
+                <List size={20} weight="bold" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  Docs
+                </span>
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="left"
+              className="w-[280px] bg-[#0a0a0c] border-r border-white/5 p-6 overflow-y-auto no-scrollbar"
+            >
+              <div className="mb-8">
+                <Link className="text-white flex gap-1.5 items-center" href="/">
+                  <img src="/logo/logo-48.png" className="w-6 h-6" />
+                  <h1 className="font-bold text-lg tracking-tight">Trackly</h1>
+                </Link>
+              </div>
+              <DocsNav
+                activeNav={activeNav}
+                setActiveNav={setActiveNav}
+                onItemSelected={() => setIsSidebarOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+          <div className="h-4 w-px bg-white/10 mx-1" />
+          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] truncate">
+            {activeNav}
+          </span>
+        </div>
+
         <aside className="w-64 hidden md:block shrink-0 sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pr-4 border-r border-white/5">
-          {NAV.map((group) => (
-            <div key={group.group} className="mb-8 last:mb-0">
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-200 mb-4 px-2">
-                {group.group}
-              </h4>
-              <nav className="flex flex-col gap-1.5">
-                {group.items.map((item: any) => {
-                  const isActive = activeNav === item.name;
-                  const icon = (byPrefixAndName as any)[item.prefix || "fas"][
-                    item.icon
-                  ];
-                  return (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        setActiveNav(item.name);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className={`
-                        text-left px-4 py-2.5 text-[0.85rem] transition-all duration-200 group relative cursor-pointer flex items-center gap-3
-                        ${isActive
-                          ? "border-2 border-black bg-white font-bold text-black shadow-primary shadow-[4px_4px_0_0] z-10"
-                          : "text-zinc-400 hover:text-zinc-200 hover:translate-x-1"
-                        }
-                      `}
-                    >
-                      {icon && (
-                        <FontAwesomeIcon
-                          icon={icon}
-                          className={`size-3.5 ${isActive ? "text-primary" : "text-zinc-500 group-hover:text-zinc-300"}`}
-                        />
-                      )}
-                      {item.name}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          ))}
+          <DocsNav activeNav={activeNav} setActiveNav={setActiveNav} />
         </aside>
 
         <main className="flex-1 min-w-0 max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">

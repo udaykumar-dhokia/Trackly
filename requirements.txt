@@ -8,3 +8,5 @@ pydantic-settings
 bcrypt
 mangum
 slowapi
+requests
+resend
