@@ -35,6 +35,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://192.168.1.44:3000",
         "https://trytrackly.vercel.app",
+        "https://tracklyai.in",
+        "https://www.tracklyai.in"
     ],
     allow_credentials=True,
     allow_methods=["*"],

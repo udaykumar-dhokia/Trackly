@@ -74,11 +74,11 @@ const navItems = [
     url: "/api-keys",
     icon: Key,
   },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Gear,
-  },
+  // {
+  //   title: "Settings",
+  //   url: "/settings",
+  //   icon: Gear,
+  // },
   {
     title: "Docs",
     url: "/docs",
@@ -236,7 +236,10 @@ export function AppSidebar({
                         : "hover:bg-white/5 text-zinc-300 hover:text-white py-3 h-auto"
                     }
                   >
-                    <Link href={item.url}>
+                    <Link
+                      href={item.url}
+                      target={item.title === "Docs" ? "_blank" : ""}
+                    >
                       <item.icon
                         weight={isActive ? "fill" : "duotone"}
                         className={

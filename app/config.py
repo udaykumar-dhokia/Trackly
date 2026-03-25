@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:1234@localhost:5432/trackly")
 
-    api_prefix: str = "/v1"
+    api_prefix: str = "/api/v1"
     debug: bool = False
 
     max_batch_size: int = 100

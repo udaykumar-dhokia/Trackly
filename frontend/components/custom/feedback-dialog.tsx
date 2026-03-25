@@ -46,7 +46,7 @@ export function FeedbackDialog() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await fetch(
-        `${apiUrl}/v1/feedback?auth0_id=${encodeURIComponent(user?.sub || "")}`,
+        `${apiUrl}/api/v1/feedback?auth0_id=${encodeURIComponent(user?.sub || "")}`,
         {
           method: "POST",
           headers: {

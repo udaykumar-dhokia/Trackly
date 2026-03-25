@@ -32,11 +32,11 @@ const PROVIDERS = [
 
 const PROVIDER_LOGOS = [
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQVRSNCZKUcvSYkmDLtSNNaRwRDh8rz5HxHA&s", // OpenAI
-  "https://www.digitalmarketingcommunity.com/wp-content/uploads/2025/06/Claude-logo.jpeg",            // Anthropic
+  "https://www.digitalmarketingcommunity.com/wp-content/uploads/2025/06/Claude-logo.jpeg", // Anthropic
   "https://static.vecteezy.com/system/resources/previews/055/687/055/non_2x/rectangle-gemini-google-icon-symbol-logo-free-png.png", // Gemini
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s",    // Groq
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s",    // Mistral
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s",    // Ollama
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s", // Groq
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s", // Mistral
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s", // Ollama
 ];
 
 export default function Hero() {
@@ -48,12 +48,14 @@ export default function Hero() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/stats/global`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/stats/global`,
+        );
         const data = await res.json();
         setTotalEvents(data.total_events);
       } catch (err) {
         console.error("Failed to fetch global stats:", err);
-        setTotalEvents(4_812_903); // Fallback
+        setTotalEvents(4_812_903);
       }
     };
     fetchStats();
@@ -195,7 +197,11 @@ export default function Hero() {
           <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
             <div
               className={`reveal d1 ${mounted ? "in" : ""}`}
-              style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: 32,
+              }}
             >
               <div className="rounded-full flex items-center -space-x-2 transition-opacity duration-800">
                 {PROVIDER_LOGOS.map((logo, i) => (
@@ -266,7 +272,9 @@ export default function Hero() {
                   <span className="c-purple">import</span>{" "}
                   <span className="c-blue">Trackly</span>
                   {"\n"}
-                  <span className="c-purple">from</span> langchain_anthropic{" "}
+                  <span className="c-purple">
+                    from
+                  </span> langchain_anthropic{" "}
                   <span className="c-purple">import</span>{" "}
                   <span className="c-blue">ChatAnthropic</span>
                   {"\n"}
@@ -274,15 +282,12 @@ export default function Hero() {
                   <span className="c-muted"># 1. Init with metadata</span>
                   {"\n"}
                   trackly <span className="c-amber">=</span>{" "}
-                  <span className="c-blue">Trackly</span>(
-                  {"\n"}
+                  <span className="c-blue">Trackly</span>({"\n"}
                   {"  "}feature<span className="c-amber">=</span>
-                  <span className="c-green">"chatbot"</span>,
-                  {"\n"}
+                  <span className="c-green">"chatbot"</span>,{"\n"}
                   {"  "}environment<span className="c-amber">=</span>
                   <span className="c-green">"prod"</span>
-                  {"\n"}
-                  ){"\n"}
+                  {"\n"}){"\n"}
                   {"\n"}
                   <span className="c-muted">
                     # 2. Attach callback — that's it
@@ -294,7 +299,8 @@ export default function Hero() {
                   <span className="c-green">"claude-3-5-sonnet-latest"</span>,
                   {"\n"}
                   {"  "}callbacks<span className="c-amber">=[</span>
-                  trackly.callback()<span className="c-amber">]</span>,{"\n"}){"\n"}
+                  trackly.callback()<span className="c-amber">]</span>,{"\n"})
+                  {"\n"}
                   <span className="c-muted">
                     # Every Claude call is now tracked automatically ✓
                   </span>
@@ -302,7 +308,10 @@ export default function Hero() {
               </div>
             </div>
 
-            <div className={`reveal d6 ${mounted ? 'in' : ''}`} style={{ marginTop: 16 }}>
+            <div
+              className={`reveal d6 ${mounted ? "in" : ""}`}
+              style={{ marginTop: 16 }}
+            >
               <div className="stats-row">
                 <div className="stat-cell">
                   <div className="stat-num">{events.toLocaleString()}</div>
@@ -313,7 +322,9 @@ export default function Hero() {
                   <div className="stat-label">Providers</div>
                 </div>
                 <div className="stat-cell">
-                  <div className="stat-num" style={{ color: 'var(--accent)' }}>2</div>
+                  <div className="stat-num" style={{ color: "var(--accent)" }}>
+                    2
+                  </div>
                   <div className="stat-label">Lines of code</div>
                 </div>
               </div>

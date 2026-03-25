@@ -19,7 +19,7 @@ export function FeedbackForm() {
     setIsSubmitting(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiUrl}/v1/feedback?auth0_id=${encodeURIComponent(user?.sub || "")}`, {
+      const response = await fetch(`${apiUrl}/api/v1/feedback?auth0_id=${encodeURIComponent(user?.sub || "")}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

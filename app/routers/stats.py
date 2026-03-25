@@ -3,11 +3,12 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.services.rate_limit import limiter
 from app.models.orm import LlmEvent
 from app.models.schemas import (
     DailyUsage,
@@ -217,11 +218,13 @@ async def get_daily(
 
 
 @router.get(
-    "/global",
+    "/stats/global",
     response_model=GlobalStats,
     summary="Get global platform stats for hero section",
 )
+@limiter.limit("30/minute")
 async def get_global_stats(
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> GlobalStats:
     stmt = select(func.count(LlmEvent.id))

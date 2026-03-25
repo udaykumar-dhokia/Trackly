@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 import uuid
 
 from app.db.session import get_db
+from app.services.rate_limit import limiter
 from app.models.orm import User, Feedback
 from app.models.schemas import FeedbackCreate, FeedbackResponse
 
@@ -16,7 +17,9 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Submit feedback (authenticated users)",
 )
+@limiter.limit("5/minute")
 async def submit_feedback(
+    request: Request,
     body: FeedbackCreate,
     auth0_id: str,
     db: AsyncSession = Depends(get_db),
@@ -51,7 +54,9 @@ async def submit_feedback(
     response_model=list[FeedbackResponse],
     summary="Get all verified feedback",
 )
+@limiter.limit("20/minute")
 async def get_verified_feedback(
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> list[FeedbackResponse]:
     result = await db.execute(
