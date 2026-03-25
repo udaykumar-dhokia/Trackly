@@ -37,6 +37,7 @@ const PROVIDER_LOGOS = [
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s", // Groq
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s", // Mistral
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s", // Ollama
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqdPRKA0_sLVNpiF5--45w5ql-IgJzqNUtgw&s",
 ];
 
 export default function Hero() {
@@ -142,6 +143,10 @@ export default function Hero() {
           line-height:1.7; max-width:600px; margin:0 auto 36px;
         }
         .cta-row { display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap; }
+        @media (max-width: 500px) {
+          .cta-row > * { width: 100%; }
+          .cta-row button, .cta-row .flex { justify-content: center; }
+        }
 
         .code-card {
           background:var(--surface);border:1px solid var(--border);border-radius:12px;
@@ -180,6 +185,27 @@ export default function Hero() {
           letter-spacing:.06em;text-transform:uppercase;margin-top:2px;
         }
 
+        @media (max-width: 640px) {
+          .hero-h1 { font-size: clamp(2rem, 8vw, 2.5rem); }
+          .stats-row { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            max-width: 100%;
+          }
+          .stat-cell { border-bottom: 1px solid var(--border); }
+          .stat-cell:nth-child(2n) { border-right: none; }
+          .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
+          
+          .code-card { max-width: 100%; }
+          .pip-install-container { font-size: 0.75rem !important; }
+        }
+        @media (max-width: 400px) {
+          .stats-row { grid-template-columns: 1fr; }
+          .stat-cell { border-right: none !important; }
+          .stat-cell:last-child { border-bottom: none; }
+          .provider-logos-container { flex-wrap: wrap; justify-content: center; gap: 8px; }
+        }
+
         .reveal { opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease; }
         .reveal.in { opacity:1;transform:translateY(0); }
         .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.35s}
@@ -207,13 +233,13 @@ export default function Hero() {
                 marginBottom: 32,
               }}
             >
-              <div className="rounded-full flex items-center -space-x-2 transition-opacity duration-800">
+              <div className="provider-logos-container rounded-full flex items-center -space-x-2 transition-opacity duration-800">
                 {PROVIDER_LOGOS.map((logo, i) => (
                   <img
                     key={i}
                     src={logo}
                     alt="Provider Logo"
-                    className="h-10 w-auto rounded-full object-contain transition-all hover:scale-110 hover:mx-2"
+                    className="h-8 md:h-10 w-auto rounded-full object-contain transition-all hover:scale-110 hover:mx-2"
                   />
                 ))}
               </div>
@@ -240,10 +266,10 @@ export default function Hero() {
                   Read Docs <ArrowUpRightIcon />{" "}
                 </Button>
               </Link>
-              <div className="flex items-center border-2 border-black bg-[#141418] shadow-primary shadow-[4px_4px_0_0] font-mono text-[.8rem] h-[32px]">
-                <div className="flex items-center flex-1 px-4 gap-2">
+              <div className="pip-install-container flex items-center border-2 border-black bg-[#141418] shadow-primary shadow-[4px_4px_0_0] font-mono text-[.8rem] h-[40px] md:h-[32px] w-full max-w-[320px] mx-auto sm:mx-0">
+                <div className="flex items-center flex-1 px-4 gap-2 overflow-hidden">
                   <span className="text-zinc-500">$</span>
-                  <span className="text-zinc-100 font-bold">
+                  <span className="text-zinc-100 font-bold truncate">
                     pip install trackly
                   </span>
                 </div>
@@ -253,7 +279,7 @@ export default function Hero() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="h-full px-5 bg-white text-black font-bold border-l-2 border-black hover:bg-indigo-300 transition-colors cursor-pointer"
+                  className="h-full px-5 bg-white text-black font-bold border-l-2 border-black hover:bg-indigo-300 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>

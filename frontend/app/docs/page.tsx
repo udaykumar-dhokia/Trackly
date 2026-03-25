@@ -1,123 +1,613 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { List } from "@phosphor-icons/react";
 import Header from "@/components/custom/header";
 import Footer from "@/components/custom/footer";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { fab } from "@fortawesome/free-brands-svg-icons";
-import { fas } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { List } from "@phosphor-icons/react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-library.add(fab, fas);
-
-const createProxy = (lib: any) =>
-  new Proxy(lib, {
-    get: (target, prop: string) => {
-      if (typeof prop !== "string") return target[prop];
-      const pascal = prop
-        .split("-")
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join("");
-      const key = `fa${pascal}`;
-      return target[key] || target[prop];
-    },
-  });
-
-const byPrefixAndName = {
-  fab: createProxy(fab),
-  fas: createProxy(fas),
+type NavGroup = {
+  group: string;
+  items: string[];
 };
 
-const NAV = [
+type ParamSpec = {
+  name: string;
+  type: string;
+  required?: boolean;
+  defaultValue?: string;
+  description: string;
+  example?: string;
+};
+
+const NAV: NavGroup[] = [
   {
-    group: "Getting started",
+    group: "Start here",
     items: [
-      { name: "Introduction", icon: "circle-info" },
-      { name: "Installation", icon: "download" },
-      { name: "Quickstart", icon: "bolt" },
-    ],
-  },
-  {
-    group: "Ollama (Native)",
-    items: [
-      { name: "Ollama Setup", icon: "linux", prefix: "fab" },
-      { name: "Ollama Streaming", icon: "stream" },
-      { name: "Ollama Async", icon: "bolt" },
+      "Introduction",
+      "Installation",
+      "Quickstart",
+      "Trackly constructor",
+      "Environment variables",
     ],
   },
   {
     group: "LangChain",
+    items: ["Callbacks", "LangChain provider examples"],
+  },
+  {
+    group: "Native SDKs",
     items: [
-      { name: "OpenAI", icon: "openai", prefix: "fab" },
-      { name: "Anthropic", icon: "claude", prefix: "fab" },
-      { name: "Google Gemini", icon: "google", prefix: "fab" },
-      { name: "Groq", icon: "meta", prefix: "fab" },
-      { name: "Mistral", icon: "codiepie", prefix: "fab" },
-      { name: "Ollama (LC)", icon: "linux", prefix: "fab" },
+      "Ollama native",
+      "Ollama async + utilities",
+      "Gemini models",
+      "Gemini batches",
     ],
   },
   {
-    group: "SDK",
-    items: [
-      { name: "Trackly client", icon: "box-archive" },
-      { name: "Callbacks", icon: "code" },
-      { name: "Debug mode", icon: "bug" },
-    ],
+    group: "Operations",
+    items: ["Debug and shutdown", "Self-hosting"],
   },
   {
     group: "Backend API",
     items: [
-      { name: "Authentication", icon: "lock" },
-      { name: "Ingest events", icon: "cloud-upload" },
-      { name: "Stats & analytics", icon: "chart-line" },
-      { name: "API reference", icon: "book" },
+      "Ingest API",
+      "Events API",
+      "Stats API",
+      "Organizations and projects",
+      "API keys",
     ],
-  },
-  {
-    group: "Deployment",
-    items: [{ name: "Self-hosting", icon: "server" }],
   },
 ];
 
-const PROVIDERS_CODE: Record<string, string> = {
-  OpenAI: `from trackly import Trackly, providers\nfrom langchain_openai import ChatOpenAI\n\n# Initialize with LANGCHAIN provider and metadata\nt = Trackly(provider=providers.LANGCHAIN, feature="chatbot", environment="prod")\n\nllm = ChatOpenAI(\n    model="gpt-4o",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello, world!")`,
-  Anthropic: `from trackly import Trackly, providers\nfrom langchain_anthropic import ChatAnthropic\n\nt = Trackly(provider=providers.LANGCHAIN, feature="chat")\n\nllm = ChatAnthropic(\n    model="claude-3-5-sonnet-latest",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("What is cost tracking?")`,
-  "Google Gemini": `from trackly import Trackly, providers\nfrom langchain_google_genai import ChatGoogleGenerativeAI\n\nt = Trackly(provider=providers.LANGCHAIN, feature="summarizer")\n\nllm = ChatGoogleGenerativeAI(\n    model="gemini-1.5-pro",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Explain cost tracking.")`,
-  Groq: `from trackly import Trackly, providers\nfrom langchain_groq import ChatGroq\n\nt = Trackly(provider=providers.LANGCHAIN, feature="rag-pipeline")\n\nllm = ChatGroq(\n    model="llama-3.3-70b-versatile",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello from Groq!")`,
-  Mistral: `from trackly import Trackly, providers\nfrom langchain_mistralai import ChatMistralAI\n\nt = Trackly(provider=providers.LANGCHAIN, feature="mistral-app")\n\nllm = ChatMistralAI(\n    model="mistral-large-latest",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Hello from Mistral!")`,
-  "Ollama (LC)": `from trackly import Trackly, providers\nfrom langchain_ollama import ChatOllama\n\nt = Trackly(provider=providers.LANGCHAIN, feature="local-dev")\n\nllm = ChatOllama(\n    model="llama3.2",\n    callbacks=[t.callback()],\n)\n\nllm.invoke("Local tracking with Ollama!")`,
-};
+const CONSTRUCTOR_PARAMS: ParamSpec[] = [
+  {
+    name: "provider",
+    type: "str | None",
+    required: false,
+    defaultValue: "None",
+    description:
+      "Use this when you want Trackly's native wrappers. The built-in values are `providers.LANGCHAIN`, `providers.OLLAMA`, and `providers.GEMINI`. For normal LangChain callbacks you can leave it unset.",
+    example: 'Trackly(provider=providers.OLLAMA)',
+  },
+  {
+    name: "api_key",
+    type: "str | None",
+    required: false,
+    defaultValue: "TRACKLY_API_KEY",
+    description:
+      "Bearer key used when Trackly ships events to your Trackly backend. If this is missing, tracking stays disabled unless you provide it later through the environment.",
+    example: 'Trackly(api_key="tk_live_...")',
+  },
+  {
+    name: "base_url",
+    type: "str | None",
+    required: false,
+    defaultValue: "TRACKLY_BASE_URL or SDK default",
+    description:
+      "Base URL for your Trackly backend. The worker automatically appends `/events` when needed, so pass your API root such as `https://your-host/api/v1`.",
+    example: 'Trackly(base_url="https://trackly.example.com/api/v1")',
+  },
+  {
+    name: "debug",
+    type: "bool",
+    required: false,
+    defaultValue: "False",
+    description:
+      "Prints enqueue, retry, and send status logs to help you debug ingestion and API key problems.",
+    example: "Trackly(debug=True)",
+  },
+  {
+    name: "feature",
+    type: "str",
+    required: false,
+    defaultValue: '"default"',
+    description:
+      "Default feature tag attached to every event generated by this Trackly instance.",
+    example: 'Trackly(feature="support-chat")',
+  },
+  {
+    name: "environment",
+    type: "str",
+    required: false,
+    defaultValue: '"production"',
+    description:
+      "Default environment label attached to every event, useful for separating dev, staging, and production traffic.",
+    example: 'Trackly(environment="staging")',
+  },
+  {
+    name: "gemini_api_key",
+    type: "str | None",
+    required: false,
+    defaultValue: "GEMINI_API_KEY",
+    description:
+      "Credential used by `trackly.models` and `trackly.batches` when you use the native Gemini wrappers.",
+    example:
+      'Trackly(provider=providers.GEMINI, gemini_api_key="AIza...")',
+  },
+];
+
+const ENV_VARS: ParamSpec[] = [
+  {
+    name: "TRACKLY_API_KEY",
+    type: "string",
+    description:
+      "Default Trackly ingestion key. This is the main secret the background worker sends in the `Authorization` header.",
+    example: "TRACKLY_API_KEY=tk_live_your_key_here",
+  },
+  {
+    name: "TRACKLY_BASE_URL",
+    type: "string",
+    description:
+      "Overrides the backend base URL for self-hosting or local development.",
+    example: "TRACKLY_BASE_URL=http://localhost:8000/api/v1",
+  },
+  {
+    name: "TRACKLY_DEBUG",
+    type: "string",
+    description:
+      'Set this to `1` to enable verbose worker logs without changing application code.',
+    example: "TRACKLY_DEBUG=1",
+  },
+  {
+    name: "GEMINI_API_KEY",
+    type: "string",
+    description:
+      "Default Gemini credential for the native Gemini wrappers.",
+    example: "GEMINI_API_KEY=AIza_your_gemini_key",
+  },
+];
+
+const INGEST_FIELDS: ParamSpec[] = [
+  {
+    name: "provider",
+    type: "string",
+    required: true,
+    description:
+      "Canonical provider name such as `openai`, `anthropic`, `google`, `ollama`, or `google-batch`.",
+    example: '"provider": "openai"',
+  },
+  {
+    name: "model",
+    type: "string",
+    required: true,
+    description:
+      "The exact model name used for the request. Cost lookup depends on this field.",
+    example: '"model": "gpt-4o"',
+  },
+  {
+    name: "prompt_tokens",
+    type: "int | null",
+    description:
+      "Input token count. Send this when your provider exposes separate prompt usage.",
+    example: '"prompt_tokens": 1200',
+  },
+  {
+    name: "completion_tokens",
+    type: "int | null",
+    description:
+      "Output token count. Send this when your provider exposes separate completion usage.",
+    example: '"completion_tokens": 280',
+  },
+  {
+    name: "total_tokens",
+    type: "int | null",
+    description:
+      "Total token count. If you omit it but send prompt and completion tokens, the backend computes the total automatically.",
+    example: '"total_tokens": 1480',
+  },
+  {
+    name: "latency_ms",
+    type: "int | null",
+    description:
+      "Latency in milliseconds for the model call or batch action.",
+    example: '"latency_ms": 842',
+  },
+  {
+    name: "finish_reason",
+    type: "string | null",
+    description:
+      "Provider finish reason such as `stop`, `length`, `STOP`, or `embedding`.",
+    example: '"finish_reason": "stop"',
+  },
+  {
+    name: "run_id",
+    type: "string | null",
+    description:
+      "Primary trace identifier for a single model call. Useful when you stitch events back to application logs.",
+    example: '"run_id": "run_123"',
+  },
+  {
+    name: "parent_run_id",
+    type: "string | null",
+    description:
+      "Optional parent trace identifier for nested chains and agents.",
+    example: '"parent_run_id": "chain_abc"',
+  },
+  {
+    name: "feature",
+    type: "string | null",
+    description:
+      "Application feature label like `chat`, `summary`, or `rag-search`.",
+    example: '"feature": "invoice-summary"',
+  },
+  {
+    name: "user_id",
+    type: "string | null",
+    description:
+      "Your own user identifier. It can be a plain string, Auth0 id, or UUID.",
+    example: '"user_id": "auth0|abc123"',
+  },
+  {
+    name: "session_id",
+    type: "string | null",
+    description:
+      "Conversation or session identifier for grouping events.",
+    example: '"session_id": "chat-session-44"',
+  },
+  {
+    name: "environment",
+    type: "string | null",
+    description:
+      "Deployment environment such as `dev`, `staging`, or `production`.",
+    example: '"environment": "production"',
+  },
+  {
+    name: "tags",
+    type: "list[str]",
+    description:
+      "Small filterable labels for manual or custom events.",
+    example: '"tags": ["trial-user", "beta"]',
+  },
+  {
+    name: "extra",
+    type: "dict[str, Any]",
+    description:
+      "Free-form JSON metadata for any custom context you want to keep with the event.",
+    example: '"extra": {"route": "/chat", "tenant": "acme"}',
+  },
+  {
+    name: "sdk_version",
+    type: "string | null",
+    description:
+      "Version string for your SDK or ingestion client.",
+    example: '"sdk_version": "0.1.3"',
+  },
+  {
+    name: "timestamp",
+    type: "datetime | null",
+    description:
+      "When the event actually happened. If omitted, the backend uses the current UTC time.",
+    example: '"timestamp": "2026-03-25T19:15:00Z"',
+  },
+];
+
+const EVENTS_QUERY_PARAMS: ParamSpec[] = [
+  {
+    name: "feature",
+    type: "string | null",
+    description: "Return only events for one feature label.",
+    example: "?feature=support-chat",
+  },
+  {
+    name: "user_id",
+    type: "string | null",
+    description:
+      "Filter by a raw user id, Auth0 id, or UUID. The backend tries to match all of them.",
+    example: "?user_id=auth0|abc123",
+  },
+  {
+    name: "model",
+    type: "string | null",
+    description: "Return only one model.",
+    example: "?model=gpt-4o",
+  },
+  {
+    name: "provider",
+    type: "string | null",
+    description: "Return only one provider.",
+    example: "?provider=openai",
+  },
+  {
+    name: "api_key_id",
+    type: "uuid | null",
+    description:
+      "Find events created by a master key or one of its derived access keys.",
+    example: "?api_key_id=6f3b3f0b-...",
+  },
+  {
+    name: "start",
+    type: "datetime | null",
+    description: "Inclusive UTC start timestamp.",
+    example: "?start=2026-03-01T00:00:00Z",
+  },
+  {
+    name: "end",
+    type: "datetime | null",
+    description: "Exclusive UTC end timestamp.",
+    example: "?end=2026-04-01T00:00:00Z",
+  },
+  {
+    name: "page",
+    type: "int",
+    defaultValue: "1",
+    description: "1-based page number.",
+    example: "?page=2",
+  },
+  {
+    name: "page_size",
+    type: "int",
+    defaultValue: "50",
+    description: "Page size from 1 to 200.",
+    example: "?page_size=100",
+  },
+];
+
+const STATS_QUERY_PARAMS: ParamSpec[] = [
+  {
+    name: "project_id",
+    type: "uuid",
+    required: true,
+    description:
+      "Path parameter for the project you want to query.",
+    example: "/api/v1/projects/6f3b3f0b-.../stats/summary",
+  },
+  {
+    name: "provider",
+    type: "string | null",
+    description:
+      "Optional provider filter for `summary`, `by-model`, `by-feature`, and `daily`.",
+    example: "?provider=openai",
+  },
+  {
+    name: "start",
+    type: "datetime | null",
+    description:
+      "Optional UTC start time. When omitted, Trackly uses 30 days before now.",
+    example: "?start=2026-03-01T00:00:00Z",
+  },
+  {
+    name: "end",
+    type: "datetime | null",
+    description:
+      "Optional UTC end time. When omitted, Trackly uses the current UTC time.",
+    example: "?end=2026-03-25T00:00:00Z",
+  },
+];
+
+const ORG_AND_PROJECT_FIELDS: ParamSpec[] = [
+  {
+    name: "OrganizationCreate.name",
+    type: "string",
+    required: true,
+    description: "Human-readable organization name.",
+    example: '"name": "Acme AI"',
+  },
+  {
+    name: "OrganizationCreate.slug",
+    type: "string",
+    required: true,
+    description:
+      "Lowercase slug. It must be alphanumeric with hyphens and cannot start or end with a hyphen.",
+    example: '"slug": "acme-ai"',
+  },
+  {
+    name: "ProjectCreate.name",
+    type: "string",
+    required: true,
+    description: "Project name inside the organization.",
+    example: '"name": "Production"',
+  },
+  {
+    name: "ProjectCreate.environment",
+    type: "string | null",
+    description:
+      "Optional environment stored on the project itself.",
+    example: '"environment": "prod"',
+  },
+  {
+    name: "ProjectMemberAdd.email",
+    type: "string",
+    required: true,
+    description: "Email of the existing user you want to add to a project.",
+    example: '"email": "teammate@example.com"',
+  },
+  {
+    name: "ProjectMemberAdd.role",
+    type: "string",
+    defaultValue: '"member"',
+    description: "Project role. The code defaults to `member`.",
+    example: '"role": "admin"',
+  },
+  {
+    name: "OrganizationMemberAdd.email",
+    type: "string",
+    required: true,
+    description: "Email of the user to add or invite to the organization.",
+    example: '"email": "new-user@example.com"',
+  },
+  {
+    name: "OrganizationMemberAdd.name",
+    type: "string | null",
+    description:
+      "Optional display name used if Trackly creates an invited placeholder user.",
+    example: '"name": "Taylor Kim"',
+  },
+];
+
+const API_KEY_FIELDS: ParamSpec[] = [
+  {
+    name: "ApiKeyCreate.name",
+    type: "string",
+    required: true,
+    description: "Friendly label for the key shown in the dashboard.",
+    example: '"name": "Server key"',
+  },
+  {
+    name: "ApiKeyCreate.project_id",
+    type: "uuid | null",
+    description:
+      "Scope the key to a project. The ingest endpoint requires a project-scoped key.",
+    example: '"project_id": "6f3b3f0b-..."',
+  },
+  {
+    name: "ApiKeyCreate.created_by_user_id",
+    type: "uuid | null",
+    description:
+      "Optional creator id used by the permission checks for org admins and project admins.",
+    example: '"created_by_user_id": "4d7f9ef8-..."',
+  },
+  {
+    name: "ApiKeyAccessRequest.auth0_id",
+    type: "string",
+    required: true,
+    description:
+      "Auth0 id of the user who should receive a derived access key.",
+    example: '"auth0_id": "auth0|abc123"',
+  },
+  {
+    name: "auth0_id query parameter",
+    type: "string",
+    description:
+      "Used by the list and revoke endpoints to apply visibility and permission rules.",
+    example: "?auth0_id=auth0|abc123",
+  },
+];
+
+const LANGCHAIN_EXAMPLES = [
+  {
+    title: "OpenAI",
+    install: 'pip install "trackly[openai]"',
+    code: `from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(
+    api_key="tk_live_...",
+    feature="support-chat",
+    environment="production",
+)
+
+llm = ChatOpenAI(
+    model="gpt-4o",
+    callbacks=[trackly.callback()],
+)
+
+response = llm.invoke("Summarize the customer issue in one sentence.")
+print(response.content)`,
+  },
+  {
+    title: "Anthropic",
+    install: 'pip install "trackly[anthropic]"',
+    code: `from trackly import Trackly
+from langchain_anthropic import ChatAnthropic
+
+trackly = Trackly(feature="ticket-triage", environment="staging")
+
+llm = ChatAnthropic(
+    model="claude-3-5-sonnet-latest",
+    callbacks=[trackly.callback()],
+)
+
+reply = llm.invoke("Classify this message into billing, bug, or feature request.")
+print(reply.content)`,
+  },
+  {
+    title: "Google Gemini",
+    install: 'pip install "trackly[gemini]"',
+    code: `from trackly import Trackly
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+trackly = Trackly(feature="doc-qa", environment="production")
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    callbacks=[trackly.callback()],
+)
+
+answer = llm.invoke("Explain retrieval augmented generation in plain English.")
+print(answer.content)`,
+  },
+  {
+    title: "Groq",
+    install: "pip install langchain-groq",
+    code: `from trackly import Trackly
+from langchain_groq import ChatGroq
+
+trackly = Trackly(feature="fast-drafts", environment="prod")
+
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    callbacks=[trackly.callback()],
+)
+
+result = llm.invoke("Write a three-bullet summary of vector databases.")
+print(result.content)`,
+  },
+  {
+    title: "Mistral",
+    install: "pip install langchain-mistralai",
+    code: `from trackly import Trackly
+from langchain_mistralai import ChatMistralAI
+
+trackly = Trackly(feature="analysis", environment="dev")
+
+llm = ChatMistralAI(
+    model="mistral-large-latest",
+    callbacks=[trackly.callback()],
+)
+
+response = llm.invoke("Explain why token accounting matters.")
+print(response.content)`,
+  },
+  {
+    title: "Ollama via LangChain",
+    install: 'pip install "trackly[ollama]"',
+    code: `from trackly import Trackly
+from langchain_ollama import ChatOllama
+
+trackly = Trackly(feature="local-rag", environment="dev")
+
+llm = ChatOllama(
+    model="llama3.2",
+    callbacks=[trackly.callback()],
+)
+
+response = llm.invoke("Give me a short explanation of embeddings.")
+print(response.content)`,
+  },
+];
 
 function Ic({ children }: { children: React.ReactNode }) {
   return (
-    <code className="font-mono text-[.78rem] bg-[#141418] border border-white/8 text-zinc-200 px-1.5 py-0.5 rounded-none">
+    <code className="font-mono text-[.78rem] bg-[#11131a] border border-white/8 text-zinc-100 px-1.5 py-0.5 rounded-none">
       {children}
     </code>
   );
 }
 
 function CodeBlock({ lang, children }: { lang: string; children: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = React.useState(false);
+
   function copy() {
     navigator.clipboard.writeText(children);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
   return (
-    <div className="bg-[#060608] border border-white/6 rounded-none overflow-hidden my-4 shadow-[4px_4px_0_0_#000]">
-      <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/5 bg-white/1.5">
+    <div className="bg-[#080a10] border border-white/8 rounded-none overflow-hidden my-4 shadow-[6px_6px_0_0_#000]">
+      <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/6 bg-white/3">
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
             <span className="w-[9px] h-[9px] rounded-full bg-[#ff5f57]" />
             <span className="w-[9px] h-[9px] rounded-full bg-[#febc2e]" />
             <span className="w-[9px] h-[9px] rounded-full bg-[#28c840]" />
           </div>
-          <span className="font-mono text-[10px] text-zinc-600 ml-1">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
             {lang}
           </span>
         </div>
@@ -126,7 +616,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
           className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${
             copied
               ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
-              : "text-zinc-400 border-zinc-700 bg-[#141418] hover:text-white hover:border-white"
+              : "text-zinc-400 border-zinc-700 bg-[#141822] hover:text-white hover:border-white"
           }`}
         >
           {copied ? "COPIED" : "COPY"}
@@ -140,7 +630,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
               ? "bash"
               : lang.toLowerCase().includes("json")
                 ? "json"
-                : lang.toLowerCase().includes(".env")
+                : lang.toLowerCase().includes("env")
                   ? "bash"
                   : "python"
         }
@@ -150,7 +640,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
           padding: "1rem",
           margin: 0,
           fontSize: "12px",
-          lineHeight: "1.5",
+          lineHeight: "1.55",
         }}
       >
         {children}
@@ -167,36 +657,40 @@ function Callout({
   children: React.ReactNode;
 }) {
   const styles = {
-    info: "bg-blue-500/[0.06]  border-blue-500/20   text-blue-300",
-    warn: "bg-amber-500/[0.06] border-amber-500/20  text-amber-300",
-    success: "bg-green-500/[0.06] border-green-500/10  text-[#34d399]",
+    info: "bg-sky-500/[0.08] border-sky-400/25 text-sky-200",
+    warn: "bg-amber-500/[0.08] border-amber-400/25 text-amber-200",
+    success: "bg-emerald-500/[0.08] border-emerald-400/25 text-emerald-200",
   };
-  const icons = {
-    info: "ℹ",
-    warn: "⚠",
-    success: "✓",
+
+  const labels = {
+    info: "INFO",
+    warn: "NOTE",
+    success: "GOOD",
   };
+
   return (
     <div
-      className={`flex gap-2.5 px-3.5 py-3 rounded-none border-2 text-[.8rem] leading-relaxed my-4 ${styles[type]}`}
+      className={`px-4 py-3 border-2 rounded-none text-[.82rem] leading-relaxed my-4 ${styles[type]}`}
     >
-      <span className="shrink-0 mt-px font-mono font-bold">{icons[type]}</span>
-      <span>{children}</span>
+      <div className="font-bold text-[10px] tracking-[0.24em] uppercase mb-1">
+        {labels[type]}
+      </div>
+      <div>{children}</div>
     </div>
   );
 }
 
 function SectionTitle({
-  accentColor = "#a78bfa",
+  accentColor = "#f59e0b",
   children,
 }: {
   accentColor?: string;
   children: React.ReactNode;
 }) {
   return (
-    <h2 className="text-[1.2rem] font-bold tracking-tight text-white mb-4 mt-8 flex items-center gap-2">
+    <h2 className="text-[1.15rem] font-bold tracking-tight text-white mb-4 mt-8 flex items-center gap-3">
       <span
-        className="w-1.5 h-6 rounded-none bg-primary"
+        className="w-2.5 h-2.5 rotate-45 shrink-0"
         style={{ backgroundColor: accentColor }}
       />
       {children}
@@ -216,14 +710,66 @@ function Step({
   return (
     <div className="mb-6">
       <div className="flex items-center gap-3 mb-2">
-        <span className="w-6 h-6 rounded-none bg-white text-black font-bold text-[11px] flex items-center justify-center shrink-0">
+        <span className="w-7 h-7 rounded-none bg-[#f59e0b] text-black font-bold text-[11px] flex items-center justify-center shrink-0">
           {n}
         </span>
         <h3 className="text-[.9rem] font-bold text-zinc-100 uppercase tracking-wide">
           {label}
         </h3>
       </div>
-      <div className="pl-9">{children}</div>
+      <div className="pl-10">{children}</div>
+    </div>
+  );
+}
+
+function ParameterGrid({ items }: { items: ParamSpec[] }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {items.map((item) => (
+        <div
+          key={item.name}
+          className="border-2 border-white/8 bg-white/[0.03] p-4 shadow-[4px_4px_0_0_#000]"
+        >
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <Ic>{item.name}</Ic>
+            <span
+              className={`text-[10px] uppercase tracking-[0.22em] ${
+                item.required ? "text-[#f59e0b]" : "text-zinc-500"
+              }`}
+            >
+              {item.required ? "Required" : "Optional"}
+            </span>
+          </div>
+          <p className="text-[.83rem] text-zinc-300 leading-relaxed">
+            {item.description}
+          </p>
+          <div className="mt-4 space-y-1 text-[.74rem] text-zinc-400">
+            <div>
+              <span className="text-zinc-500">Type:</span> {item.type}
+            </div>
+            {item.defaultValue ? (
+              <div>
+                <span className="text-zinc-500">Default:</span>{" "}
+                {item.defaultValue}
+              </div>
+            ) : null}
+            {item.example ? (
+              <div>
+                <span className="text-zinc-500">Example:</span>{" "}
+                <span className="text-zinc-200">{item.example}</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RouteBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[.8rem] text-zinc-200 font-mono uppercase tracking-[0.14em]">
+      {children}
     </div>
   );
 }
@@ -240,40 +786,28 @@ const DocsNav = ({
   return (
     <div className="flex flex-col gap-8">
       {NAV.map((group) => (
-        <div key={group.group} className="mb-8 last:mb-0">
-          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-200 mb-4 px-2">
+        <div key={group.group}>
+          <h4 className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400 mb-4 px-2">
             {group.group}
           </h4>
           <nav className="flex flex-col gap-1.5">
-            {group.items.map((item: any) => {
-              const isActive = activeNav === item.name;
-              const icon = (byPrefixAndName as any)[item.prefix || "fas"][
-                item.icon
-              ];
+            {group.items.map((item) => {
+              const isActive = activeNav === item;
               return (
                 <button
-                  key={item.name}
+                  key={item}
                   onClick={() => {
-                    setActiveNav(item.name);
+                    setActiveNav(item);
                     onItemSelected?.();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className={`
-                    text-left px-4 py-2.5 text-[0.85rem] transition-all duration-200 group relative cursor-pointer flex items-center gap-3
-                    ${
-                      isActive
-                        ? "border-2 border-black bg-white font-bold text-black shadow-primary shadow-[4px_4px_0_0] z-10"
-                        : "text-zinc-400 hover:text-zinc-200 hover:translate-x-1"
-                    }
-                  `}
+                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${
+                    isActive
+                      ? "border-[#f59e0b] bg-white/[0.06] text-white translate-x-1"
+                      : "border-transparent text-zinc-500 hover:text-zinc-200 hover:border-white/20"
+                  }`}
                 >
-                  {icon && (
-                    <FontAwesomeIcon
-                      icon={icon}
-                      className={`size-3.5 ${isActive ? "text-primary" : "text-zinc-500 group-hover:text-zinc-300"}`}
-                    />
-                  )}
-                  {item.name}
+                  {item}
                 </button>
               );
             })}
@@ -285,491 +819,1074 @@ const DocsNav = ({
 };
 
 export default function DocsPage() {
-  const [activeNav, setActiveNav] = useState("Introduction");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeNav, setActiveNav] = React.useState("Introduction");
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const renderContent = () => {
     switch (activeNav) {
       case "Introduction":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Source-driven docs
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
               Introduction
             </h1>
-            <p className="text-[.95rem] text-zinc-400 leading-relaxed mb-8">
-              Trackly is a performance-first LLM observability layer. It
-              provides a simple callback interface for Python developers to
-              track token usage, costs, and latency across 10+ providers with{" "}
-              <span className="text-white font-bold underline decoration-primary underline-offset-4">
-                zero added latency
-              </span>
-              .
+            <p className="text-[.96rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly is a Python usage-tracking layer for LLM apps. It hooks
+              into LangChain callbacks or native Ollama and Gemini SDK calls,
+              then records provider, model, tokens, latency, and your own
+              labels in the background.
             </p>
-            <SectionTitle>Core Features</SectionTitle>
+            <Callout type="info">
+              This page is written from the actual repository code, not just the
+              README. A few important details are easy to miss otherwise:
+              <Ic>callback()</Ic> takes no arguments, native Ollama uses the
+              <Ic>ollama</Ic> package, native Gemini uses <Ic>google-genai</Ic>,
+              and the ingest route is <Ic>/api/v1/events</Ic>.
+            </Callout>
+
+            <SectionTitle accentColor="#14b8a6">What Trackly records</SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
-                  title: "Universal",
-                  desc: "Support for OpenAI, Anthropic, Gemini, Groq, Ollama and more.",
+                  title: "Provider + model",
+                  desc: "Trackly stores the provider name and exact model string so pricing and filtering stay accurate.",
                 },
                 {
-                  title: "Safe",
-                  desc: "Batched background flushing ensures your app never slows down.",
+                  title: "Token usage",
+                  desc: "Prompt, completion, and total tokens are captured when the provider exposes them.",
                 },
                 {
-                  title: "Transparent",
-                  desc: "Open API schema. Self-host our backend or use our cloud.",
+                  title: "Latency",
+                  desc: "Each event records the wall-clock duration in milliseconds when available.",
                 },
                 {
-                  title: "Affordable",
-                  desc: "Precise token tracking using provider-specific logic.",
+                  title: "Your metadata",
+                  desc: "Feature, environment, user, session, tags, and extra JSON help you slice usage later.",
                 },
-              ].map((f) => (
+              ].map((card) => (
                 <div
-                  key={f.title}
-                  className="p-4 border-2 border-white/5 bg-white/5"
+                  key={card.title}
+                  className="border-2 border-white/8 bg-white/[0.03] p-4 shadow-[4px_4px_0_0_#000]"
                 >
-                  <h4 className="font-bold text-primary text-[.85rem] mb-1 uppercase tracking-widest">
-                    {f.title}
-                  </h4>
-                  <p className="text-[.8rem] text-zinc-500 ">{f.desc}</p>
+                  <h3 className="text-[.82rem] font-bold uppercase tracking-[0.18em] text-[#f59e0b] mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-[.83rem] text-zinc-400 leading-relaxed">
+                    {card.desc}
+                  </p>
                 </div>
               ))}
             </div>
+
+            <SectionTitle accentColor="#fb7185">Provider constants</SectionTitle>
+            <p className="text-[.88rem] text-zinc-400 leading-[1.8]">
+              The SDK exports a tiny helper object if you prefer constants over
+              raw strings.
+            </p>
+            <CodeBlock lang="python">{`from trackly import providers
+
+print(providers.LANGCHAIN)  # "langchain"
+print(providers.OLLAMA)     # "ollama"
+print(providers.GEMINI)     # "gemini"`}</CodeBlock>
           </>
         );
+
       case "Installation":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Setup
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
               Installation
             </h1>
-            <p className="text-zinc-400 mb-6 ">
-              Get up and running in seconds.
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Install the core package first, then add only the provider SDKs
+              you actually use.
             </p>
-            <Step n={1} label="Install via PIP">
+
+            <Step n={1} label="Install Trackly">
               <CodeBlock lang="bash">{`pip install trackly`}</CodeBlock>
             </Step>
-            <Step n={2} label="Install Extras (Recommended)">
-              <p className="text-[.8rem] text-zinc-500 mb-2">
-                Install specific provider dependencies to avoid bloat.
-              </p>
-              <CodeBlock lang="bash">{`# For OpenAI support\npip install "trackly[openai]"\n\n# For Anthropic support\npip install "trackly[anthropic]"\n\n# Install everything\npip install "trackly[all]"`}</CodeBlock>
+
+            <Step n={2} label="Install LangChain integrations">
+              <CodeBlock lang="bash">{`pip install "trackly[openai]"
+pip install "trackly[anthropic]"
+pip install "trackly[gemini]"
+pip install "trackly[ollama]"
+pip install "trackly[all]"`}</CodeBlock>
             </Step>
+
+            <Step n={3} label="Install native SDKs when needed">
+              <CodeBlock lang="bash">{`# Needed for Trackly(provider="ollama")
+pip install ollama
+
+# Needed for Trackly(provider="gemini")
+pip install google-genai`}</CodeBlock>
+            </Step>
+
+            <Callout type="warn">
+              The native wrappers and the LangChain integrations are separate.
+              For example, <Ic>trackly[ollama]</Ic> installs the LangChain
+              adapter, while native <Ic>trackly.chat(...)</Ic> needs the
+              official <Ic>ollama</Ic> package too.
+            </Callout>
           </>
         );
+
       case "Quickstart":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              First request
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
               Quickstart
             </h1>
-            <Step n={1} label="Grab an API Key">
-              <p className="text-zinc-400 text-[.85rem]">
-                Sign in to the dashboard and head to <Ic>API Keys</Ic> to create
-                your first key.
+
+            <Step n={1} label="Create a Trackly API key">
+              <p className="text-[.86rem] text-zinc-400 leading-[1.7]">
+                In the dashboard, create an organization, create a project, and
+                then generate a project-scoped API key.
               </p>
             </Step>
-            <Step n={2} label="Configure Environment">
+
+            <Step n={2} label="Export your key">
               <CodeBlock lang=".env">{`TRACKLY_API_KEY=tk_live_your_key_here`}</CodeBlock>
             </Step>
-            <Step n={3} label="Start Tracking">
-              <CodeBlock lang="python">{`from trackly import Trackly, providers\nfrom langchain_openai import ChatOpenAI\n\n# Initialize with your provider and metadata\nt = Trackly(\n    provider=providers.LANGCHAIN, \n    feature="summarizer", \n    environment="prod"\n)\n\n# Pass to LangChain\nllm = ChatOpenAI(model="gpt-4o", callbacks=[t.callback()])\nllm.invoke("You are now being tracked.")`}</CodeBlock>
+
+            <Step n={3} label="Attach Trackly to a LangChain model">
+              <CodeBlock lang="python">{`from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(
+    feature="support-chat",
+    environment="production",
+)
+
+llm = ChatOpenAI(
+    model="gpt-4o",
+    callbacks=[trackly.callback()],
+)
+
+response = llm.invoke("Summarize this customer issue in one sentence.")
+print(response.content)
+
+# Call shutdown() in short-lived scripts, tests, or serverless functions
+trackly.shutdown()`}</CodeBlock>
             </Step>
 
-            <SectionTitle accentColor="#34d399">
-              Visual Setup Guide
-            </SectionTitle>
-            <p className="text-[.88rem] text-zinc-400 leading-[1.7] mb-6">
-              Follow along with these screenshots to set up your first project
-              and API key in the Trackly dashboard.
-            </p>
-
-            <div className="space-y-8">
-              {[
-                {
-                  n: 1,
-                  title: "Sign in & view your Dashboard",
-                  desc: "After signing in, you'll land on the Trackly Dashboard. If you don't have any projects yet, you'll be prompted to create one.",
-                  img: "/flow/1.png",
-                },
-                {
-                  n: 2,
-                  title: "Navigate to Projects",
-                  desc: "Go to Organization Settings → Projects to see all your tracking environments.",
-                  img: "/flow/2.png",
-                },
-                {
-                  n: 3,
-                  title: "Create a new Project",
-                  desc: 'Click "+ New Project", enter a name, and hit Launch Project.',
-                  img: "/flow/3.png",
-                },
-                {
-                  n: 4,
-                  title: "Go to API Keys",
-                  desc: "Navigate to API Keys from the sidebar. You need a key to authenticate SDK calls.",
-                  img: "/flow/4.png",
-                },
-                {
-                  n: 5,
-                  title: "Generate an API Key",
-                  desc: 'Click "+ Create API Key", give it a name, and optionally scope it to a project.',
-                  img: "/flow/5.png",
-                },
-                {
-                  n: 6,
-                  title: "Copy your API Key",
-                  desc: "Your key is generated! Copy it immediately — you won't see it again. Use it in your SDK config.",
-                  img: "/flow/6.png",
-                },
-              ].map((step) => (
-                <div key={step.n}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="w-7 h-7 rounded-none bg-primary text-black font-bold text-[11px] flex items-center justify-center shrink-0">
-                      {step.n}
-                    </span>
-                    <h3 className="text-[.9rem] font-bold text-zinc-100 uppercase tracking-wide">
-                      {step.title}
-                    </h3>
-                  </div>
-                  <div className="pl-10">
-                    <p className="text-[.84rem] text-zinc-400 leading-[1.7] mb-3">
-                      {step.desc}
-                    </p>
-                    <div className="border border-white/8 rounded-[10px] overflow-hidden bg-[#0a0a0c] hover:border-primary/25 transition-all duration-200">
-                      <img
-                        src={step.img}
-                        alt={`Step ${step.n}: ${step.title}`}
-                        className="w-full block"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
             <Callout type="success">
-              You're all set! Head back to your code and pass the API key to the
-              Trackly SDK to start tracking your LLM costs.
+              After that call finishes, Trackly enqueues an event with model,
+              provider, token usage, latency, feature, environment, and a UTC
+              timestamp.
             </Callout>
           </>
         );
-      case "Ollama Setup":
+
+      case "Trackly constructor":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon
-                icon={byPrefixAndName.fab["linux"]}
-                className="text-primary size-10"
-              />
-              Ollama Setup
-            </h1>
-            <p className="text-zinc-400 mb-6">
-              Trackly provides a native wrapper for the Ollama library. It
-              shares the same API as the official SDK, making it zero-config.
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              SDK entry point
             </p>
-            <CodeBlock lang="python">{`from trackly import Trackly, providers\n\n# Initialize with OLLAMA provider and metadata\nt = Trackly(\n    provider=providers.OLLAMA,\n    feature="chatbot",\n    environment="prod"\n)\n\n# Use it exactly like the ollama library\nresponse = t.chat(\n    model='llama3',\n    messages=[{'role': 'user', 'content': 'Hi'}]\n)\n\nprint(response['message']['content'])`}</CodeBlock>
-            <Callout type="info">
-              Embedding support is also included:{" "}
-              <Ic>t.embed(model='llama3', input='...')</Ic> is tracked
-              automatically.
-            </Callout>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Trackly constructor
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              The <Ic>Trackly</Ic> class is the main entry point for callbacks,
+              native providers, and the background worker.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+
+trackly = Trackly(
+    provider=providers.GEMINI,
+    api_key="tk_live_...",
+    base_url="https://trackly.example.com/api/v1",
+    debug=False,
+    feature="batch-summarizer",
+    environment="production",
+    gemini_api_key="AIza...",
+)`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Constructor parameters</SectionTitle>
+            <ParameterGrid items={CONSTRUCTOR_PARAMS} />
           </>
         );
-      case "Ollama Streaming":
+
+      case "Environment variables":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon
-                icon={byPrefixAndName.fab["linux"]}
-                className="text-primary size-10"
-              />
-              Ollama Streaming
-            </h1>
-            <p className="text-zinc-400 mb-6">
-              Streaming responses are fully supported. Trackly captures the
-              total usage from the final chunk of the stream.
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Configuration
             </p>
-            <CodeBlock lang="python">{`from trackly import Trackly, providers\n\nt = Trackly(provider=providers.OLLAMA)\n\n# Streaming works as expected\nstream = t.chat(\n    model='llama3', \n    messages=[{'role': 'user', 'content': 'Tell me a story'}], \n    stream=True\n)\n\nfor chunk in stream:\n    print(chunk['message']['content'], end='', flush=True)`}</CodeBlock>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Environment variables
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Every constructor setting that matters most can also be driven by
+              environment variables.
+            </p>
+            <CodeBlock lang=".env">{`TRACKLY_API_KEY=tk_live_your_trackly_key
+TRACKLY_BASE_URL=http://localhost:8000/api/v1
+TRACKLY_DEBUG=1
+GEMINI_API_KEY=AIza_your_gemini_key`}</CodeBlock>
+            <ParameterGrid items={ENV_VARS} />
           </>
         );
-      case "Ollama Async":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-              <FontAwesomeIcon
-                icon={byPrefixAndName.fab["linux"]}
-                className="text-primary size-10"
-              />
-              Ollama Async
-            </h1>
-            <p className="text-zinc-400 mb-6">
-              For high-concurrency applications, use the async variants which
-              wrap the Ollama AsyncClient.
-            </p>
-            <CodeBlock lang="python">{`import asyncio\nfrom trackly import Trackly, providers\n\nasync def main():\n    t = Trackly(provider=providers.OLLAMA)\n    \n    response = await t.chat_async(\n        model='llama3', \n        messages=[{'role': 'user', 'content': 'Async hello'}]\n    )\n    print(response['message']['content'])\n\nasyncio.run(main())`}</CodeBlock>
-          </>
-        );
-      case "Trackly client":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Trackly Client
-            </h1>
-            <p className="text-zinc-400 mb-6">
-              The <Ic>Trackly</Ic> class is the entry point for all
-              interactions.
-            </p>
-            <CodeBlock lang="python">{`from trackly import Trackly\n\nt = Trackly(\n    api_key="...",    # Defaults to os.getenv("TRACKLY_API_KEY")\n    base_url="...",   # Defaults to api.trackly.ai\n    feature="chatbot", # Default feature name\n    environment="prod",# Default environment\n    debug=False       # Enable for verbose logs\n)`}</CodeBlock>
-            <Callout type="info">
-              If no API key is provided during initialization, the client will
-              look for the `TRACKLY_API_KEY` environment variable.
-            </Callout>
-          </>
-        );
+
       case "Callbacks":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              LangChain
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
               Callbacks
             </h1>
-            <p className="text-zinc-400 mb-6">
-              Callbacks allow you to attach rich metadata to your LLM
-              observability data.
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              <Ic>trackly.callback()</Ic> returns the Trackly instance itself as
+              a LangChain callback handler. It does not take per-call metadata,
+              so set metadata on the constructor.
             </p>
-            <CodeBlock lang="python">{`# Initialize Trackly with metadata\nt = Trackly(\n    feature="retrieval",      # Feature name (e.g. chat, rag, summary)\n    environment="production", # Env (e.g. dev, staging, prod)\n)\n\n# Generate a callback for LangChain\ncb = t.callback()`}</CodeBlock>
-            <SectionTitle>Fields</SectionTitle>
-            <ul className="space-y-4 text-[.85rem] text-zinc-400">
-              <li>
-                <Ic>feature</Ic>: A string identifying the application feature.
-              </li>
-              <li>
-                <Ic>environment</Ic>: Typically `prod`, `dev`, or `staging`.
-              </li>
-              <li>
-                <Ic>user_id</Ic>: String ID of your end user.
-              </li>
-              <li>
-                <Ic>session_id</Ic>: String ID for the session or conversation.
-              </li>
-            </ul>
-          </>
-        );
-      case "Debug mode":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Debug Mode
-            </h1>
-            <p className="text-zinc-400 mb-6">
-              Toggle verbose logging to troubleshoot event ingestion issues.
-            </p>
-            <CodeBlock lang="python">{`t = Trackly(debug=True)\n\n# Or set environment variable\n# TRACKLY_DEBUG=1`}</CodeBlock>
-            <Callout type="warn">
-              Do not enable debug mode in high-traffic production environments
-              as it may generate significant log volume.
-            </Callout>
-          </>
-        );
-      case "Authentication":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Authentication
-            </h1>
-            <p className="text-zinc-400 mb-4">
-              The Backend API uses Bearer authentication via API Keys.
-            </p>
-            <CodeBlock lang="bash">{`curl -H "Authorization: Bearer tk_live_..." \\\n     https://api.trackly.ai/api/v1/health`}</CodeBlock>
-            <p className="text-zinc-500 text-[.8rem]  mt-2">
-              API Keys are generated per project and provide access to both
-              ingestion and stats endpoints for that project.
-            </p>
-          </>
-        );
-      case "Ingest events":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Ingest Events
-            </h1>
-            <p className="text-zinc-400 mb-4 font-mono text-sm underline group-hover:text-primary transition-colors">
-              POST /api/v1/events/ingest
-            </p>
-            <p className="text-[.85rem] text-zinc-500 mb-4 ">
-              Accepts a batch of LLM events. The SDK handles this automatically,
-              but you can trigger it manually for custom logging.
-            </p>
-            <CodeBlock lang="json">{`[\n  {\n    "model": "gpt-4o",\n    "provider": "openai",\n    "prompt_tokens": 150,\n    "completion_tokens": 200,\n    "latency_ms": 1200,\n    "feature": "chatbot"\n  }\n]`}</CodeBlock>
-          </>
-        );
-      case "Stats & analytics":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Stats & Analytics
-            </h1>
-            <p className="text-zinc-400 mb-4">
-              Query your data programmatically to build custom cost-dashboards.
-            </p>
-            <Step n={1} label="Daily Stats">
-              <Ic>GET /api/v1/stats/daily?project_id=...</Ic>
-            </Step>
-            <Step n={2} label="Model Usage">
-              <Ic>GET /api/v1/stats/models?project_id=...</Ic>
-            </Step>
-          </>
-        );
-      case "API reference":
-        return (
-          <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              API Reference
-            </h1>
-            <p className="text-zinc-400 mb-6 ">
-              Full technical specification for direct integrations.
-            </p>
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-white font-bold mb-2 uppercase text-sm border-b border-white/10 pb-1">
-                  Ingestion
-                </h3>
-                <ul className="space-y-2 text-[.85rem] text-zinc-500">
-                  <li>
-                    <Ic>POST /api/v1/events/ingest</Ic> - Bulk upload of LLM
-                    events.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-white font-bold mb-2 uppercase text-sm border-b border-white/10 pb-1">
-                  Analytics
-                </h3>
-                <ul className="space-y-2 text-[.85rem] text-zinc-500">
-                  <li>
-                    <Ic>GET /api/v1/stats/daily</Ic> - Daily cost & token usage.
-                  </li>
-                  <li>
-                    <Ic>GET /api/v1/stats/models</Ic> - Usage breakdown by
-                    model.
-                  </li>
-                  <li>
-                    <Ic>GET /api/v1/stats/providers</Ic> - Usage breakdown by
-                    provider.
-                  </li>
-                </ul>
-              </div>
+            <CodeBlock lang="python">{`from trackly import Trackly
+
+trackly = Trackly(
+    feature="retrieval",
+    environment="staging",
+)
+
+callback_handler = trackly.callback()`}</CodeBlock>
+
+            <SectionTitle accentColor="#fb7185">How the callback works</SectionTitle>
+            <div className="space-y-4 text-[.86rem] text-zinc-400 leading-[1.8]">
+              <p>
+                On <Ic>on_llm_start</Ic>, Trackly stores the start time and tries
+                to capture the model name from LangChain invocation params.
+              </p>
+              <p>
+                On <Ic>on_llm_end</Ic>, Trackly computes latency, token counts,
+                finish reason, infers the provider, builds an event, and enqueues
+                it for the background worker.
+              </p>
+              <p>
+                On <Ic>on_llm_error</Ic>, Trackly only cleans up callback state.
+                It does not emit a usage event for failed runs.
+              </p>
             </div>
+
             <Callout type="info">
-              For the full Swagger/OpenAPI spec, visit your hosted backend at{" "}
-              <Ic>/docs</Ic> or <Ic>/redoc</Ic>.
+              For LangChain usage, you usually do not need to set
+              <Ic>provider</Ic> at all. Trackly infers the provider from the
+              serialized LangChain namespace and then falls back to the model
+              name.
             </Callout>
           </>
         );
+
+      case "LangChain provider examples":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Examples
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              LangChain provider examples
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              These examples all use the same Trackly pattern: construct one
+              client, call <Ic>callback()</Ic>, and attach it to the LangChain
+              model.
+            </p>
+
+            <div className="space-y-8">
+              {LANGCHAIN_EXAMPLES.map((example) => (
+                <div
+                  key={example.title}
+                  className="border-2 border-white/8 bg-white/[0.03] p-5 shadow-[4px_4px_0_0_#000]"
+                >
+                  <div className="flex flex-col gap-2 mb-3">
+                    <h3 className="text-[.96rem] font-bold uppercase tracking-[0.14em] text-white">
+                      {example.title}
+                    </h3>
+                    <p className="text-[.8rem] text-zinc-500">
+                      Install: <Ic>{example.install}</Ic>
+                    </p>
+                  </div>
+                  <CodeBlock lang="python">{example.code}</CodeBlock>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
+      case "Ollama native":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Native wrapper
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Ollama native
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              When <Ic>provider=&quot;ollama&quot;</Ic>, Trackly wraps the official
+              <Ic>ollama</Ic> Python package and logs usage from chat, generate,
+              and embed calls.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+
+trackly = Trackly(
+    provider=providers.OLLAMA,
+    api_key="tk_live_...",
+    feature="local-chat",
+    environment="dev",
+)
+
+chat_response = trackly.chat(
+    model="llama3.2",
+    messages=[
+        {"role": "system", "content": "You answer in one short paragraph."},
+        {"role": "user", "content": "Explain vector databases simply."},
+    ],
+)
+
+generate_response = trackly.generate(
+    model="llama3.2",
+    prompt="Write a five-word slogan for Trackly.",
+)
+
+embedding_response = trackly.embed(
+    model="nomic-embed-text",
+    input="Track this paragraph for retrieval.",
+)`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Tracked Ollama methods</SectionTitle>
+            <ParameterGrid
+              items={[
+                {
+                  name: "chat(*args, **kwargs)",
+                  type: "official ollama.chat signature",
+                  description:
+                    "Sends a chat request through Ollama. Trackly logs tokens and latency from the final response.",
+                  example: 'trackly.chat(model="llama3.2", messages=[...])',
+                },
+                {
+                  name: "generate(*args, **kwargs)",
+                  type: "official ollama.generate signature",
+                  description:
+                    "Wraps text generation through Ollama and logs usage.",
+                  example:
+                    'trackly.generate(model="llama3.2", prompt="Hello")',
+                },
+                {
+                  name: "embed(*args, **kwargs)",
+                  type: "official ollama.embed signature",
+                  description:
+                    "Wraps embeddings and logs an event with `finish_reason=\"embedding\"`.",
+                  example:
+                    'trackly.embed(model="nomic-embed-text", input="hello")',
+                },
+                {
+                  name: "stream=True",
+                  type: "bool",
+                  description:
+                    "When you stream chat or generate, Trackly waits for the final `done` chunk before logging usage.",
+                  example: 'trackly.chat(..., stream=True)',
+                },
+              ]}
+            />
+
+            <Callout type="info">
+              Trackly forwards the original Ollama parameters unchanged. The
+              most common ones you will pass are <Ic>model</Ic>,
+              <Ic>messages</Ic>, <Ic>prompt</Ic>, <Ic>input</Ic>, and
+              <Ic>stream</Ic>.
+            </Callout>
+          </>
+        );
+
+      case "Ollama async + utilities":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Async and utility methods
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Ollama async + utilities
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Async methods mirror the sync API and use the Ollama
+              <Ic>AsyncClient</Ic>. Utility methods expose model management
+              helpers from the Ollama SDK.
+            </p>
+            <CodeBlock lang="python">{`import asyncio
+from trackly import Trackly, providers
+
+async def main():
+    trackly = Trackly(provider=providers.OLLAMA, feature="async-local")
+
+    response = await trackly.chat_async(
+        model="llama3.2",
+        messages=[{"role": "user", "content": "Say hello in six words."}],
+    )
+    print(response["message"]["content"])
+
+    stream = await trackly.generate_async(
+        model="llama3.2",
+        prompt="Write a short poem about telemetry.",
+        stream=True,
+    )
+
+    async for chunk in stream:
+        print(chunk.get("response", ""), end="")
+
+    embeddings = await trackly.embed_async(
+        model="nomic-embed-text",
+        input="Track this asynchronously.",
+    )
+    print(len(embeddings["embeddings"]))
+
+asyncio.run(main())`}</CodeBlock>
+
+            <SectionTitle accentColor="#fb7185">Non-tracking utility methods</SectionTitle>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+
+trackly = Trackly(provider=providers.OLLAMA)
+
+models = trackly.list()
+info = trackly.show("llama3.2")
+running = trackly.ps()
+trackly.pull("llama3.2")
+trackly.push("my-custom-model")
+trackly.copy("llama3.2", "llama3.2-backup")
+trackly.create(model="qa-helper", from_="llama3.2")
+trackly.delete("llama3.2-backup")`}</CodeBlock>
+            <ParameterGrid
+              items={[
+                {
+                  name: "list()",
+                  type: "no parameters",
+                  description: "Returns local Ollama models.",
+                },
+                {
+                  name: "show(model)",
+                  type: "model: string",
+                  description: "Returns model metadata for one local model.",
+                  example: 'trackly.show("llama3.2")',
+                },
+                {
+                  name: "ps()",
+                  type: "no parameters",
+                  description: "Lists running models.",
+                },
+                {
+                  name: "create(**kwargs)",
+                  type: "official ollama.create signature",
+                  description:
+                    "Creates a model through Ollama. Trackly forwards all arguments unchanged.",
+                  example: 'trackly.create(model="qa-helper", from_="llama3.2")',
+                },
+                {
+                  name: "copy(source, destination)",
+                  type: "source: string, destination: string",
+                  description: "Copies a local model.",
+                },
+                {
+                  name: "delete(model)",
+                  type: "model: string",
+                  description: "Deletes a local model.",
+                },
+                {
+                  name: "pull(model, **kwargs)",
+                  type: "model: string + Ollama kwargs",
+                  description: "Pulls a remote model.",
+                },
+                {
+                  name: "push(model, **kwargs)",
+                  type: "model: string + Ollama kwargs",
+                  description: "Pushes a local model to a registry.",
+                },
+              ]}
+            />
+            <Callout type="warn">
+              Only chat, generate, embed, and their async variants emit Trackly
+              usage events. Model management helpers are pass-through calls.
+            </Callout>
+          </>
+        );
+
+      case "Gemini models":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Native wrapper
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Gemini models
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              When <Ic>provider=&quot;gemini&quot;</Ic>, Trackly exposes
+              <Ic>trackly.models</Ic> and wraps <Ic>google.genai.Client</Ic>.
+              It records prompt tokens, candidate tokens, total tokens, latency,
+              finish reason, feature, environment, and timestamp.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+
+trackly = Trackly(
+    provider=providers.GEMINI,
+    api_key="tk_live_...",
+    gemini_api_key="AIza...",
+    feature="summaries",
+    environment="production",
+)
+
+response = trackly.models.generate_content(
+    model="gemini-1.5-flash",
+    contents="Explain quantum computing in one short paragraph.",
+)
+
+print(response.text)`}</CodeBlock>
+            <CodeBlock lang="python">{`import asyncio
+from trackly import Trackly, providers
+
+async def main():
+    trackly = Trackly(
+        provider=providers.GEMINI,
+        gemini_api_key="AIza...",
+        feature="async-gemini",
+    )
+
+    response = await trackly.models.generate_content_async(
+        model="gemini-1.5-flash",
+        contents="Write a two-sentence release note.",
+        api_key="AIza_per_call_override",
+    )
+    print(response.text)
+
+asyncio.run(main())`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Method parameters</SectionTitle>
+            <ParameterGrid
+              items={[
+                {
+                  name: "generate_content(model, contents, **kwargs)",
+                  type: "model: str, contents: Any",
+                  required: true,
+                  description:
+                    "Synchronous Gemini content generation. Trackly times the call, then logs usage from `response.usage_metadata`.",
+                  example:
+                    'trackly.models.generate_content(model="gemini-1.5-flash", contents="Hello")',
+                },
+                {
+                  name: "generate_content_async(model, contents, **kwargs)",
+                  type: "model: str, contents: Any",
+                  required: true,
+                  description:
+                    "Async Gemini generation with the same tracked fields as the sync method.",
+                },
+                {
+                  name: "model",
+                  type: "string",
+                  required: true,
+                  description:
+                    "Gemini model name. Trackly stores this exact string on the event.",
+                },
+                {
+                  name: "contents",
+                  type: "Any",
+                  required: true,
+                  description:
+                    "Whatever the underlying Gemini SDK accepts for content input: plain text, structured content, or arrays.",
+                },
+                {
+                  name: "api_key",
+                  type: "string | null",
+                  description:
+                    "Optional per-call override. If omitted, Trackly uses `gemini_api_key` from the constructor or `GEMINI_API_KEY`.",
+                  example: 'api_key="AIza_override"',
+                },
+                {
+                  name: "**kwargs",
+                  type: "provider-specific options",
+                  description:
+                    "Forwarded directly into `client.models.generate_content(...)`.",
+                  example: 'config={"temperature": 0.2}',
+                },
+              ]}
+            />
+          </>
+        );
+
+      case "Gemini batches":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Batch operations
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Gemini batches
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly exposes <Ic>trackly.batches</Ic> for batch creation,
+              embedding batch creation, status checks, listing, canceling, and
+              deleting. Batch events use provider <Ic>google-batch</Ic>.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+
+trackly = Trackly(
+    provider=providers.GEMINI,
+    gemini_api_key="AIza...",
+    feature="offline-processing",
+)
+
+job = trackly.batches.create(
+    model="gemini-1.5-flash",
+    src="gs://my-bucket/prompts.jsonl",
+    config={"dest": "gs://my-bucket/results/"},
+)
+
+embedding_job = trackly.batches.create_embeddings(
+    model="text-embedding-004",
+    src="gs://my-bucket/embedding-input.jsonl",
+    config={"dest": "gs://my-bucket/embedding-output/"},
+)
+
+status = trackly.batches.get(name=job.name)
+jobs = trackly.batches.list(page_size=20)
+trackly.batches.cancel(name=job.name)
+trackly.batches.delete(name=job.name)`}</CodeBlock>
+
+            <SectionTitle accentColor="#fb7185">Batch method parameters</SectionTitle>
+            <ParameterGrid
+              items={[
+                {
+                  name: "create(model, src, config=None, **kwargs)",
+                  type: "model: str, src: Any, config: dict | None",
+                  description:
+                    "Creates a Gemini batch job and logs an action of `create`.",
+                },
+                {
+                  name: "create_embeddings(model, src, config=None, **kwargs)",
+                  type: "model: str, src: Any, config: dict | None",
+                  description:
+                    "Creates a Gemini embeddings batch and logs `create_embeddings`.",
+                },
+                {
+                  name: "get(name, **kwargs)",
+                  type: "name: str",
+                  description:
+                    "Fetches a batch job. When the returned state is `JOB_STATE_SUCCEEDED`, Trackly logs `status_check`.",
+                },
+                {
+                  name: "list(**kwargs)",
+                  type: "provider-specific list kwargs",
+                  description: "Lists Gemini batch jobs.",
+                },
+                {
+                  name: "cancel(name, **kwargs)",
+                  type: "name: str",
+                  description: "Cancels a batch job.",
+                },
+                {
+                  name: "delete(name, **kwargs)",
+                  type: "name: str",
+                  description: "Deletes a batch job.",
+                },
+                {
+                  name: "api_key",
+                  type: "string | null",
+                  description:
+                    "Optional per-call Gemini API key override on every batch method.",
+                },
+              ]}
+            />
+          </>
+        );
+
+      case "Debug and shutdown":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Runtime behavior
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Debug and shutdown
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly ships events in a background thread every two seconds,
+              retries failed sends up to three times, and keeps a queue of up to
+              5000 events.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly
+
+trackly = Trackly(debug=True)
+
+# ... your model calls ...
+
+trackly.shutdown(timeout=5.0)`}</CodeBlock>
+            <ParameterGrid
+              items={[
+                {
+                  name: "debug",
+                  type: "bool",
+                  defaultValue: "False",
+                  description:
+                    "Prints worker warnings, queued events, retry failures, and HTTP status codes.",
+                },
+                {
+                  name: "shutdown(timeout=5.0)",
+                  type: "timeout: float",
+                  description:
+                    "Flushes any queued events and waits for the worker thread to stop.",
+                  example: "trackly.shutdown(timeout=2.0)",
+                },
+              ]}
+            />
+            <Callout type="warn">
+              In long-running web servers you can usually rely on the background
+              thread and the <Ic>atexit</Ic> shutdown hook. In tests, CLI tools,
+              and serverless functions, call <Ic>shutdown()</Ic> yourself.
+            </Callout>
+          </>
+        );
+
+      case "Ingest API":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Backend API
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Ingest API
+            </h1>
+            <RouteBadge>POST /api/v1/events</RouteBadge>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mt-6 mb-6">
+              The Trackly SDK uses this route automatically. If you want to send
+              manual events, wrap them in an <Ic>events</Ic> array. The backend
+              accepts between 1 and 100 events per request.
+            </p>
+            <CodeBlock lang="bash">{`curl -X POST http://localhost:8000/api/v1/events \\
+  -H "Authorization: Bearer tk_live_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "events": [
+      {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "prompt_tokens": 1200,
+        "completion_tokens": 280,
+        "latency_ms": 842,
+        "finish_reason": "stop",
+        "feature": "invoice-summary",
+        "user_id": "auth0|abc123",
+        "session_id": "chat-session-44",
+        "environment": "production",
+        "tags": ["beta", "priority-customer"],
+        "extra": {"route": "/chat"},
+        "timestamp": "2026-03-25T19:15:00Z"
+      }
+    ]
+  }'`}</CodeBlock>
+            <CodeBlock lang="json">{`{
+  "accepted": 1,
+  "rejected": 0
+}`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Event payload fields</SectionTitle>
+            <ParameterGrid items={INGEST_FIELDS} />
+          </>
+        );
+
+      case "Events API":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Query raw events
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Events API
+            </h1>
+            <RouteBadge>GET /api/v1/projects/{`{project_id}`}/events</RouteBadge>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mt-6 mb-6">
+              This endpoint returns raw events with pagination and filters.
+            </p>
+            <CodeBlock lang="bash">{`curl "http://localhost:8000/api/v1/projects/6f3b3f0b-1234-5678-9abc-def012345678/events?feature=support-chat&provider=openai&page=1&page_size=20"`}</CodeBlock>
+            <CodeBlock lang="json">{`{
+  "items": [
+    {
+      "id": "1dfe09a1-1234-5678-9abc-def012345678",
+      "provider": "openai",
+      "model": "gpt-4o",
+      "prompt_tokens": 1200,
+      "completion_tokens": 280,
+      "total_tokens": 1480,
+      "estimated_cost_usd": 0.0123,
+      "latency_ms": 842,
+      "finish_reason": "stop",
+      "feature": "support-chat",
+      "user_id": "auth0|abc123",
+      "session_id": "chat-session-44",
+      "run_id": "run_123",
+      "tags": ["beta"],
+      "occurred_at": "2026-03-25T19:15:00Z",
+      "ingested_at": "2026-03-25T19:15:02Z",
+      "user_name": "Taylor Kim",
+      "user_photo": null,
+      "api_key_id": "6f3b3f0b-1234-5678-9abc-def012345678",
+      "parent_api_key_id": null
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20,
+  "has_more": false
+}`}</CodeBlock>
+
+            <SectionTitle accentColor="#fb7185">Query parameters</SectionTitle>
+            <ParameterGrid items={EVENTS_QUERY_PARAMS} />
+          </>
+        );
+
+      case "Stats API":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Aggregates
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Stats API
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly exposes four project-level stats routes and one global
+              route for platform counters.
+            </p>
+            <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/summary</RouteBadge>
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/by-model</RouteBadge>
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/by-feature</RouteBadge>
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/daily</RouteBadge>
+              <RouteBadge>GET /api/v1/stats/global</RouteBadge>
+            </div>
+
+            <CodeBlock lang="bash">{`curl "http://localhost:8000/api/v1/projects/6f3b3f0b-1234-5678-9abc-def012345678/stats/summary?provider=openai&start=2026-03-01T00:00:00Z&end=2026-03-25T00:00:00Z"`}</CodeBlock>
+            <CodeBlock lang="json">{`{
+  "total_events": 248,
+  "total_tokens": 812340,
+  "total_cost_usd": 34.77,
+  "avg_latency_ms": 623.9,
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-25T00:00:00Z"
+}`}</CodeBlock>
+            <CodeBlock lang="bash">{`curl "http://localhost:8000/api/v1/projects/6f3b3f0b-1234-5678-9abc-def012345678/stats/daily"`}</CodeBlock>
+            <CodeBlock lang="json">{`[
+  {
+    "date": "2026-03-24",
+    "event_count": 18,
+    "total_tokens": 62100,
+    "total_cost_usd": 2.91
+  },
+  {
+    "date": "2026-03-25",
+    "event_count": 23,
+    "total_tokens": 71140,
+    "total_cost_usd": 3.44
+  }
+]`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Query parameters</SectionTitle>
+            <ParameterGrid items={STATS_QUERY_PARAMS} />
+
+            <Callout type="info">
+              If you omit <Ic>start</Ic> and <Ic>end</Ic>, Trackly uses the last
+              30 days by default.
+            </Callout>
+          </>
+        );
+
+      case "Organizations and projects":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Workspace management
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Organizations and projects
+            </h1>
+            <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
+              <RouteBadge>POST /api/v1/organizations</RouteBadge>
+              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}</RouteBadge>
+              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/projects</RouteBadge>
+              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/projects</RouteBadge>
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}</RouteBadge>
+              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/members</RouteBadge>
+              <RouteBadge>POST /api/v1/projects/{`{project_id}`}/members</RouteBadge>
+              <RouteBadge>DELETE /api/v1/projects/{`{project_id}`}/members/{`{user_id}`}</RouteBadge>
+              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/users</RouteBadge>
+              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/users</RouteBadge>
+              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/usage</RouteBadge>
+            </div>
+
+            <CodeBlock lang="bash">{`curl -X POST http://localhost:8000/api/v1/organizations \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Acme AI",
+    "slug": "acme-ai"
+  }'
+
+curl -X POST http://localhost:8000/api/v1/organizations/6f3b3f0b-1234-5678-9abc-def012345678/projects \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Production",
+    "environment": "prod"
+  }'`}</CodeBlock>
+
+            <SectionTitle accentColor="#fb7185">Request body fields</SectionTitle>
+            <ParameterGrid items={ORG_AND_PROJECT_FIELDS} />
+          </>
+        );
+
+      case "API keys":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Authentication
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              API keys
+            </h1>
+            <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
+              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/api-keys</RouteBadge>
+              <RouteBadge>POST /api/v1/api-keys/{`{key_id}`}/access</RouteBadge>
+              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/api-keys</RouteBadge>
+              <RouteBadge>DELETE /api/v1/api-keys/{`{key_id}`}</RouteBadge>
+            </div>
+
+            <CodeBlock lang="bash">{`curl -X POST http://localhost:8000/api/v1/organizations/6f3b3f0b-1234-5678-9abc-def012345678/api-keys \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Production server key",
+    "project_id": "d36af0e5-1234-5678-9abc-def012345678"
+  }'`}</CodeBlock>
+            <CodeBlock lang="json">{`{
+  "id": "8ac5dbd6-1234-5678-9abc-def012345678",
+  "name": "Production server key",
+  "key_prefix": "tk_live_ab12",
+  "project_id": "d36af0e5-1234-5678-9abc-def012345678",
+  "created_by_user_id": null,
+  "parent_key_id": null,
+  "is_active": true,
+  "created_at": "2026-03-25T19:15:00Z",
+  "last_used_at": null,
+  "raw_key": "tk_live_0123456789abcdef0123456789abcdef"
+}`}</CodeBlock>
+            <CodeBlock lang="bash">{`curl -X POST http://localhost:8000/api/v1/api-keys/8ac5dbd6-1234-5678-9abc-def012345678/access \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "auth0_id": "auth0|abc123"
+  }'`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Parameters and behavior</SectionTitle>
+            <ParameterGrid items={API_KEY_FIELDS} />
+
+            <Callout type="warn">
+              The raw API key is only returned once when the key is created. The
+              list endpoint never returns <Ic>raw_key</Ic>.
+            </Callout>
+          </>
+        );
+
       case "Self-hosting":
         return (
           <>
-            <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6  uppercase">
-              Self-Hosting
-            </h1>
-            <p className="text-zinc-400 mb-6 ">
-              Run Trackly on your own infrastructure.
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Backend setup
             </p>
-            <Step n={1} label="Requirements">
-              <ul className="list-disc list-inside text-zinc-500 text-[.85rem] space-y-1">
-                <li>Docker & Docker Compose</li>
-                <li>PostgreSQL 15+</li>
-                <li>Redis (Optional, for caching)</li>
-              </ul>
-            </Step>
-            <Step n={2} label="Deploy with Docker">
-              <CodeBlock lang="bash">{`docker run -d \\\n  -p 8000:8000 \\\n  -e DATABASE_URL=postgresql://... \\\n  udaykumarnd/trackly-backend:latest`}</CodeBlock>
-            </Step>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Self-hosting
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              The repository contains both the SDK and the FastAPI backend. For
+              local development, start PostgreSQL first, then run the API.
+            </p>
+            <CodeBlock lang="bash">{`docker-compose up -d db
+
+# in another shell
+uvicorn app.main:app --host 0.0.0.0 --port 8000`}</CodeBlock>
+            <CodeBlock lang=".env">{`DATABASE_URL=postgresql+asyncpg://postgres:1234@localhost:5432/trackly
+ADMIN_API_TOKEN=your_admin_token
+APP_BASE_URL=https://tracklyai.in
+SUPPORT_EMAIL=support@tracklyai.in`}</CodeBlock>
+            <Callout type="info">
+              Once the backend is running, FastAPI docs are available at
+              <Ic>/docs</Ic> and <Ic>/redoc</Ic>, and the health route is
+              <Ic>/health</Ic>.
+            </Callout>
           </>
         );
+
       default:
-        if (PROVIDERS_CODE[activeNav]) {
-          const iconMap: Record<string, any> = {
-            OpenAI: byPrefixAndName.fab["openai"],
-            Anthropic: byPrefixAndName.fab["claude"],
-            "Google Gemini": byPrefixAndName.fab["google"],
-            Groq: byPrefixAndName.fab["meta"],
-            Mistral: byPrefixAndName.fab["codiepie"],
-            "Ollama (LC)": byPrefixAndName.fab["linux"],
-          };
-
-          // Special case for Anthropic/Claude if available in fab
-          if (activeNav === "Anthropic") {
-            // In free-brands, claude might not be present, but some versions have it.
-            // If not, we use a generic AI icon or similar.
-          }
-
-          return (
-            <>
-              <h1 className="text-[2.5rem] font-extrabold tracking-tighter leading-none mb-6 uppercase flex items-center gap-4">
-                {iconMap[activeNav] && (
-                  <FontAwesomeIcon
-                    icon={iconMap[activeNav]}
-                    className="text-primary size-10"
-                  />
-                )}
-                {activeNav}
-              </h1>
-              <p className="text-zinc-400 mb-6 ">
-                Tracking {activeNav} usage seamlessly.
-              </p>
-              <CodeBlock lang="python">{PROVIDERS_CODE[activeNav]}</CodeBlock>
-              <Callout type="success">
-                Ensure you have the required provider package installed via{" "}
-                <Ic>
-                  pip install "trackly[
-                  {activeNav
-                    .toLowerCase()
-                    .split(" ")[0]
-                    .replace("(", "")
-                    .replace(")", "")}
-                  ]"
-                </Ic>
-                .
-              </Callout>
-            </>
-          );
-        }
-        return <p>Section coming soon...</p>;
+        return <p className="text-zinc-400">Section coming soon.</p>;
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0c] selection:bg-primary/30 scroll-smooth relative overflow-hidden docs-root">
+    <div className="flex flex-col min-h-screen bg-[#06070c] selection:bg-[#f59e0b]/30 scroll-smooth relative overflow-hidden docs-root">
       <style>{`
         .docs-root::before {
-          content:''; position:absolute; inset:0;
-          background-image:linear-gradient(rgba(167,139,250,0.03) 1px,transparent 1px),
-            linear-gradient(90deg,rgba(167,139,250,0.03) 1px,transparent 1px);
-          background-size:48px 48px;
-          mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 100%);
-          pointer-events:none; z-index:0;
+          content:'';
+          position:absolute;
+          inset:0;
+          background-image:
+            linear-gradient(rgba(25, 97, 240, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(31, 20, 184, 0.05) 1px, transparent 1px);
+          background-size: 56px 56px;
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 100%);
+          pointer-events:none;
+          z-index:0;
         }
-        .orb { position:absolute; border-radius:50%; filter:blur(120px); pointer-events:none; z-index:0; }
-        .orb-1 { width:600px;height:600px;background:#a78bfa;top:-200px;left:-150px;opacity:0.12; }
-        .orb-2 { width:400px;height:400px;background:#f472b6;top:100px;right:-100px;opacity:0.06; }
-
+        .orb {
+          position:absolute;
+          border-radius:50%;
+          filter:blur(120px);
+          pointer-events:none;
+          z-index:0;
+        }
+        .orb-1 {
+          width:560px;
+          height:560px;
+          background: oklch(0.398 0.195 277.366);
+          top:-180px;
+          left:-180px;
+          opacity:0.10;
+        }
+        .orb-2 {
+          width:460px;
+          height:460px;
+          background:#14b8a6;
+          top:80px;
+          right:-120px;
+          opacity:0.08;
+        }
         .no-scrollbar::-webkit-scrollbar {
-          display: none;
+          display:none;
         }
         .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+          -ms-overflow-style:none;
+          scrollbar-width:none;
         }
       `}</style>
+
       <div className="orb orb-1" />
       <div className="orb orb-2" />
+
       <Header />
 
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-12 gap-6 md:gap-12 relative z-10">
-        <div className="md:hidden sticky top-20 z-30 flex items-center gap-2 px-4 py-3 bg-[#0a0a0c]/80 backdrop-blur-md border-2 border-white/5 mb-4 shadow-[4px_4px_0_0_#000]">
+        <div className="md:hidden sticky top-20 z-30 flex items-center gap-2 px-4 py-3 bg-[#06070c]/85 backdrop-blur-md border-2 border-white/8 mb-4 shadow-[4px_4px_0_0_#000]">
           <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetTrigger asChild>
               <button className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer">
@@ -781,11 +1898,17 @@ export default function DocsPage() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[280px] bg-[#0a0a0c] border-r border-white/5 p-6 overflow-y-auto no-scrollbar"
+              className="w-[300px] bg-[#06070c] border-r border-white/8 p-6 overflow-y-auto no-scrollbar"
             >
               <div className="mb-8">
-                <Link className="text-white flex gap-1.5 items-center" href="/">
-                  <img src="/logo/logo-48.png" className="w-6 h-6" />
+                <Link className="text-white flex gap-2 items-center" href="/">
+                  <Image
+                    src="/logo/logo-48.png"
+                    className="w-6 h-6"
+                    alt="Trackly"
+                    width={24}
+                    height={24}
+                  />
                   <h1 className="font-bold text-lg tracking-tight">Trackly</h1>
                 </Link>
               </div>
@@ -797,16 +1920,16 @@ export default function DocsPage() {
             </SheetContent>
           </Sheet>
           <div className="h-4 w-px bg-white/10 mx-1" />
-          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] truncate">
+          <span className="text-[10px] font-bold text-[#f59e0b] uppercase tracking-[0.2em] truncate">
             {activeNav}
           </span>
         </div>
 
-        <aside className="w-64 hidden md:block shrink-0 sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pr-4 border-r border-white/5">
+        <aside className="w-72 hidden md:block shrink-0 sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pr-5 border-r border-white/8">
           <DocsNav activeNav={activeNav} setActiveNav={setActiveNav} />
         </aside>
 
-        <main className="flex-1 min-w-0 max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <main className="flex-1 min-w-0 max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
           {renderContent()}
         </main>
       </div>

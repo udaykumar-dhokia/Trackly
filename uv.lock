@@ -1763,6 +1763,7 @@ dependencies = [
     { name = "langchain-core" },
     { name = "requests" },
     { name = "resend" },
+    { name = "uvicorn" },
 ]
 
 [package.optional-dependencies]
@@ -1823,6 +1824,7 @@ requires-dist = [
     { name = "resend", marker = "extra == 'server'", specifier = ">=2.0.0" },
     { name = "slowapi", marker = "extra == 'server'", specifier = ">=0.1.9" },
     { name = "sqlalchemy", extras = ["asyncio"], marker = "extra == 'server'", specifier = ">=2.0.0" },
+    { name = "uvicorn", specifier = ">=0.42.0" },
     { name = "uvicorn", marker = "extra == 'server'", specifier = ">=0.23.0" },
 ]
 provides-extras = ["openai", "anthropic", "gemini", "ollama", "all", "server", "dev"]

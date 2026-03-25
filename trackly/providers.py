@@ -1,5 +1,3 @@
-class Providers:
-    LANGCHAIN = "langchain"
-    OLLAMA = "ollama"
+from .constants import Providers, providers
 
-providers = Providers()
+__all__ = ["Providers", "providers"]

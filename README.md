@@ -54,6 +54,60 @@ response = llm.invoke("Summarise the following contract...")
 
 Every call now automatically logs to your Trackly dashboard.
 
+### Native Provider Wrappers
+
+If you prefer using the native SDKs instead of LangChain, Trackly provides high-performance wrappers that capture the same rich metadata.
+
+#### Google Gemini (Native SDK)
+
+Trackly supports the official `google-genai` SDK.
+
+```python
+from trackly import Trackly
+
+# Initialize for Gemini (Reads GEMINI_API_KEY from environment)
+trackly = Trackly(provider="gemini")
+
+# Use the .models wrapper
+response = trackly.models.generate_content(
+    model="gemini-1.5-flash",
+    contents="Explain quantum computing in one sentence."
+)
+print(response.text)
+```
+
+#### Gemini Batch API
+
+Trackly automatically tracks batch job creation and status.
+
+```python
+# Create a batch job (Trackly logs 'create' event)
+job = trackly.batches.create(
+    model="gemini-1.5-flash",
+    src="gs://my-bucket/input.json",
+    config={"dest": "gs://my-bucket/output/"}
+)
+
+# Get job status (Trackly logs 'status_check' on success)
+status = trackly.batches.get(name=job.name)
+```
+
+#### Ollama (Local LLMs)
+
+Trackly provides a first-class wrapper for the `ollama` Python library.
+
+```python
+from trackly import Trackly
+
+trackly = Trackly(provider="ollama")
+
+# Works just like the official ollama.chat
+response = trackly.chat(
+    model="llama3",
+    messages=[{"role": "user", "content": "Why is the sky blue?"}]
+)
+```
+
 ### Annotating Calls with Metadata
 
 Register a callback with default tags to track metadata across components easily:
@@ -75,9 +129,10 @@ You can configure the SDK programmatically or via environment variables:
 
 ```python
 trackly = Trackly(
-    api_key="tk_live_...",                   # Or TRACKLY_API_KEY
-    base_url="http://localhost:8000/v1",   # Or TRACKLY_BASE_URL (Self-hosting)
-    debug=True,                              # Or TRACKLY_DEBUG=1 (Outputs console logs)
+    api_key="tk_live_...",                   # Or TRACKLY_API_KEY (Trackly Backend)
+    gemini_api_key="sk-...",                 # Or GEMINI_API_KEY (Google Gemini)
+    base_url="https://api.trackly.ai/v1",    # Or TRACKLY_BASE_URL
+    debug=True,                              # Or TRACKLY_DEBUG=1
 )
 ```
 
