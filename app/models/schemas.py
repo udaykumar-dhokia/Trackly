@@ -177,8 +177,39 @@ class OrganizationUsageResponse(BaseModel):
     org_id: uuid.UUID
     plan: str
     current_month_usage: int
+    current_month_events: int
+    current_month_tokens: int
+    current_month_cost_usd: float
     plan_limit: int
     reset_date: datetime
+    budget: OrganizationBudgetStatusResponse | None = None
+
+
+class OrganizationBudgetUpdate(BaseModel):
+    monthly_token_limit: int | None = Field(default=None, ge=1)
+    monthly_cost_limit_usd: float | None = Field(default=None, ge=0)
+
+
+class OrganizationBudgetResponse(BaseModel):
+    org_id: uuid.UUID
+    monthly_token_limit: int | None
+    monthly_cost_limit_usd: float | None
+    configured: bool
+    updated_at: datetime | None
+    created_at: datetime | None
+
+
+class OrganizationBudgetStatusResponse(BaseModel):
+    monthly_token_limit: int | None
+    monthly_cost_limit_usd: float | None
+    current_month_tokens: int
+    current_month_cost_usd: float
+    token_usage_percentage: float | None
+    cost_usage_percentage: float | None
+    token_remaining: int | None
+    cost_remaining_usd: float | None
+    status: str
+    updated_at: datetime | None = None
 
 
 class FeedbackCreate(BaseModel):

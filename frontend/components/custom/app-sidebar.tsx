@@ -37,6 +37,7 @@ import {
   Users,
   Monitor,
   ChartLineUp,
+  Wallet,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -68,6 +69,11 @@ const navItems = [
     title: "Events Log",
     url: "/events",
     icon: ActivityIcon,
+  },
+  {
+    title: "Budgets",
+    url: "/budgets",
+    icon: Wallet,
   },
   {
     title: "API Keys",
@@ -325,8 +331,8 @@ export function AppSidebar({
                       isActive={isActive}
                       className={
                         isActive
-                          ? "border-2 border-foreground bg-foreground text-background px-5 py-3 font-bold shadow-primary shadow-[4px_4px_0_0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none focus:outline-0 h-auto rounded-none transition-all uppercase tracking-wider"
-                          : "hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold py-3 h-auto transition-all rounded-none uppercase tracking-wider"
+                          ? "border-2 border-foreground bg-foreground text-background px-5 py-3 font-bold shadow-primary shadow-[4px_4px_0_0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none focus:outline-0 h-auto rounded-none transition-all tracking-wider"
+                          : "hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold py-3 h-auto transition-all rounded-none tracking-wider"
                       }
                     >
                       <Link href={usageUrl}>

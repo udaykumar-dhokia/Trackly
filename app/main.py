@@ -43,14 +43,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ingest.router,        prefix=settings.api_prefix, tags=["ingest"])
-app.include_router(stats.router,         prefix=settings.api_prefix, tags=["stats"])
-app.include_router(organizations.router, prefix=settings.api_prefix, tags=["organizations"])
-app.include_router(api_keys.router,      prefix=settings.api_prefix, tags=["api-keys"])
-app.include_router(events.router,        prefix=settings.api_prefix, tags=["events"])
-app.include_router(users.router,         prefix=settings.api_prefix, tags=["users"])
-app.include_router(feedback.router,      prefix=settings.api_prefix, tags=["feedback"])
-app.include_router(admin.router,         prefix=settings.api_prefix, tags=["admin"])
+api_prefixes = []
+for prefix in (settings.api_prefix, "/v1"):
+    if prefix not in api_prefixes:
+        api_prefixes.append(prefix)
+
+for prefix in api_prefixes:
+    app.include_router(ingest.router,        prefix=prefix, tags=["ingest"])
+    app.include_router(stats.router,         prefix=prefix, tags=["stats"])
+    app.include_router(organizations.router, prefix=prefix, tags=["organizations"])
+    app.include_router(api_keys.router,      prefix=prefix, tags=["api-keys"])
+    app.include_router(events.router,        prefix=prefix, tags=["events"])
+    app.include_router(users.router,         prefix=prefix, tags=["users"])
+    app.include_router(feedback.router,      prefix=prefix, tags=["feedback"])
+    app.include_router(admin.router,         prefix=prefix, tags=["admin"])
 
 
 @app.get("/health", tags=["ops"])

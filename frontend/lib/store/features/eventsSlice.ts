@@ -40,6 +40,10 @@ interface EventsState {
     pageSize?: number; 
     provider?: string;
     userId?: string;
+    model?: string;
+    feature?: string;
+    start?: string;
+    end?: string;
   } | null;
 }
 
@@ -63,13 +67,21 @@ export const fetchEvents = createAsyncThunk(
     page = 1, 
     pageSize = 50, 
     provider,
-    userId 
+    userId,
+    model,
+    feature,
+    start,
+    end,
   }: { 
     projectId: string; 
     page?: number; 
     pageSize?: number; 
     provider?: string;
     userId?: string;
+    model?: string;
+    feature?: string;
+    start?: string;
+    end?: string;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     
@@ -81,6 +93,18 @@ export const fetchEvents = createAsyncThunk(
     }
     if (userId && userId !== "all") {
         queryParams.append("user_id", userId)
+    }
+    if (model) {
+      queryParams.append("model", model)
+    }
+    if (feature) {
+      queryParams.append("feature", feature)
+    }
+    if (start) {
+      queryParams.append("start", start)
+    }
+    if (end) {
+      queryParams.append("end", end)
     }
 
     const response = await fetch(`${apiUrl}/api/v1/projects/${projectId}/events?${queryParams.toString()}`);

@@ -32,7 +32,15 @@ interface StatsState {
   dailyUsage: DailyUsage[];
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
-  lastFetchedParams: { projectId: string; provider?: string } | null;
+  lastFetchedParams: {
+    projectId: string;
+    provider?: string;
+    model?: string;
+    feature?: string;
+    userId?: string;
+    start?: string;
+    end?: string;
+  } | null;
 }
 
 const initialState: StatsState = {
@@ -46,12 +54,43 @@ const initialState: StatsState = {
 
 export const fetchDashboardStats = createAsyncThunk(
   "stats/fetchDashboardStats",
-  async ({ projectId, provider }: { projectId: string; provider?: string }) => {
+  async ({
+    projectId,
+    provider,
+    model,
+    feature,
+    userId,
+    start,
+    end,
+  }: {
+    projectId: string;
+    provider?: string;
+    model?: string;
+    feature?: string;
+    userId?: string;
+    start?: string;
+    end?: string;
+  }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     const queryParams = new URLSearchParams();
     if (provider && provider !== "all") {
       queryParams.append("provider", provider);
+    }
+    if (model) {
+      queryParams.append("model", model);
+    }
+    if (feature) {
+      queryParams.append("feature", feature);
+    }
+    if (userId && userId !== "all") {
+      queryParams.append("user_id", userId);
+    }
+    if (start) {
+      queryParams.append("start", start);
+    }
+    if (end) {
+      queryParams.append("end", end);
     }
     const queryString = queryParams.toString()
       ? `?${queryParams.toString()}`

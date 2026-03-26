@@ -9,7 +9,6 @@ import {
   CaretRight,
   WarningCircle,
   Funnel,
-  ChartBar,
   ArrowClockwise,
   Users,
 } from "@phosphor-icons/react";
@@ -20,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -31,12 +30,10 @@ import Link from "next/link";
 
 export default function EventsPage() {
   const dispatch = useAppDispatch();
-
   const {
     activeProjectId,
     status: projectsStatus,
     members,
-    membersStatus,
   } = useAppSelector((state) => state.projects);
   const {
     data: { items: events, page, has_more, total },
@@ -48,61 +45,93 @@ export default function EventsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [providerFilter, setProviderFilter] = useState("all");
   const [memberFilter, setMemberFilter] = useState("all");
+  const [modelFilter, setModelFilter] = useState("");
+  const [featureFilter, setFeatureFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [providerFilter, memberFilter, activeProjectId]);
+  }, [providerFilter, memberFilter, modelFilter, featureFilter, startDate, endDate, activeProjectId]);
 
   useEffect(() => {
     if (activeProjectId) {
       dispatch(fetchProjectMembers(activeProjectId));
-      setMemberFilter("all");
     }
   }, [activeProjectId, dispatch]);
 
   useEffect(() => {
-    if (activeProjectId) {
-      const needsFetch =
-        !lastFetchedParams ||
-        lastFetchedParams.projectId !== activeProjectId ||
-        lastFetchedParams.page !== currentPage ||
-        lastFetchedParams.provider !== providerFilter ||
-        lastFetchedParams.userId !== memberFilter;
+    if (!activeProjectId) return;
 
-      if (needsFetch) {
-        dispatch(
-          fetchEvents({
-            projectId: activeProjectId,
-            page: currentPage,
-            pageSize: 50,
-            provider: providerFilter,
-            userId: memberFilter,
-          }),
-        );
-      }
+    const model = modelFilter.trim() || undefined;
+    const feature = featureFilter.trim() || undefined;
+    const start = toStartIso(startDate);
+    const end = toEndExclusiveIso(endDate);
+    const needsFetch =
+      !lastFetchedParams ||
+      lastFetchedParams.projectId !== activeProjectId ||
+      lastFetchedParams.page !== currentPage ||
+      lastFetchedParams.provider !== providerFilter ||
+      lastFetchedParams.userId !== memberFilter ||
+      lastFetchedParams.model !== model ||
+      lastFetchedParams.feature !== feature ||
+      lastFetchedParams.start !== start ||
+      lastFetchedParams.end !== end;
+
+    if (needsFetch) {
+      dispatch(
+        fetchEvents({
+          projectId: activeProjectId,
+          page: currentPage,
+          pageSize: 50,
+          provider: providerFilter,
+          userId: memberFilter,
+          model,
+          feature,
+          start,
+          end,
+        }),
+      );
     }
   }, [
     activeProjectId,
     currentPage,
     providerFilter,
+    memberFilter,
+    modelFilter,
+    featureFilter,
+    startDate,
+    endDate,
     dispatch,
     lastFetchedParams,
   ]);
 
-  const nextPage = () => {
-    if (has_more) setCurrentPage((p) => p + 1);
+  const refreshEvents = () => {
+    if (!activeProjectId) return;
+    dispatch(
+      fetchEvents({
+        projectId: activeProjectId,
+        page: currentPage,
+        pageSize: 50,
+        provider: providerFilter,
+        userId: memberFilter,
+        model: modelFilter.trim() || undefined,
+        feature: featureFilter.trim() || undefined,
+        start: toStartIso(startDate),
+        end: toEndExclusiveIso(endDate),
+      }),
+    );
   };
 
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage((p) => p - 1);
-  };
+
 
   if (
     projectsStatus === "loading" ||
     (projectsStatus === "idle" && !activeProjectId)
   ) {
     return (
-      <div className="p-8 text-zinc-500 font-mono animate-pulse">
+      <div className="p-8 font-mono text-zinc-500 animate-pulse">
         Initializing Event Subsystem...
       </div>
     );
@@ -110,20 +139,15 @@ export default function EventsPage() {
 
   if (!activeProjectId) {
     return (
-      <div className="max-w-4xl mx-auto mt-12 p-12 border-4 border-fuchsia-500 bg-[#141418] shadow-[12px_12px_0_0_#d946ef] flex flex-col items-center text-center space-y-6">
-        <WarningCircle
-          size={64}
-          weight="duotone"
-          className="text-fuchsia-400"
-        />
+      <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center space-y-6 border-4 border-fuchsia-500 bg-[#141418] p-12 text-center shadow-[12px_12px_0_0_#d946ef]">
+        <WarningCircle size={64} weight="duotone" className="text-fuchsia-400" />
         <h1 className="text-3xl font-bold text-white">No Active Project</h1>
-        <p className="text-zinc-400 font-mono max-w-lg">
-          Please select or create a project to view underlying telemetry and API
-          events.
+        <p className="max-w-lg font-mono text-zinc-400">
+          Please select or create a project to view underlying telemetry and API events.
         </p>
         <Link
           href="/organizations"
-          className="bg-fuchsia-500 text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0_0_#000000] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000000] inline-flex items-center gap-2 transition-all"
+          className="inline-flex items-center gap-2 border-2 border-black bg-fuchsia-500 px-6 py-3 font-bold text-black shadow-[4px_4px_0_0_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000000]"
         >
           Go to Organizations
           <CaretRight weight="bold" />
@@ -133,139 +157,113 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10">
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-            Events Log
-          </h1>
-          <p className="text-zinc-400 font-mono text-sm max-w-3xl leading-relaxed">
-            The raw, paginated telemetry stream originating from your API
-            endpoints. Dive into deep tracking markers including tokens,
-            estimated costs, execution latency, and custom feature tags.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 bg-[#1a1a24] border-2 border-fuchsia-500/50 px-4 py-2 self-start md:self-auto shadow-[4px_4px_0_0_rgba(217,70,239,0.15)] min-w-[200px]">
-            <Funnel size={20} className="text-fuchsia-400" />
-            <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger className="border-none w-full bg-transparent text-white font-bold font-mono text-sm focus:ring-0 px-0 h-auto shadow-none data-[state=open]:bg-transparent">
-                <SelectValue placeholder="All Providers" />
-              </SelectTrigger>
-              <SelectContent className="border-2 border-fuchsia-500/50 text-white font-mono rounded-none bg-[#1a1a24]">
-                <SelectItem
-                  value="all"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer font-bold"
-                >
-                  All Providers
-                </SelectItem>
-                <SelectItem
-                  value="openai"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                >
-                  OpenAI
-                </SelectItem>
-                <SelectItem
-                  value="anthropic"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                >
-                  Anthropic
-                </SelectItem>
-                <SelectItem
-                  value="google"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                >
-                  Google
-                </SelectItem>
-                <SelectItem
-                  value="ollama"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                >
-                  Ollama
-                </SelectItem>
-                <SelectItem
-                  value="groq"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                >
-                  Groq
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-3 bg-[#1a1a24] border-2 border-fuchsia-500/50 px-4 py-2 self-start md:self-auto shadow-[4px_4px_0_0_rgba(217,70,239,0.15)] min-w-[220px]">
-            <Users size={20} className="text-fuchsia-400" />
-            <Select value={memberFilter} onValueChange={setMemberFilter}>
-              <SelectTrigger className="border-none w-full bg-transparent text-white font-bold font-mono text-sm focus:ring-0 px-0 h-auto shadow-none data-[state=open]:bg-transparent">
-                <SelectValue placeholder="All Members" />
-              </SelectTrigger>
-              <SelectContent className="border-2 border-fuchsia-500/50 text-white font-mono rounded-none bg-[#1a1a24]">
-                <SelectItem
-                  value="all"
-                  className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer font-bold"
-                >
-                  All Members
-                </SelectItem>
-                {members.map((m) => (
-                  <SelectItem
-                    key={m.user_id}
-                    value={m.user_id}
-                    className="focus:bg-fuchsia-500/20 focus:text-white cursor-pointer hover:bg-white/5"
-                  >
-                    {m.name || m.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="mx-auto max-w-6xl space-y-10">
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-extrabold tracking-tight text-white">Events Log</h1>
+            <p className="max-w-2xl font-mono text-sm leading-relaxed text-zinc-400">
+              The raw telemetry stream for your project. Apply filters and inspect who generated spend.
+            </p>
           </div>
           <button
-            onClick={() =>
-              dispatch(
-                fetchEvents({
-                  projectId: activeProjectId!,
-                  page: currentPage,
-                  pageSize: 50,
-                  provider: providerFilter,
-                  userId: memberFilter,
-                }),
-              )
-            }
+            onClick={refreshEvents}
             disabled={status === "loading"}
-            className="p-2 border-2 border-fuchsia-500/50 bg-[#1a1a24] shadow-[4px_4px_0_0_rgba(217,70,239,0.15)] hover:bg-white/5 text-fuchsia-400 hover:text-fuchsia-300 transition-colors disabled:opacity-50 flex items-center justify-center self-start md:self-auto h-[44px]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-fuchsia-500/50 bg-[#1a1a24] text-fuchsia-400 transition-colors hover:bg-white/5 hover:text-fuchsia-300 disabled:opacity-50"
             title="Refresh Events"
           >
             <ArrowClockwise
               weight="bold"
-              size={24}
+              size={20}
               className={status === "loading" ? "animate-spin" : ""}
             />
           </button>
         </div>
+
+        <div className="border-2 border-fuchsia-500/30 bg-[#1a1a24] p-4">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+            <Funnel size={14} className="text-fuchsia-400" />
+            Filters
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+            <Select value={providerFilter} onValueChange={setProviderFilter}>
+              <SelectTrigger className="h-10 rounded-none border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+                <SelectValue placeholder="All Providers" />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-2 border-fuchsia-500/30 bg-[#1a1a24] font-mono text-white">
+                <SelectItem value="all">All Providers</SelectItem>
+                <SelectItem value="openai">OpenAI</SelectItem>
+                <SelectItem value="anthropic">Anthropic</SelectItem>
+                <SelectItem value="google">Google</SelectItem>
+                <SelectItem value="groq">Groq</SelectItem>
+                <SelectItem value="mistral">Mistral</SelectItem>
+                <SelectItem value="cohere">Cohere</SelectItem>
+                <SelectItem value="deepseek">DeepSeek</SelectItem>
+                <SelectItem value="ollama">Ollama</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={memberFilter} onValueChange={setMemberFilter}>
+              <SelectTrigger className="h-10 rounded-none border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+                <SelectValue placeholder="All Members" />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-2 border-fuchsia-500/30 bg-[#1a1a24] font-mono text-white">
+                <SelectItem value="all">All Members</SelectItem>
+                {members.map((member) => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.name || member.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <input
+              value={modelFilter}
+              onChange={(e) => setModelFilter(e.target.value)}
+              placeholder="Model"
+              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+            />
+            <input
+              value={featureFilter}
+              onChange={(e) => setFeatureFilter(e.target.value)}
+              placeholder="Feature"
+              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+            />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+            />
+          </div>
+        </div>
       </section>
 
-      <section className="border-2 border-fuchsia-500/50 bg-[#141418] shadow-[8px_8px_0_0_rgba(217,70,239,0.15)] relative">
-        <div className="flex items-center justify-between p-4 border-b-2 border-fuchsia-500/50 bg-[#1a1a24]">
+      <section className="relative border-2 border-fuchsia-500/50 bg-[#141418] shadow-[8px_8px_0_0_rgba(217,70,239,0.15)]">
+        <div className="flex items-center justify-between border-b-2 border-fuchsia-500/50 bg-[#1a1a24] p-4">
           <div className="font-mono text-xs text-zinc-400">
-            <span className="text-fuchsia-400 font-bold">
-              {total.toLocaleString()}
-            </span>{" "}
-            Events Tracked
+            <span className="font-bold text-fuchsia-400">{total.toLocaleString()}</span> Events Tracked
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-zinc-400 text-xs font-mono">Page {page}</span>
+            <span className="font-mono text-xs text-zinc-400">Page {page}</span>
             <div className="flex gap-2">
               <button
-                onClick={prevPage}
+                onClick={() => currentPage > 1 && setCurrentPage((value) => value - 1)}
                 disabled={currentPage <= 1 || status === "loading"}
-                className="p-2 bg-[#0f0f12] border-2 border-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed hover:border-fuchsia-400 focus:outline-none transition-colors text-zinc-300"
+                className="border-2 border-zinc-600 bg-[#0f0f12] p-2 text-zinc-300 transition-colors hover:border-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <CaretLeft weight="bold" />
               </button>
               <button
-                onClick={nextPage}
+                onClick={() => has_more && setCurrentPage((value) => value + 1)}
                 disabled={!has_more || status === "loading"}
-                className="p-2 bg-[#0f0f12] border-2 border-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed hover:border-fuchsia-400 focus:outline-none transition-colors text-zinc-300"
+                className="border-2 border-zinc-600 bg-[#0f0f12] p-2 text-zinc-300 transition-colors hover:border-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <CaretRight weight="bold" />
               </button>
@@ -274,93 +272,62 @@ export default function EventsPage() {
         </div>
 
         {status === "loading" && events.length === 0 ? (
-          <div className="p-16 text-center text-fuchsia-400 font-mono animate-pulse">
+          <div className="p-16 text-center font-mono text-fuchsia-400 animate-pulse">
             Querying database vectors...
           </div>
         ) : status === "failed" ? (
-          <div className="p-16 text-center text-red-500 font-mono italic">
+          <div className="p-16 text-center font-mono italic text-red-500">
             Anomalous reading: {error}
           </div>
         ) : events.length === 0 ? (
-          <div className="p-24 flex flex-col items-center justify-center text-center">
-            <p className="text-zinc-300 mb-2">No events logged yet.</p>
-            <p className="text-zinc-500 text-sm max-w-sm mb-6">
-              Install our SDK and route requests through your API keys to see
-              telemetry data appear here in real-time.
+          <div className="flex flex-col items-center justify-center p-24 text-center">
+            <p className="mb-2 text-zinc-300">No events matched the current filters.</p>
+            <p className="mb-6 max-w-sm text-sm text-zinc-500">
+              Adjust the filters or send more telemetry through your Trackly keys to populate this view.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left font-mono text-xs whitespace-nowrap">
-              <thead className="bg-[#141418] text-zinc-400 uppercase tracking-wider sticky top-0 border-b-2 border-fuchsia-500/20 z-10">
+            <table className="w-full whitespace-nowrap text-left font-mono text-xs">
+              <thead className="sticky top-0 z-10 border-b-2 border-fuchsia-500/20 bg-[#141418] uppercase tracking-wider text-zinc-400">
                 <tr>
-                  <th className="px-4 py-3 border-r border-white/5">
-                    Time (UTC)
-                  </th>
-                  <th className="px-4 py-3 border-r border-white/5">
-                    Provider/Model
-                  </th>
-                  <th className="px-4 py-3 border-r border-white/5 text-right">
-                    Tokens (P/C/T)
-                  </th>
-                  <th className="px-4 py-3 border-r border-white/5 text-right">
-                    Cost (USD)
-                  </th>
-                  <th className="px-4 py-3 border-r border-white/5 text-right">
-                    Latency
-                  </th>
-                  <th className="px-4 py-3 border-r border-white/5">
-                    Tags / Feature
-                  </th>
+                  <th className="border-r border-white/5 px-4 py-3">Time (UTC)</th>
+                  <th className="border-r border-white/5 px-4 py-3">Provider/Model</th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">Tokens (P/C/T)</th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">Cost (USD)</th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">Latency</th>
+                  <th className="border-r border-white/5 px-4 py-3">Tags / Feature</th>
                   <th className="px-4 py-3">User ID</th>
                 </tr>
               </thead>
               <tbody className="divide-y-2 divide-white/5">
                 {events.map((evt) => (
-                  <tr
-                    key={evt.id}
-                    className="hover:bg-white/5 transition-colors group"
-                  >
-                    <td className="px-4 py-3 border-r border-white/5 text-zinc-300">
-                      {new Date(evt.occurred_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
+                  <tr key={evt.id} className="group transition-colors hover:bg-white/5">
+                    <td className="border-r border-white/5 px-4 py-3 text-zinc-300">
+                      {new Date(evt.occurred_at).toISOString().replace("T", " ").slice(0, 19)}
                     </td>
-                    <td className="px-4 py-3 border-r border-white/5">
-                      <span className="text-zinc-500 mr-2">{evt.provider}</span>
-                      <span className="text-fuchsia-300 font-semibold">
-                        {evt.model}
-                      </span>
+                    <td className="border-r border-white/5 px-4 py-3">
+                      <span className="mr-2 text-zinc-500">{evt.provider}</span>
+                      <span className="font-semibold text-fuchsia-300">{evt.model}</span>
                     </td>
-                    <td className="px-4 py-3 border-r border-white/5 text-right">
+                    <td className="border-r border-white/5 px-4 py-3 text-right">
                       {evt.prompt_tokens || 0} / {evt.completion_tokens || 0} /{" "}
-                      <span className="text-zinc-300">
-                        {evt.total_tokens || 0}
-                      </span>
+                      <span className="text-zinc-300">{evt.total_tokens || 0}</span>
                     </td>
-                    <td className="px-4 py-3 border-r border-white/5 text-right text-emerald-400">
-                      $
-                      {evt.estimated_cost_usd
-                        ? evt.estimated_cost_usd.toFixed(6)
-                        : "0.000000"}
+                    <td className="border-r border-white/5 px-4 py-3 text-right text-emerald-400">
+                      ${(evt.estimated_cost_usd || 0).toFixed(6)}
                     </td>
-                    <td className="px-4 py-3 border-r border-white/5 text-right text-amber-300">
+                    <td className="border-r border-white/5 px-4 py-3 text-right text-amber-300">
                       {evt.latency_ms ? `${evt.latency_ms}ms` : "-"}
                     </td>
-                    <td className="px-4 py-3 border-r border-white/5 max-w-[200px] truncate">
+                    <td className="max-w-[220px] truncate border-r border-white/5 px-4 py-3">
                       {evt.feature && (
-                        <span className="mr-2 px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        <span className="mr-2 border border-indigo-500/30 bg-indigo-500/20 px-1.5 py-0.5 text-indigo-300">
                           {evt.feature}
                         </span>
                       )}
                       {evt.tags && evt.tags.length > 0 && (
-                        <span className="text-zinc-500">
-                          [{evt.tags.join(", ")}]
-                        </span>
+                        <span className="text-zinc-500">[{evt.tags.join(", ")}]</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -368,39 +335,29 @@ export default function EventsPage() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 cursor-help group/user">
-                                <Avatar
-                                  size="sm"
-                                  className="size-6 border border-white/10 shrink-0"
-                                >
+                              <div className="group/user flex cursor-help items-center gap-2">
+                                <Avatar size="sm" className="size-6 shrink-0 border border-white/10">
                                   {evt.user_photo && (
-                                    <AvatarImage
-                                      src={evt.user_photo}
-                                      alt={evt.user_name || evt.user_id}
-                                    />
+                                    <AvatarImage src={evt.user_photo} alt={evt.user_name || evt.user_id} />
                                   )}
-                                  <AvatarFallback className="bg-fuchsia-500/10 text-fuchsia-400 text-[10px] font-bold">
-                                    {(evt.user_name || evt.user_id)
-                                      .substring(0, 2)
-                                      .toUpperCase()}
+                                  <AvatarFallback className="bg-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400">
+                                    {(evt.user_name || evt.user_id).substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="text-zinc-500 truncate max-w-[100px] group-hover/user:text-zinc-300 transition-colors">
+                                <span className="max-w-[110px] truncate text-zinc-500 transition-colors group-hover/user:text-zinc-300">
                                   {evt.user_name || evt.user_id}
                                 </span>
                               </div>
                             </TooltipTrigger>
                             <TooltipContent
                               side="top"
-                              className="bg-[#1a1a24] border-2 border-fuchsia-500/50 text-white font-mono rounded-none shadow-[4px_4px_0_0_rgba(217,70,239,0.2)]"
+                              className="rounded-none border-2 border-fuchsia-500/50 bg-[#1a1a24] font-mono text-white shadow-[4px_4px_0_0_rgba(217,70,239,0.2)]"
                             >
                               <div className="flex flex-col gap-0.5">
                                 <span className="font-bold text-fuchsia-400">
                                   {evt.user_name || "Unknown User"}
                                 </span>
-                                <span className="text-[10px] text-zinc-400">
-                                  {evt.user_id}
-                                </span>
+                                <span className="text-[10px] text-zinc-400">{evt.user_id}</span>
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -418,4 +375,15 @@ export default function EventsPage() {
       </section>
     </div>
   );
+}
+
+function toStartIso(value: string) {
+  return value ? `${value}T00:00:00.000Z` : undefined;
+}
+
+function toEndExclusiveIso(value: string) {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString();
 }

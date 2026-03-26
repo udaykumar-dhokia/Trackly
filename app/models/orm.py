@@ -30,6 +30,7 @@ class Organization(Base):
     projects: Mapped[list[Project]] = relationship(back_populates="organization")
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="organization")
     members: Mapped[list[OrganizationMember]] = relationship(back_populates="organization")
+    budget: Mapped[OrganizationBudget | None] = relationship(back_populates="organization", uselist=False)
 
 
 class User(Base):
@@ -221,6 +222,31 @@ class ModelPricing(Base):
     __table_args__ = (
         Index("ix_model_pricing_lookup", "provider", "model", "effective_from"),
     )
+
+
+class OrganizationBudget(Base):
+    __tablename__ = "organization_budgets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    monthly_token_limit: Mapped[int | None] = mapped_column(BigInteger)
+    monthly_cost_limit_usd: Mapped[float | None] = mapped_column(Numeric(12, 4))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
+
+    organization: Mapped[Organization] = relationship(back_populates="budget")
+    created_by: Mapped[User | None] = relationship()
 
 
 class Feedback(Base):

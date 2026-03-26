@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 import re
+from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
@@ -9,13 +10,29 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.models.orm import Organization, Project, User, ProjectMember, OrganizationMember
-from app.models.schemas import (
-    ProjectMemberResponse, ProjectMemberAdd, UserResponse, 
-    OrganizationMemberAdd, OrganizationUsageResponse
+from app.models.orm import (
+    Organization,
+    OrganizationBudget,
+    OrganizationMember,
+    Project,
+    ProjectMember,
+    User,
 )
-from app.services.billing import get_organization_usage, PLAN_LIMITS, get_current_month_start
-from datetime import timedelta
+from app.models.schemas import (
+    OrganizationBudgetResponse,
+    OrganizationBudgetStatusResponse,
+    OrganizationBudgetUpdate,
+    OrganizationMemberAdd,
+    OrganizationUsageResponse,
+    ProjectMemberAdd,
+    ProjectMemberResponse,
+    UserResponse,
+)
+from app.services.billing import (
+    PLAN_LIMITS,
+    get_current_month_start,
+    get_organization_usage_snapshot,
+)
 
 router = APIRouter()
 
@@ -402,6 +419,50 @@ async def add_org_user(
 
 
 @router.get(
+    "/organizations/{org_id}/budget",
+    response_model=OrganizationBudgetResponse,
+    summary="Get organization budget settings",
+)
+async def get_org_budget(
+    org_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> OrganizationBudgetResponse:
+    await _get_org_or_404(db, org_id)
+    budget = await _get_budget_for_org(db, org_id)
+    return _serialize_budget(org_id, budget)
+
+
+@router.put(
+    "/organizations/{org_id}/budget",
+    response_model=OrganizationBudgetResponse,
+    summary="Create or update organization budget settings",
+)
+async def update_org_budget(
+    org_id: uuid.UUID,
+    body: OrganizationBudgetUpdate,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> OrganizationBudgetResponse:
+    await _get_org_or_404(db, org_id)
+    actor = await _require_org_admin(db, org_id, auth0_id)
+    budget = await _get_budget_for_org(db, org_id)
+
+    if budget is None:
+        budget = OrganizationBudget(
+            org_id=org_id,
+            created_by_user_id=actor.id,
+        )
+        db.add(budget)
+
+    budget.monthly_token_limit = body.monthly_token_limit
+    budget.monthly_cost_limit_usd = body.monthly_cost_limit_usd
+
+    await db.flush()
+    await db.refresh(budget)
+    return _serialize_budget(org_id, budget)
+
+
+@router.get(
     "/organizations/{org_id}/usage",
     response_model=OrganizationUsageResponse,
     summary="Get monthly usage stats for an organization",
@@ -411,7 +472,8 @@ async def get_org_usage(
     db: AsyncSession = Depends(get_db),
 ) -> OrganizationUsageResponse:
     org = await _get_org_or_404(db, org_id)
-    usage = await get_organization_usage(db, org_id)
+    usage = await get_organization_usage_snapshot(db, org_id)
+    budget = await _get_budget_for_org(db, org_id)
     
     current_start = get_current_month_start()
     if current_start.month == 12:
@@ -420,13 +482,18 @@ async def get_org_usage(
         next_reset = current_start.replace(month=current_start.month + 1)
         
     limit = PLAN_LIMITS.get(org.plan.lower(), PLAN_LIMITS["free"])
-    
+    budget_status = _build_budget_status(usage, budget)
+
     return OrganizationUsageResponse(
         org_id=org_id,
         plan=org.plan,
-        current_month_usage=usage,
+        current_month_usage=usage.event_count,
+        current_month_events=usage.event_count,
+        current_month_tokens=usage.total_tokens,
+        current_month_cost_usd=float(usage.total_cost_usd),
         plan_limit=limit,
-        reset_date=next_reset
+        reset_date=next_reset,
+        budget=budget_status,
     )
 
 
@@ -436,3 +503,115 @@ async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found.")
     return org
+
+
+async def _require_org_admin(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    auth0_id: str,
+) -> User:
+    result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=403, detail="Requester not found.")
+
+    result = await db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org_id,
+            OrganizationMember.user_id == user.id,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if membership is None or membership.role not in ("owner", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Only organization admins can manage budgets.",
+        )
+    return user
+
+
+async def _get_budget_for_org(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+) -> OrganizationBudget | None:
+    result = await db.execute(
+        select(OrganizationBudget).where(OrganizationBudget.org_id == org_id)
+    )
+    return result.scalar_one_or_none()
+
+
+def _serialize_budget(
+    org_id: uuid.UUID,
+    budget: OrganizationBudget | None,
+) -> OrganizationBudgetResponse:
+    return OrganizationBudgetResponse(
+        org_id=org_id,
+        monthly_token_limit=budget.monthly_token_limit if budget else None,
+        monthly_cost_limit_usd=float(budget.monthly_cost_limit_usd)
+        if budget and budget.monthly_cost_limit_usd is not None
+        else None,
+        configured=bool(
+            budget
+            and (
+                budget.monthly_token_limit is not None
+                or budget.monthly_cost_limit_usd is not None
+            )
+        ),
+        updated_at=budget.updated_at if budget else None,
+        created_at=budget.created_at if budget else None,
+    )
+
+
+def _build_budget_status(
+    usage,
+    budget: OrganizationBudget | None,
+) -> OrganizationBudgetStatusResponse | None:
+    if budget is None:
+        return None
+
+    token_limit = budget.monthly_token_limit
+    cost_limit = (
+        float(budget.monthly_cost_limit_usd)
+        if budget.monthly_cost_limit_usd is not None
+        else None
+    )
+    current_cost = float(usage.total_cost_usd)
+
+    token_usage_percentage = (
+        round((usage.total_tokens / token_limit) * 100, 2)
+        if token_limit
+        else None
+    )
+    cost_usage_percentage = (
+        round((current_cost / cost_limit) * 100, 2)
+        if cost_limit
+        else None
+    )
+
+    status = "not_configured"
+    percentages = [
+        value for value in (token_usage_percentage, cost_usage_percentage) if value is not None
+    ]
+    if percentages:
+        highest = max(percentages)
+        if highest >= 100:
+            status = "exceeded"
+        elif highest >= 80:
+            status = "warning"
+        else:
+            status = "healthy"
+
+    return OrganizationBudgetStatusResponse(
+        monthly_token_limit=token_limit,
+        monthly_cost_limit_usd=cost_limit,
+        current_month_tokens=usage.total_tokens,
+        current_month_cost_usd=current_cost,
+        token_usage_percentage=token_usage_percentage,
+        cost_usage_percentage=cost_usage_percentage,
+        token_remaining=max(token_limit - usage.total_tokens, 0) if token_limit else None,
+        cost_remaining_usd=round(max(cost_limit - current_cost, 0.0), 4)
+        if cost_limit is not None
+        else None,
+        status=status,
+        updated_at=budget.updated_at,
+    )

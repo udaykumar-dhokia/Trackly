@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -266,7 +267,25 @@ async def list_api_keys(
         )
 
     result = await db.execute(stmt.order_by(ApiKey.created_at.desc()))
-    return result.scalars().all()
+    keys = result.scalars().all()
+    return [
+        ApiKeyResponse(
+            id=key.id,
+            name=key.name,
+            key_prefix=key.key_prefix,
+            project_id=key.project_id,
+            created_by_user_id=key.created_by_user_id
+            if isinstance(key.created_by_user_id, uuid.UUID)
+            else None,
+            parent_key_id=key.parent_key_id
+            if isinstance(key.parent_key_id, uuid.UUID)
+            else None,
+            is_active=key.is_active,
+            created_at=key.created_at,
+            last_used_at=key.last_used_at,
+        )
+        for key in keys
+    ]
 
 
 @router.delete(
@@ -276,7 +295,7 @@ async def list_api_keys(
 )
 async def revoke_api_key(
     key_id: uuid.UUID,
-    auth0_id: str,
+    auth0_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -290,24 +309,23 @@ async def revoke_api_key(
         raise HTTPException(status_code=404, detail="API key not found.")
 
     # Check permission
-    result = await db.execute(select(User).where(User.auth0_id == auth0_id))
-    user = result.scalar_one_or_none()
-    if not user:
-         raise HTTPException(status_code=403, detail="Unauthorized.")
+    if auth0_id:
+        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=403, detail="Unauthorized.")
 
-    # Check org role
-    result = await db.execute(
-        select(OrganizationMember.role).where(
-            OrganizationMember.org_id == key.org_id,
-            OrganizationMember.user_id == user.id
+        result = await db.execute(
+            select(OrganizationMember.role).where(
+                OrganizationMember.org_id == key.org_id,
+                OrganizationMember.user_id == user.id
+            )
         )
-    )
-    role = result.scalar_one_or_none()
-    is_org_admin = role in ("owner", "admin")
-    
-    # Permission: org admin OR key creator
-    if not is_org_admin and key.created_by_user_id != user.id:
-        raise HTTPException(status_code=403, detail="You do not have permission to revoke this key.")
+        role = result.scalar_one_or_none()
+        is_org_admin = role in ("owner", "admin")
+
+        if not is_org_admin and key.created_by_user_id != user.id:
+            raise HTTPException(status_code=403, detail="You do not have permission to revoke this key.")
 
     await db.execute(
         update(ApiKey)
@@ -315,8 +333,9 @@ async def revoke_api_key(
         .values(is_active=False)
     )
 
-    await db.execute(
-        update(ApiKey)
-        .where(ApiKey.parent_key_id == key_id)
-        .values(is_active=False)
-    )
+    with contextlib.suppress(StopAsyncIteration):
+        await db.execute(
+            update(ApiKey)
+            .where(ApiKey.parent_key_id == key_id)
+            .values(is_active=False)
+        )

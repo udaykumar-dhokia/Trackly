@@ -27,6 +27,7 @@ classifiers = [
 # SDK only — nothing server-related here
 dependencies = [
     "langchain-core>=0.2.0",
+    "reportlab>=4.4.10",
     "requests>=2.28.0",
 ]
 
@@ -51,6 +52,7 @@ server    = [
     "slowapi>=0.1.9",
     "mangum>=0.17.0",
     "bcrypt>=4.0.0",
+    "reportlab>=4.0.0",
 ]
 dev       = ["pytest>=7.0", "pytest-asyncio>=0.21"]
 

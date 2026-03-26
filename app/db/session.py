@@ -38,3 +38,12 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         from app.models import orm
         await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as session:
+        try:
+            from app.services.pricing_catalog import sync_pricing_catalog
+
+            await sync_pricing_catalog(session)
+            await session.commit()
+        except Exception:
+            await session.rollback()
