@@ -10,3 +10,4 @@ mangum
 slowapi
 requests
 resend
+reportlab
