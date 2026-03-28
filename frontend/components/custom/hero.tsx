@@ -21,22 +21,15 @@ function useCountUp(target: number, duration = 2400, start = false) {
   return value;
 }
 
-const PROVIDERS = [
-  "OpenAI",
-  "Anthropic",
-  "Groq",
-  "Gemini",
-  "Mistral",
-  "Ollama",
-];
+const PROVIDERS = ["OpenAI", "Anthropic", "Groq", "Gemini", "Mistral", "Ollama"];
 
 const PROVIDER_LOGOS = [
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQVRSNCZKUcvSYkmDLtSNNaRwRDh8rz5HxHA&s", // OpenAI
-  "https://www.digitalmarketingcommunity.com/wp-content/uploads/2025/06/Claude-logo.jpeg", // Anthropic
-  "https://static.vecteezy.com/system/resources/previews/055/687/055/non_2x/rectangle-gemini-google-icon-symbol-logo-free-png.png", // Gemini
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s", // Groq
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s", // Mistral
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s", // Ollama
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQVRSNCZKUcvSYkmDLtSNNaRwRDh8rz5HxHA&s",
+  "https://www.digitalmarketingcommunity.com/wp-content/uploads/2025/06/Claude-logo.jpeg",
+  "https://static.vecteezy.com/system/resources/previews/055/687/055/non_2x/rectangle-gemini-google-icon-symbol-logo-free-png.png",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_DaHGtoqrk8iozc9mWeQ8_1RXcxTlRI_dWA&s",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFVZ9JJ3PrF8m-lYW-rPzJpZJVMzq3CwpdsQ&s",
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqdPRKA0_sLVNpiF5--45w5ql-IgJzqNUtgw&s",
 ];
 
@@ -47,27 +40,21 @@ export default function Hero() {
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
   const [totalUsers, setTotalUsers] = useState(1200);
-  const [featuredUsers, setFeaturedUsers] = useState<{name: string | null, email: string, profile_photo: string | null}[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [featuredUsers, setFeaturedUsers] = useState<{ name: string | null; email: string; profile_photo: string | null }[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/stats/global`,
-        );
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/stats/global`);
         const data = await res.json();
         setTotalEvents(data.total_events);
         setTotalTokens(data.total_tokens);
         setTotalUsers(data.total_users || 1200);
         setFeaturedUsers(data.featured_users || []);
-      } catch (err) {
-        console.error("Failed to fetch global stats:", err);
+      } catch {
         setTotalEvents(4_812_903);
         setTotalTokens(183_450_281);
         setTotalUsers(1200);
-      } finally {
-        setLoadingStats(false);
       }
     };
     fetchStats();
@@ -76,16 +63,9 @@ export default function Hero() {
   const events = useCountUp(totalEvents || 4_812_903, 2400, mounted);
   const tokens = useCountUp(totalTokens || 183_450_281, 2400, mounted);
 
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 100); return () => clearTimeout(t); }, []);
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(
-      () => setProviderIdx((i) => (i + 1) % PROVIDERS.length),
-      1800,
-    );
+    const id = setInterval(() => setProviderIdx((i) => (i + 1) % PROVIDERS.length), 1800);
     return () => clearInterval(id);
   }, []);
 
@@ -113,147 +93,117 @@ export default function Hero() {
         .orb-1 { width:600px;height:600px;background:var(--color-primary);top:-200px;left:-150px;opacity:.18; }
         .orb-2 { width:400px;height:400px;background:var(--color-secondary);top:100px;right:-100px;opacity:.1; }
 
-        .badge {
-          display:inline-flex; align-items:center; gap:6px;
-          border:1px solid var(--border-bright); background:rgba(167,139,250,0.07);
-          border-radius:999px; padding:4px 14px 4px 8px;
-          font-family:'DM Mono',monospace; font-size:11px;
-          color:var(--accent); letter-spacing:.04em; margin-bottom:28px;
-        }
-        .badge-dot {
-          width:6px;height:6px;background:var(--green);border-radius:50%;
-          box-shadow:0 0 6px var(--green); animation:pulse-dot 2s ease-in-out infinite;
-        }
-        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
-        
-        .logo-pulse {
-          animation: logo-fade 1.8s ease-in-out infinite;
-          width: 14px; height: 14px; border-radius: 2px; object-fit: cover;
-          filter: grayscale(1) brightness(1.5);
-        }
-        @keyframes logo-fade {
-          0%, 100% { opacity: 0; transform: scale(0.8); }
-          20%, 80% { opacity: 1; transform: scale(1); }
-        }
-
+        /* headline — matches Features h2 clamp */
         .hero-h1 {
-          font-size:clamp(2.4rem,5.5vw,4rem); font-weight:800;
+          font-size:clamp(1.9rem,3.5vw,2.8rem); font-weight:800;
           line-height:1.08; letter-spacing:-.03em; margin-bottom:20px;
         }
         .provider-word {
-          display:inline-block; min-width:160px;
+          display:inline-block; min-width:120px;
           animation:cycle-fade 1.8s ease-in-out infinite;
         }
         @keyframes cycle-fade { 0%,80%{opacity:1} 90%,100%{opacity:0} }
 
-        .hero-sub {
-          font-size:clamp(.95rem,1.8vw,1.125rem); color:var(--muted);
-          line-height:1.7; max-width:600px; margin:0 auto 36px;
+        .pip-pill {
+          display:flex; align-items:center; overflow:hidden;
+          border:2px solid rgba(255,255,255,0.12); border-radius:10px;
+          background:#141418; font-family:'DM Mono',monospace;
+          height:40px; width:100%; max-width:300px;
         }
-        .cta-row { display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap; }
-        @media (max-width: 500px) {
-          .cta-row > * { width: 100%; }
-          .cta-row button, .cta-row .flex { justify-content: center; }
+        .pip-pill-text {
+          display:flex; align-items:center; gap:8px;
+          flex:1; padding:0 14px; overflow:hidden; min-width:0;
         }
+        .pip-pill-copy {
+          height:100%; padding:0 16px; background:#fff; color:#000;
+          font-weight:700; border-left:2px solid rgba(255,255,255,0.12);
+          font-size:12px; cursor:pointer; white-space:nowrap; transition:background .15s;
+        }
+        .pip-pill-copy:hover { background:#c7d2fe; }
 
         .code-card {
-          background:var(--surface);border:1px solid var(--border);border-radius:12px;
-          overflow:hidden;text-align:left;max-width:560px;margin:0 auto;
+          background:var(--surface); border:1px solid var(--border); border-radius:12px;
+          overflow:hidden; text-align:left; width:100%; max-width:560px; margin:0 auto;
           box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px var(--border);
         }
         .code-topbar {
-          display:flex;align-items:center;gap:6px;padding:12px 16px;
-          border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);
+          display:flex; align-items:center; gap:6px; padding:12px 16px;
+          border-bottom:1px solid var(--border); background:rgba(255,255,255,.02);
         }
-        .dot { width:10px;height:10px;border-radius:50%; }
+        .wdot { width:10px; height:10px; border-radius:50%; }
         .dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
-        .code-filename { margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted); }
+        .code-filename { margin-left:8px; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
         .code-body {
-          padding:20px 22px;font-family:'DM Mono',monospace;font-size:12.5px;
-          line-height:1.75;color:#a1a1aa;white-space:pre;overflow-x:auto;
+          padding:18px 20px; font-family:'DM Mono',monospace;
+          font-size:clamp(11px,2.5vw,12.5px); line-height:1.75; color:#a1a1aa;
+          white-space:pre; overflow-x:auto; -webkit-overflow-scrolling:touch;
         }
         .c-purple{color:#c084fc}.c-green{color:#86efac}.c-amber{color:#fde68a}
         .c-blue{color:#93c5fd}.c-muted{color:#52525b}
 
         .stats-row {
-          display:flex;border:1px solid var(--border);border-radius:12px;
-          overflow:hidden;background:var(--surface);max-width:560px;margin:0 auto;
+          display:grid; grid-template-columns:repeat(4,1fr);
+          border:1px solid var(--border); border-radius:12px;
+          overflow:hidden; background:var(--surface);
+          width:100%; max-width:560px; margin:0 auto;
         }
-        .stat-cell {
-          flex:1;padding:16px 20px;text-align:center;
-          border-right:1px solid var(--border);
-        }
-        .stat-cell:last-child{border-right:none}
+        .stat-cell { padding:14px 12px; text-align:center; border-right:1px solid var(--border); }
+        .stat-cell:last-child { border-right:none; }
         .stat-num {
-          font-size:1.35rem;font-weight:700;color:var(--text);
-          letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+          font-size:clamp(.95rem,3vw,1.35rem); font-weight:700; color:var(--text);
+          letter-spacing:-.02em; font-variant-numeric:tabular-nums;
         }
         .stat-label {
-          font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
-          letter-spacing:.06em;text-transform:uppercase;margin-top:2px;
+          font-family:'DM Mono',monospace; font-size:10px; color:var(--muted);
+          letter-spacing:.05em; text-transform:uppercase; margin-top:3px;
         }
 
-        @media (max-width: 640px) {
-          .hero-h1 { font-size: clamp(2rem, 8vw, 2.5rem); }
-          .stats-row { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            max-width: 100%;
-          }
-          .stat-cell { border-bottom: 1px solid var(--border); }
-          .stat-cell:nth-child(2n) { border-right: none; }
-          .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
-          
-          .code-card { max-width: 100%; }
-          .pip-install-container { font-size: 0.75rem !important; }
+        .provider-logos-wrap { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+        .provider-logos-wrap::-webkit-scrollbar { display:none; }
+        .provider-logos-inner {
+          display:flex; align-items:center; justify-content:center;
+          gap:6px; padding:0 4px; min-width:max-content; margin:0 auto;
         }
-        @media (max-width: 400px) {
-          .stats-row { grid-template-columns: 1fr; }
-          .stat-cell { border-right: none !important; }
-          .stat-cell:last-child { border-bottom: none; }
-          .provider-logos-container { flex-wrap: wrap; justify-content: center; gap: 8px; }
+        .provider-logo {
+          width:32px; height:32px; border-radius:50%; object-fit:cover;
+          border:2px solid rgba(255,255,255,0.08); flex-shrink:0; transition:transform .2s;
+        }
+        .provider-logo:hover { transform:scale(1.12); }
+
+        @media (max-width:480px) {
+          .stats-row { grid-template-columns:repeat(2,1fr); }
+          .stat-cell { border-bottom:1px solid var(--border); }
+          .stat-cell:nth-child(2n) { border-right:none; }
+          .stat-cell:nth-last-child(-n+2) { border-bottom:none; }
+          .hero-cta-row { flex-direction:column !important; align-items:stretch !important; }
+          .hero-cta-row > * { width:100%; }
+          .pip-pill { max-width:100%; }
         }
 
-        .reveal { opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease; }
-        .reveal.in { opacity:1;transform:translateY(0); }
+        .reveal { opacity:0; transform:translateY(16px); transition:opacity .6s ease,transform .6s ease; }
+        .reveal.in { opacity:1; transform:translateY(0); }
         .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.35s}
         .d4{transition-delay:.5s}.d5{transition-delay:.65s}.d6{transition-delay:.8s}
       `}</style>
 
-      <div className="hero-root relative pt-12">
+      <div className="hero-root relative">
         <div className="orb orb-1" />
         <div className="orb orb-2" />
 
-        <section
-          style={{
-            display: "grid",
-            placeContent: "center",
-            minHeight: "100vh",
-            padding: "80px 24px",
-          }}
-        >
-          <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
-            <div
-              className={`reveal d1 ${mounted ? "in" : ""}`}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: 32,
-              }}
-            >
-              <div className="provider-logos-container rounded-full flex items-center -space-x-2 transition-opacity duration-800">
-                {PROVIDER_LOGOS.map((logo, i) => (
-                  <img
-                    key={i}
-                    src={logo}
-                    alt="Provider Logo"
-                    className="h-8 md:h-10 w-auto rounded-full object-contain transition-all hover:scale-110 hover:mx-2"
-                  />
-                ))}
+        <section className="relative flex min-h-screen flex-col items-center justify-center px-6 py-24 text-zinc-100">
+          <div className="mx-auto w-full max-w-[1080px] flex flex-col items-center text-center">
+
+            <div className={`reveal d1 ${mounted ? "in" : ""} mb-8 w-full`}>
+              <div className="provider-logos-wrap">
+                <div className="provider-logos-inner">
+                  {PROVIDER_LOGOS.map((logo, i) => (
+                    <img key={i} src={logo} alt="Provider" className="provider-logo" />
+                  ))}
+                </div>
               </div>
             </div>
 
-            <h1 className={`hero-h1 reveal d2 ${mounted ? "in" : ""}`}>
+            <h1 className={`hero-h1 reveal d2 ${mounted ? "in" : ""} w-full max-w-[660px]`}>
               Track every{" "}
               <span className="provider-word text-primary" key={providerIdx}>
                 {PROVIDERS[providerIdx]}
@@ -262,165 +212,99 @@ export default function Hero() {
               call. Know your costs.
             </h1>
 
-            <p className={`hero-sub reveal d3 ${mounted ? "in" : ""}`}>
+            <p className={`reveal d3 ${mounted ? "in" : ""} mb-9 max-w-xl text-[.95rem] leading-[1.7] text-zinc-400`}>
               Two lines of code. Automatic token tracking, cost attribution, and
               latency monitoring — across OpenAI, Anthropic, Groq, Gemini, and
               more. No proxies, zero added latency.
             </p>
 
-            <div className={`cta-row reveal d4 ${mounted ? "in" : ""}`}>
+            <div className={`hero-cta-row reveal d4 ${mounted ? "in" : ""} mb-6 flex items-center justify-center gap-3`}>
               <Link href="/docs">
-                <Button className="cursor-pointer border-black bg-white/20 px-5 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0">
-                  Read Docs <ArrowUpRightIcon />{" "}
+                <Button className="h-10 cursor-pointer border-black bg-white/20 px-5 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:outline-0 focus:ring-2 focus:ring-indigo-300">
+                  Read Docs <ArrowUpRightIcon />
                 </Button>
               </Link>
-              <div className="pip-install-container rounded-xl flex items-center border-2 border-black bg-[#141418] font-mono text-[.8rem] h-[40px] md:h-[32px] w-full max-w-[320px] mx-auto sm:mx-0">
-                <div className="flex items-center flex-1 px-4 gap-2 overflow-hidden">
-                  <span className="text-zinc-500">$</span>
-                  <span className="text-zinc-100 font-bold truncate">
+              <div className="pip-pill">
+                <div className="pip-pill-text">
+                  <span style={{ color: "#52525b", flexShrink: 0 }}>$</span>
+                  <span style={{ color: "#f4f4f5", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13 }}>
                     pip install trackly
                   </span>
                 </div>
-                <Button
+                <button
+                  className="pip-pill-copy"
                   onClick={() => {
                     navigator.clipboard.writeText("pip install trackly");
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="h-full px-5 bg-white text-black font-bold border-l-2 border-black hover:bg-indigo-300 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   {copied ? "Copied!" : "Copy"}
-                </Button>
+                </button>
               </div>
             </div>
 
-            <div className={`reveal d4 ${mounted ? "in" : ""}`} style={{ marginTop: 24 }}>
-              <p className="text-[11px] text-zinc-500 font-mono">
-                Questions? Reach out at{" "}
-                <a href="mailto:support@tracklyai.in" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-400/30 transition-colors">
-                  support@tracklyai.in
-                </a>
-              </p>
-
-              <div className="mt-6 flex flex-col items-center gap-3">
-                <div className="flex -space-x-3">
-                  {featuredUsers.length > 0 ? (
-                    featuredUsers.slice(0, 5).map((u, i) => (
-                      <div key={i} className="size-8 rounded-full border-2 border-[#09090b] bg-zinc-900 overflow-hidden ring-1 ring-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                        {u.profile_photo ? (
-                          <img
-                            src={u.profile_photo}
-                            alt="Developer"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          (u.name || u.email)[0].toUpperCase()
-                        )}
+            <div className={`reveal d4 ${mounted ? "in" : ""} mb-8 flex flex-col items-center gap-4`}>
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex">
+                  {featuredUsers.length > 0
+                    ? featuredUsers.slice(0, 5).map((u, i) => (
+                      <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", overflow: "hidden", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a", zIndex: 5 - i }}>
+                        {u.profile_photo
+                          ? <img src={u.profile_photo} alt="Dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : (u.name || u.email)[0].toUpperCase()}
                       </div>
                     ))
-                  ) : (
-                    [
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=64&h=64&q=80",
-                      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64&q=80",
-                      "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=64&h=64&q=80",
-                      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=64&h=64&q=80",
-                      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=64&h=64&q=80",
-                    ].map((url, i) => (
-                      <img
-                        key={i}
-                        src={url}
-                        alt="Developer"
-                        className="size-8 rounded-full border-2 border-[#09090b] object-cover ring-1 ring-white/10"
-                      />
-                    ))
-                  )}
-                  <div className="flex size-8 items-center justify-center rounded-full border-2 border-[#09090b] bg-zinc-900 text-[10px] font-bold text-zinc-400 ring-1 ring-white/10">
+                    : ["photo-1535713875002-d1d0cf377fde", "photo-1494790108377-be9c29b29330", "photo-1599566150163-29194dcaad36", "photo-1527980965255-d3b416303d12", "photo-1438761681033-6461ffad8d80"].map((id, i) => (
+                      <img key={i} src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=64&h=64&q=80`} alt="Dev" style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", objectFit: "cover", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i }} />
+                    ))}
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", marginLeft: -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a" }}>
                     +{totalUsers > 1000 ? (totalUsers / 1000).toFixed(1) + "k" : totalUsers}
                   </div>
                 </div>
-                <p className="text-xs font-medium text-zinc-500">
-                  Join <span className="text-zinc-200">{totalUsers.toLocaleString()}+</span> developers building the future of AI
+                <p style={{ fontSize: 12, fontWeight: 500, color: "#71717a" }}>
+                  Join <span style={{ color: "#f4f4f5" }}>{totalUsers.toLocaleString()}+</span> developers building the future of AI
+                </p>
+                <p style={{ fontSize: 11, color: "#71717a", fontFamily: "'DM Mono',monospace" }}>
+                  Questions?{" "}
+                  <a href="mailto:support@tracklyai.in" style={{ color: "#818cf8", textDecoration: "underline", textUnderlineOffset: 4 }}>
+                    support@tracklyai.in
+                  </a>
                 </p>
               </div>
             </div>
 
-            <div
-              className={`reveal d5 ${mounted ? "in" : ""}`}
-              style={{ marginTop: 48 }}
-            >
+            <div className={`reveal d5 ${mounted ? "in" : ""} w-full`}>
               <div className="code-card">
                 <div className="code-topbar">
-                  <span className="dot dot-r" />
-                  <span className="dot dot-y" />
-                  <span className="dot dot-g" />
+                  <span className="wdot dot-r" /><span className="wdot dot-y" /><span className="wdot dot-g" />
                   <span className="code-filename">main.py</span>
                 </div>
-                <div className="code-body">
-                  <span className="c-purple">from</span> trackly{" "}
-                  <span className="c-purple">import</span>{" "}
-                  <span className="c-blue">Trackly</span>
-                  {"\n"}
-                  <span className="c-purple">
-                    from
-                  </span> langchain_anthropic{" "}
-                  <span className="c-purple">import</span>{" "}
-                  <span className="c-blue">ChatAnthropic</span>
-                  {"\n"}
-                  {"\n"}
-                  <span className="c-muted"># 1. Init with metadata</span>
-                  {"\n"}
-                  trackly <span className="c-amber">=</span>{" "}
-                  <span className="c-blue">Trackly</span>({"\n"}
-                  {"  "}feature<span className="c-amber">=</span>
-                  <span className="c-green">"chatbot"</span>,{"\n"}
-                  {"  "}environment<span className="c-amber">=</span>
-                  <span className="c-green">"prod"</span>
-                  {"\n"}){"\n"}
-                  {"\n"}
-                  <span className="c-muted">
-                    # 2. Attach callback — that's it
-                  </span>
-                  {"\n"}
-                  llm <span className="c-amber">=</span>{" "}
-                  <span className="c-blue">ChatAnthropic</span>({"\n"}
-                  {"  "}model<span className="c-amber">=</span>
-                  <span className="c-green">"claude-3-5-sonnet-latest"</span>,
-                  {"\n"}
-                  {"  "}callbacks<span className="c-amber">=[</span>
-                  trackly.callback()<span className="c-amber">]</span>,{"\n"})
-                  {"\n"}
-                  <span className="c-muted">
-                    # Every Claude call is now tracked automatically ✓
-                  </span>
-                </div>
+                <div className="code-body"><span className="c-purple">from</span> trackly <span className="c-purple">import</span> <span className="c-blue">Trackly</span>{"\n"}<span className="c-purple">from</span> langchain_anthropic <span className="c-purple">import</span> <span className="c-blue">ChatAnthropic</span>{"\n"}{"\n"}<span className="c-muted"># 1. Init with metadata</span>{"\n"}trackly <span className="c-amber">=</span> <span className="c-blue">Trackly</span>({"\n"}{"  "}feature<span className="c-amber">=</span><span className="c-green">"chatbot"</span>,{"\n"}{"  "}environment<span className="c-amber">=</span><span className="c-green">"prod"</span>{"\n"}){"\n"}{"\n"}<span className="c-muted"># 2. Attach callback — that's it</span>{"\n"}llm <span className="c-amber">=</span> <span className="c-blue">ChatAnthropic</span>({"\n"}{"  "}model<span className="c-amber">=</span><span className="c-green">"claude-3-5-sonnet-latest"</span>,{"\n"}{"  "}callbacks<span className="c-amber">=[</span>trackly.callback()<span className="c-amber">]</span>,{"\n"}){"\n"}<span className="c-muted"># Every Claude call is now tracked automatically ✓</span></div>
               </div>
             </div>
 
-            <div
-              className={`reveal d6 ${mounted ? "in" : ""}`}
-              style={{ marginTop: 16 }}
-            >
+            <div className={`reveal d6 ${mounted ? "in" : ""} mt-4 w-full`}>
               <div className="stats-row">
                 <div className="stat-cell">
                   <div className="stat-num">{events.toLocaleString()}</div>
-                  <div className="stat-label">Events tracked</div>
+                  <div className="stat-label">Events</div>
                 </div>
                 <div className="stat-cell">
                   <div className="stat-num">{tokens.toLocaleString()}</div>
-                  <div className="stat-label">Tokens consumed</div>
+                  <div className="stat-label">Tokens</div>
                 </div>
                 <div className="stat-cell">
                   <div className="stat-num">6</div>
                   <div className="stat-label">Providers</div>
                 </div>
                 <div className="stat-cell">
-                  <div className="stat-num" style={{ color: "var(--accent)" }}>
-                    2
-                  </div>
+                  <div className="stat-num" style={{ color: "var(--accent)" }}>2</div>
                   <div className="stat-label">Lines of code</div>
                 </div>
               </div>
             </div>
+
           </div>
         </section>
       </div>
