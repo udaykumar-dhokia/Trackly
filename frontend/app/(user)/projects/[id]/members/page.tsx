@@ -36,6 +36,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProjectMembersPage() {
   const params = useParams();
@@ -56,7 +59,7 @@ export default function ProjectMembersPage() {
   const project = projects.find((p) => p.id === projectId);
   const activeOrg = organizations.find((o) => o.id === activeOrgId);
   const isOrgAdmin = activeOrg?.role === "admin" || activeOrg?.role === "owner";
-  
+
   const currentProjectMember = members.find((m) => m.email === authUser?.email);
   const isProjectAdmin = currentProjectMember?.role === "admin" || isOrgAdmin;
 
@@ -181,15 +184,8 @@ export default function ProjectMembersPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10">
+    <div className="max-w-6xl mx-auto space-y-12">
       <section className="flex flex-col gap-4">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-mono"
-        >
-          <CaretLeft weight="bold" />
-          Back to Dashboard
-        </Link>
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
             Project Members
@@ -215,7 +211,7 @@ export default function ProjectMembersPage() {
             <button
               onClick={() => dispatch(fetchProjectMembers(projectId))}
               disabled={membersStatus === "loading"}
-              className="flex items-center justify-center p-2 text-zinc-500 hover:text-white transition-colors disabled:opacity-50"
+              className="flex items-center cursor-pointer justify-center p-2 text-zinc-500 hover:text-white transition-colors disabled:opacity-50"
               title="Refresh Members"
             >
               <ArrowClockwise
@@ -236,12 +232,20 @@ export default function ProjectMembersPage() {
             {members.map((member) => (
               <div
                 key={member.id}
-                className="p-6 border-2 border-white/10 bg-[#141418] hover:border-white/20 transition-all flex items-center justify-between group shadow-[4px_4px_0_0_rgba(255,255,255,0.02)]"
+                className="p-6 border-2 border-white/10 bg-[#141418] rounded-xl hover:border-white/20 transition-all flex items-center justify-between group shadow-[4px_4px_0_0_rgba(255,255,255,0.02)]"
               >
                 <div className="flex items-center gap-4">
-                  <div className="size-10 bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
-                    {member.name?.[0]?.toUpperCase() ||
-                      member.email[0].toUpperCase()}
+                  <div className="size-10 bg-indigo-500/10 border-2 rounded-xl border-indigo-500/20 flex items-center justify-center overflow-hidden text-indigo-400 font-bold shrink-0">
+                    {member.profile_photo ? (
+                      <img
+                        src={member.profile_photo}
+                        alt={member.name || "Member"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      member.name?.[0]?.toUpperCase() ||
+                      member.email[0].toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-white flex items-center gap-2">
@@ -283,44 +287,48 @@ export default function ProjectMembersPage() {
 
         {isProjectAdmin && (
           <div className="lg:col-span-1">
-            <div className="border-4 border-indigo-500 bg-[#141418] p-8 sticky top-8 shadow-[12px_12px_0_0_#4f46e5] space-y-6">
+            <div className="rounded-xl bg-[#141418] p-8 sticky top-8 space-y-6">
               <h3 className="text-xl font-bold text-white uppercase tracking-tighter">
                 Add Collaborator
               </h3>
 
-              {/* Org Member Dropdown */}
               {orgMembers.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                     <User size={14} /> Quick Add (Org Member)
                   </label>
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setEmail(e.target.value);
-                      }
-                    }}
+
+                  <Select
                     value={orgMembers.find((m) => m.email === email)?.email || ""}
-                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
+                    onValueChange={(value) => {
+                      if (value) setEmail(value)
+                    }}
                   >
-                    <option value="">Select a teammate...</option>
-                    {orgMembers
-                      .filter(
-                        (m) =>
-                          !members.some((pm) => pm.email === m.email) &&
-                          m.email !== authUser?.email,
-                      )
-                      .map((member) => (
-                        <option key={member.id} value={member.email}>
-                          {member.name || member.email}
-                        </option>
-                      ))}
-                  </select>
-                  <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-zinc-500 font-mono italic">
-                      Choose from existing organization members
-                    </p>
-                  </div>
+                    <SelectTrigger className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:border-indigo-500 focus:ring-0 focus:ring-offset-0 transition-colors font-mono rounded-xl h-auto">
+                      <SelectValue placeholder="Select a teammate..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0f0f12] border border-white/10 text-zinc-100 rounded-xl">
+                      {orgMembers
+                        .filter(
+                          (m) =>
+                            !members.some((pm) => pm.email === m.email) &&
+                            m.email !== authUser?.email
+                        )
+                        .map((member) => (
+                          <SelectItem
+                            key={member.id}
+                            value={member.email}
+                            className="font-mono text-sm text-zinc-200 focus:bg-white/5 focus:text-white cursor-pointer"
+                          >
+                            {member.name || member.email}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+
+                  <p className="text-[9px] text-zinc-500 font-mono italic px-1">
+                    Choose from existing organization members
+                  </p>
                 </div>
               )}
 
@@ -338,56 +346,35 @@ export default function ProjectMembersPage() {
                     <Envelope size={14} /> User Email
                   </label>
                   <div className="relative">
-                    <input
+                    <Input
                       type="email"
                       placeholder="name@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full bg-[#0f0f12] border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
-                        ${
-                          emailStatus?.inOrg
-                            ? "border-emerald-500/50"
-                            : emailStatus?.exists
-                              ? "border-indigo-500/50"
-                              : emailStatus?.exists === false &&
-                                  email.includes("@")
-                                ? "border-amber-500/50"
-                                : "border-white/10 focus:border-indigo-500"
+                      className={`w-full rounded-xl bg-[#0f0f12] border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
+                ${emailStatus?.inOrg
+                          ? "border-emerald-500/50"
+                          : emailStatus?.exists
+                            ? "border-indigo-500/50"
+                            : emailStatus?.exists === false && email.includes("@")
+                              ? "border-amber-500/50"
+                              : "border-white/10 focus:border-indigo-500"
                         }`}
                       required
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
                       {checkingEmail && (
-                        <ArrowClockwise
-                          className="animate-spin text-zinc-500"
-                          size={16}
-                        />
+                        <ArrowClockwise className="animate-spin text-zinc-500" size={16} />
                       )}
                       {!checkingEmail && emailStatus?.inOrg && (
-                        <CheckCircle
-                          className="text-emerald-500"
-                          weight="fill"
-                          size={18}
-                        />
+                        <CheckCircle className="text-emerald-500" weight="fill" size={18} />
                       )}
-                      {!checkingEmail &&
-                        emailStatus?.exists &&
-                        !emailStatus.inOrg && (
-                          <UserPlus
-                            className="text-indigo-500"
-                            weight="fill"
-                            size={18}
-                          />
-                        )}
-                      {!checkingEmail &&
-                        emailStatus?.exists === false &&
-                        email.includes("@") && (
-                          <XCircle
-                            className="text-amber-500"
-                            weight="fill"
-                            size={18}
-                          />
-                        )}
+                      {!checkingEmail && emailStatus?.exists && !emailStatus.inOrg && (
+                        <UserPlus className="text-indigo-500" weight="fill" size={18} />
+                      )}
+                      {!checkingEmail && emailStatus?.exists === false && email.includes("@") && (
+                        <XCircle className="text-amber-500" weight="fill" size={18} />
+                      )}
                     </div>
                   </div>
                   {emailStatus?.inOrg && (
@@ -411,15 +398,32 @@ export default function ProjectMembersPage() {
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                     <IdentificationBadge size={14} /> Role
                   </label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer font-mono"
-                  >
-                    <option value="member">Project Member</option>
-                    <option value="admin">Project Admin</option>
-                    <option value="viewer">Viewer Only</option>
-                  </select>
+
+                  <Select value={role} onValueChange={(value) => setRole(value)}>
+                    <SelectTrigger className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:border-indigo-500 focus:ring-0 focus:ring-offset-0 transition-colors font-mono rounded-xl h-auto">
+                      <SelectValue placeholder="Select a role..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0f0f12] border border-white/10 text-zinc-100 rounded-xl">
+                      <SelectItem
+                        value="member"
+                        className="font-mono text-sm text-zinc-200 focus:bg-white/5 focus:text-white cursor-pointer"
+                      >
+                        Project Member
+                      </SelectItem>
+                      <SelectItem
+                        value="admin"
+                        className="font-mono text-sm text-zinc-200 focus:bg-white/5 focus:text-white cursor-pointer"
+                      >
+                        Project Admin
+                      </SelectItem>
+                      <SelectItem
+                        value="viewer"
+                        className="font-mono text-sm text-zinc-200 focus:bg-white/5 focus:text-white cursor-pointer"
+                      >
+                        Viewer Only
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {addError && (
@@ -429,17 +433,17 @@ export default function ProjectMembersPage() {
                   </div>
                 )}
 
-                <button
+                <Button
                   type="submit"
                   disabled={isAdding || !email.trim()}
-                  className="group flex items-center justify-center gap-2 bg-indigo-500 text-white font-bold py-4 border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-y-px active:shadow-[2px_2px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-tighter"
+                  className="group flex items-center justify-center gap-2 bg-white/20 text-white font-bold py-4 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-tighter"
                 >
                   {isAdding ? "Inviting..." : "Grant Access"}
-                </button>
+                </Button>
               </form>
 
               <div className="pt-4 border-t border-white/5">
-                <p className="text-[10px] text-zinc-500 leading-relaxed font-mono italic">
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
                   Note: Users must already be registered within your organization
                   to be added to specific projects.
                 </p>

@@ -196,6 +196,7 @@ async def list_project_members(
             user_id=m.user_id,
             email=m.user.email,
             name=m.user.name,
+            profile_photo=m.user.profile_photo,
             role=m.role,
             created_at=m.created_at,
         )
@@ -286,6 +287,7 @@ async def add_project_member(
         user_id=member.user_id,
         email=member.user.email,
         name=member.user.name,
+        profile_photo=member.user.profile_photo,
         role=member.role,
         created_at=member.created_at,
     )
@@ -371,6 +373,7 @@ async def list_org_users(
             auth0_id=m.user.auth0_id,
             email=m.user.email,
             name=m.user.name,
+            profile_photo=m.user.profile_photo,
             org_id=org_id,
             created_at=m.user.created_at,
         )

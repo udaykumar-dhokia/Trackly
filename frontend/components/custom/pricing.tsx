@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "@phosphor-icons/react";
+import { Button } from "../ui/button";
 
 const plans = [
   {
@@ -126,7 +127,7 @@ export default function Pricing() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`pricing-card ${plan.popular ? "popular" : ""}`}
+                className={`rounded-xl pricing-card ${plan.popular ? "popular" : ""}`}
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0">
@@ -184,13 +185,13 @@ export default function Pricing() {
                 </ul>
 
                 {/* CTA */}
-                <button
+                <Button
                   disabled={plan.comingSoon}
-                  className={`cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 w-full transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
+                  className={`cursor-pointer bg-white/20 px-5 py-3 font-semibold text-white hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 hover:text-black focus:outline-0 w-full transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
                   `}
                 >
                   {plan.cta}
-                </button>
+                </Button>
               </div>
             ))}
           </div>

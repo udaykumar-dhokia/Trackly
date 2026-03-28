@@ -75,8 +75,8 @@ export default function UsagePage() {
   const isOverLimit = usagePercentage >= 100;
 
   return (
-    <SidebarInset className="bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-8 transition-colors duration-300 md:p-12">
+    <SidebarInset className="bg-background max-w-6xl mx-auto space-y-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-8 transition-colors duration-300 md:p-12 rounded-xl">
         <div className="space-y-2">
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
@@ -102,7 +102,7 @@ export default function UsagePage() {
           </div>
         ) : usage ? (
           <div className="grid gap-8">
-            <Card className="overflow-hidden rounded-none border-2 border-border bg-card shadow-[8px_8px_0_0_rgba(0,0,0,0.03)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,0.02)]">
+            <Card className="overflow-hidden rounded-xl border-2 border-border bg-card shadow-[8px_8px_0_0_rgba(0,0,0,0.03)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,0.02)]">
               <CardHeader className="relative border-b-2 border-border bg-secondary/20 p-8 pb-8">
                 <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
                   <div className="space-y-1">
@@ -118,14 +118,14 @@ export default function UsagePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="border-2 border-foreground bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff]">
+                  <div className="bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground rounded-xl">
                     {usage.plan.toUpperCase()} PLAN
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-8 p-8 md:p-10">
                 <div className="space-y-4">
-                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                  <div className="flex justify-between text-[11px] font-bold tracking-wider">
                     <span className="text-muted-foreground opacity-60">
                       Monthly Capacity Utilization
                     </span>
@@ -141,18 +141,17 @@ export default function UsagePage() {
                       {usagePercentage.toFixed(1)}% Consumed
                     </span>
                   </div>
-                  <div className="h-6 w-full overflow-hidden border-2 border-border bg-secondary p-0.5">
+                  <div className="h-6 w-full rounded-xl overflow-hidden bg-secondary p-0.5">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${usagePercentage}%` }}
                       transition={{ duration: 1.2, ease: "circOut" }}
-                      className={`h-full ${
-                        isOverLimit
-                          ? "bg-destructive"
-                          : isNearLimit
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
-                      } opacity-90`}
+                      className={`h-full rounded-xl ${isOverLimit
+                        ? "bg-destructive"
+                        : isNearLimit
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                        } opacity-90`}
                     />
                   </div>
                 </div>
@@ -245,9 +244,9 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-5 border-2 border-border bg-secondary/30 p-5 transition-all hover:bg-secondary/50">
+    <div className="rounded-xl flex items-center gap-5 border-2 border-border bg-secondary/30 p-5 transition-all hover:bg-secondary/50">
       <div
-        className={`flex size-11 items-center justify-center border-2 border-foreground text-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] ${color}`}
+        className={`flex size-11 items-center justify-center text-white rounded-xl ${color}`}
       >
         {icon}
       </div>
@@ -280,10 +279,10 @@ function ActionCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-5 border-2 border-border bg-card p-7 shadow-[4px_4px_0_0_rgba(0,0,0,0.03)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.05)]"
+      className="flex flex-col gap-5 border-2 border-border bg-card rounded-xl p-7 shadow-[4px_4px_0_0_rgba(0,0,0,0.03)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.05)]"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex size-10 items-center justify-center border border-border bg-secondary/20 text-foreground">
+        <div className="flex size-10 items-center justify-center text-foreground">
           {icon}
         </div>
         <span className="border border-border bg-secondary/20 px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -300,7 +299,7 @@ function ActionCard({
       </div>
       <Link
         href={href}
-        className="mt-2 flex items-center justify-center gap-2 border-2 border-border bg-secondary/50 p-2.5 text-center text-[10px] font-bold uppercase tracking-wider transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground"
+        className="mt-2 rounded-xl flex items-center justify-center gap-2 border-2 border-border bg-secondary/50 p-2.5 text-center text-[10px] font-bold uppercase tracking-wider transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground"
       >
         Open <ArrowUpRight size={14} weight="bold" />
       </Link>

@@ -109,7 +109,7 @@ export function FeedbackDialog() {
             <p className="font-medium text-sm">Got feedback? Share it here!</p>
           </TooltipContent>
         </Tooltip>
-        <DialogContent className="bg-[#0f0f12] border-white/10 text-zinc-200 sm:max-w-[425px]">
+        <DialogContent className="bg-[#0f0f12] border-white/10 text-zinc-200 sm:max-w-[425px] rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               Share your Experience
@@ -124,7 +124,7 @@ export function FeedbackDialog() {
               placeholder="What do you think about Trackly? (max 1000 characters)"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="bg-[#09090b] border-white/5 focus:border-indigo-500/50 min-h-[120px] text-zinc-200 rounded-lg placeholder:text-zinc-600 rounded-none"
+              className="bg-[#09090b] border-white/5 focus:border-indigo-500/50 min-h-[120px] text-zinc-200 rounded-xl placeholder:text-zinc-600"
               maxLength={1000}
               required
             />

@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
 
 export default function EventsPage() {
   const dispatch = useAppDispatch();
@@ -169,7 +170,7 @@ export default function EventsPage() {
           <button
             onClick={refreshEvents}
             disabled={status === "loading"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-fuchsia-500/50 bg-[#1a1a24] text-fuchsia-400 transition-colors hover:bg-white/5 hover:text-fuchsia-300 disabled:opacity-50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-fuchsia-400 transition-colors cursor-pointer hover:text-fuchsia-300 disabled:opacity-50"
             title="Refresh Events"
           >
             <ArrowClockwise
@@ -180,17 +181,17 @@ export default function EventsPage() {
           </button>
         </div>
 
-        <div className="border-2 border-fuchsia-500/30 bg-[#1a1a24] p-4">
+        <div className="border-2 rounded-xl border-white/10 bg-[#1a1a24] p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-            <Funnel size={14} className="text-fuchsia-400" />
+            <Funnel size={14} className="text-zinc-500" />
             Filters
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 rounded-xl">
             <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger className="h-10 rounded-none border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
                 <SelectValue placeholder="All Providers" />
               </SelectTrigger>
-              <SelectContent className="rounded-none border-2 border-fuchsia-500/30 bg-[#1a1a24] font-mono text-white">
+              <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
                 <SelectItem value="all">All Providers</SelectItem>
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="anthropic">Anthropic</SelectItem>
@@ -204,10 +205,10 @@ export default function EventsPage() {
             </Select>
 
             <Select value={memberFilter} onValueChange={setMemberFilter}>
-              <SelectTrigger className="h-10 rounded-none border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
                 <SelectValue placeholder="All Members" />
               </SelectTrigger>
-              <SelectContent className="rounded-none border-2 border-fuchsia-500/30 bg-[#1a1a24] font-mono text-white">
+              <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
                 <SelectItem value="all">All Members</SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.user_id} value={member.user_id}>
@@ -217,36 +218,36 @@ export default function EventsPage() {
               </SelectContent>
             </Select>
 
-            <input
+            <Input
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
               placeholder="Model"
-              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-indigo-400"
             />
-            <input
+            <Input
               value={featureFilter}
               onChange={(e) => setFeatureFilter(e.target.value)}
               placeholder="Feature"
-              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
             />
-            <input
+            <Input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
-            <input
+            <Input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="h-10 border-2 border-fuchsia-500/30 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
           </div>
         </div>
       </section>
 
-      <section className="relative border-2 border-fuchsia-500/50 bg-[#141418] shadow-[8px_8px_0_0_rgba(217,70,239,0.15)]">
-        <div className="flex items-center justify-between border-b-2 border-fuchsia-500/50 bg-[#1a1a24] p-4">
+      <section className="relative border-2 border-white/10 bg-[#141418] rounded-xl">
+        <div className="flex items-center justify-between border-b-2 border-white/10 bg-[#1a1a24] rounded-t-xl p-4">
           <div className="font-mono text-xs text-zinc-400">
             <span className="font-bold text-fuchsia-400">{total.toLocaleString()}</span> Events Tracked
           </div>

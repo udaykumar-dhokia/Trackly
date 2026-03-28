@@ -13,6 +13,7 @@ export interface ProjectMember {
   user_id: string;
   email: string;
   name: string | null;
+  profile_photo?: string | null;
   role: string;
   created_at: string;
 }
@@ -22,6 +23,7 @@ export interface User {
   auth0_id: string;
   email: string;
   name: string | null;
+  profile_photo?: string | null;
   org_id: string;
   created_at: string;
 }

@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function OrganizationsPage() {
   const { user } = useUser();
@@ -149,9 +150,9 @@ export default function OrganizationsPage() {
           <h2 className="text-2xl font-bold text-white">Available Projects</h2>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-2 bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-[3px_3px_0_0_#4338ca] hover:bg-indigo-500 hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_#4338ca] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all border-2 border-transparent">
+              <Button className="flex items-center gap-2 bg-white/20 px-4 py-2 text-sm font-bold text-white active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all border-2 border-transparent">
                 <Plus weight="bold" /> New Project
-              </button>
+              </Button>
             </DialogTrigger>
             <DialogContent className="border-2 border-white/10 bg-[#141418] text-white">
               <DialogHeader>
@@ -221,11 +222,10 @@ export default function OrganizationsPage() {
             {projects.map((proj) => (
               <div
                 key={proj.id}
-                className={`group border-2 p-6 flex flex-col justify-between min-h-[160px] transition-all
-                  ${
-                    activeProjectId === proj.id
-                      ? "border-indigo-400 bg-[#1a1a24] shadow-[4px_4px_0_0_#818cf8]"
-                      : "border-white/10 bg-[#0f0f12] hover:border-white/30 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#ffffff30]"
+                className={`group border-2 p-6 flex flex-col justify-between min-h-[160px] transition-all rounded-xl
+                  ${activeProjectId === proj.id
+                    ? "border-indigo-400 bg-[#1a1a24]"
+                    : "border-white/10 bg-[#0f0f12] hover:border-white/30 hover:-translate-y-1"
                   }
                 `}
               >
@@ -247,7 +247,7 @@ export default function OrganizationsPage() {
 
                 <button
                   onClick={() => dispatch(setActiveProject(proj.id))}
-                  className={`flex items-center gap-1 text-sm font-semibold transition-colors w-max
+                  className={`flex items-center gap-1 text-sm font-semibold transition-colors w-max cursor-pointer
                     ${activeProjectId === proj.id ? "text-indigo-400" : "text-zinc-400 group-hover:text-zinc-200"}
                   `}
                 >

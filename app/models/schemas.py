@@ -132,6 +132,7 @@ class ProjectMemberResponse(BaseModel):
     user_id: uuid.UUID
     email: str
     name: str | None
+    profile_photo: str | None = None
     role: str
     created_at: datetime
 
@@ -154,6 +155,7 @@ class OrganizationMemberResponse(BaseModel):
     user_id: uuid.UUID
     email: str
     name: str | None
+    profile_photo: str | None = None
     role: str
     created_at: datetime
 
@@ -228,7 +230,14 @@ class FeedbackResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class FeaturedUser(BaseModel):
+    name: str | None = None
+    email: str
+    profile_photo: str | None = None
+
 class GlobalStats(BaseModel):
     total_events: int
     total_tokens: int
+    total_users: int = 0
+    featured_users: list[FeaturedUser] = Field(default_factory=list)
 

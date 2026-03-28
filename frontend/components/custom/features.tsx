@@ -1,5 +1,5 @@
 "use client"
-import { CodeIcon, MoneyIcon, TimerIcon, TrendUpIcon, UserIcon, WarningIcon } from '@phosphor-icons/react'
+import { MoneyIcon, TimerIcon, TrendUpIcon, UserIcon, WarningIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 
 const PROVIDERS = [
@@ -77,15 +77,6 @@ export default function Features() {
         .glow-amber::after  { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(251,191,36,0.05), transparent); }
         .glow-blue::after   { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(96,165,250,0.06), transparent); }
 
-        .icon-badge {
-          width: 38px; height: 38px;
-          display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
-        }
-        .ib-purple { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); }
-        .ib-green  { background: rgba(52,211,153,0.1);  border: 1px solid rgba(52,211,153,0.2); }
-        .ib-amber  { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.2); }
-        .ib-blue   { background: rgba(96,165,250,0.1);  border: 1px solid rgba(96,165,250,0.2); }
-
         .bar-fill { transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
 
         .meta-code {
@@ -107,7 +98,7 @@ export default function Features() {
                 <div className="mx-auto max-w-[1080px]">
 
                     {/* Header */}
-                    <div className={`feat-reveal ${mounted ? 'in' : ''}`}>
+                    <div className={`rounded-xl feat-reveal ${mounted ? 'in' : ''}`}>
                         <div className="flex items-center gap-2 mb-4">
                             <span className="w-5 h-px bg-primary/60" />
                             <span className=" text-[11px] uppercase tracking-[.12em] text-primary">
@@ -131,12 +122,7 @@ export default function Features() {
                     <div className="grid grid-cols-12 gap-3">
 
                         {/* Card 1: Zero-config (tall, 5 cols, 2 rows) */}
-                        <div className={`feat-card glow-purple col-span-12 md:col-span-5 row-span-2 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.1s' }}>
-                            <div className="icon-badge ib-purple">
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                    <path d="M9 2L11.5 7H16.5L12.5 10.5L14 15.5L9 12.5L4 15.5L5.5 10.5L1.5 7H6.5L9 2Z" stroke="#a78bfa" strokeWidth="1.5" strokeLinejoin="round" />
-                                </svg>
-                            </div>
+                        <div className={`rounded-xl feat-card glow-purple col-span-12 md:col-span-5 row-span-2 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.1s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-2">
                                 Zero-config <span className="text-primary">provider detection</span>
                             </p>
@@ -154,7 +140,7 @@ export default function Features() {
                                     <span
                                         key={prov.chip}
                                         className={[
-                                            ' text-[10px] px-2.5 py-1 rounded-none border transition-all duration-300',
+                                            ' text-[10px] px-2.5 py-1 rounded-xl border transition-all duration-300',
                                             i === provIdx
                                                 ? 'border-primary/40 text-primary bg-primary/10'
                                                 : 'border-white/10 text-zinc-500 bg-[#141418]',
@@ -166,7 +152,7 @@ export default function Features() {
                             </div>
 
                             {/* Live detection readout */}
-                            <div className="mt-6 pt-5 border-t border-white/6">
+                            <div className="rounded-xl mt-6 pt-5 border-t border-white/6">
                                 <p className=" text-[10px] text-zinc-500 tracking-[.04em] uppercase mb-2">
                                     Detected automatically
                                 </p>
@@ -184,13 +170,7 @@ export default function Features() {
                         </div>
 
                         {/* Card 2: Cost attribution (7 cols) */}
-                        <div className={`feat-card glow-amber col-span-12 md:col-span-7 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.18s' }}>
-                            <div className="icon-badge ib-amber">
-                                <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
-                                    <circle cx="8.5" cy="8.5" r="6.5" stroke="#fbbf24" strokeWidth="1.5" />
-                                    <path d="M8.5 5v1.5M8.5 10v1.5M6.5 8.5h4" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round" />
-                                </svg>
-                            </div>
+                        <div className={`rounded-xl feat-card glow-amber col-span-12 md:col-span-7 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.18s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Cost attribution</span> by feature
                             </p>
@@ -205,7 +185,7 @@ export default function Features() {
                                         <span className=" text-[10px] text-zinc-500 w-20 shrink-0">{bar.label}</span>
                                         <div className="flex-1 h-[6px] bg-[#141418] overflow-hidden">
                                             <div
-                                                className="bar-fill h-full rounded-none"
+                                                className="bar-fill h-full rounded-xl"
                                                 style={{ width: barsGo ? `${bar.pct}%` : '0%', background: bar.color }}
                                             />
                                         </div>
@@ -216,10 +196,7 @@ export default function Features() {
                         </div>
 
                         {/* Card 3: Latency (4 cols) */}
-                        <div className={`feat-card glow-green col-span-12 md:col-span-4 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.28s' }}>
-                            <div className="icon-badge ib-green">
-                                <TimerIcon />
-                            </div>
+                        <div className={`rounded-xl feat-card glow-green col-span-12 md:col-span-4 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.28s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 Latency <span className="text-primary">per model</span>
                             </p>
@@ -241,10 +218,7 @@ export default function Features() {
                         </div>
 
                         {/* Card 4: Per-user cost (3 cols) */}
-                        <div className={`feat-card glow-blue col-span-12 md:col-span-3 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.36s' }}>
-                            <div className="icon-badge ib-blue">
-                                <UserIcon />
-                            </div>
+                        <div className={`rounded-xl feat-card glow-blue col-span-12 md:col-span-3 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.36s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Per-user</span> cost
                             </p>
@@ -265,10 +239,7 @@ export default function Features() {
                         </div>
 
                         {/* Card 5: Live pricing table (6 cols) */}
-                        <div className={`feat-card glow-amber col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.44s' }}>
-                            <div className="icon-badge ib-amber">
-                                <MoneyIcon />
-                            </div>
+                        <div className={`rounded-xl feat-card glow-amber col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.44s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 Live <span className="text-primary">model pricing</span>
                             </p>
@@ -294,11 +265,8 @@ export default function Features() {
                             </div>
                         </div>
 
-                        {/* Card 6: Alerts (3 cols) */}
-                        <div className={`feat-card glow-purple col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.52s' }}>
-                            <div className="icon-badge ib-purple">
-                                <WarningIcon />
-                            </div>
+                        {/* Card 6: Alerts (6 cols) */}
+                        <div className={`rounded-xl feat-card glow-purple col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.52s' }}>
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Cost alerts</span>
                             </p>
@@ -309,8 +277,8 @@ export default function Features() {
                                 { dot: '#f87171', shadow: '#f87171', title: 'Budget exceeded', sub: 'summarizer hit $20 limit' },
                                 { dot: '#fbbf24', shadow: '#fbbf24', title: 'Spike detected', sub: '3× usage in last hour' },
                             ].map(alert => (
-                                <div key={alert.title} className="flex items-start gap-2 mt-3 p-2.5 bg-[#141418] rounded-none border border-white/6">
-                                    <span className="w-1.5 h-1.5 rounded-none shrink-0 mt-[5px]" style={{ background: alert.dot, boxShadow: `0 0 5px ${alert.shadow}` }} />
+                                <div key={alert.title} className="flex items-start gap-2 mt-3 p-2.5 bg-[#141418] rounded-xl border border-white/6">
+                                    <span className="w-1.5 h-1.5 rounded-xl shrink-0 mt-[5px]" style={{ background: alert.dot, boxShadow: `0 0 5px ${alert.shadow}` }} />
                                     <div className=" text-[10px] leading-normal text-zinc-500">
                                         <strong className="text-zinc-200 font-medium">{alert.title}</strong><br />{alert.sub}
                                     </div>
@@ -318,35 +286,10 @@ export default function Features() {
                             ))}
                         </div>
 
-                        {/* Card 7: Metadata (3 cols) */}
-                        <div className={`feat-card glow-blue col-span-12 md:col-span-4 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.60s' }}>
-                            <div className="icon-badge ib-blue">
-                                <CodeIcon />
-                            </div>
-                            <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
-                                <span className="text-primary">Rich metadata</span>
-                            </p>
-                            <p className="text-[.8rem] text-zinc-400 leading-[1.65] mb-3">Tag any call. Filter anything.</p>
-                            <div className="meta-code">{
-                                `llm.invoke(
-  prompt,
-  config={"metadata": {
-    "_trackly": {
-      "feature": "rag",
-      "user_id": uid,
-    }
-  }}
-)`
-                            }</div>
-                        </div>
-
-                        {/* Card 8: Daily trends (6 cols) */}
-                        <div className={`feat-card glow-green col-span-12 md:col-span-8 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.68s' }}>
+                        {/* Card 7: Daily trends (12 cols) */}
+                        <div className={`rounded-xl feat-card glow-green col-span-12 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.68s' }}>
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <div className="icon-badge ib-green mb-3.5">
-                                        <TrendUpIcon />
-                                    </div>
                                     <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                         Daily usage <span className="text-primary">trends</span>
                                     </p>

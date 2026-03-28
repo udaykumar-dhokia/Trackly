@@ -46,6 +46,9 @@ export default function Hero() {
   const [copied, setCopied] = useState(false);
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(1200);
+  const [featuredUsers, setFeaturedUsers] = useState<{name: string | null, email: string, profile_photo: string | null}[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -56,10 +59,15 @@ export default function Hero() {
         const data = await res.json();
         setTotalEvents(data.total_events);
         setTotalTokens(data.total_tokens);
+        setTotalUsers(data.total_users || 1200);
+        setFeaturedUsers(data.featured_users || []);
       } catch (err) {
         console.error("Failed to fetch global stats:", err);
         setTotalEvents(4_812_903);
         setTotalTokens(183_450_281);
+        setTotalUsers(1200);
+      } finally {
+        setLoadingStats(false);
       }
     };
     fetchStats();
@@ -262,18 +270,18 @@ export default function Hero() {
 
             <div className={`cta-row reveal d4 ${mounted ? "in" : ""}`}>
               <Link href="/docs">
-                <Button className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0">
+                <Button className="cursor-pointer border-black bg-white/20 px-5 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0">
                   Read Docs <ArrowUpRightIcon />{" "}
                 </Button>
               </Link>
-              <div className="pip-install-container flex items-center border-2 border-black bg-[#141418] shadow-primary shadow-[4px_4px_0_0] font-mono text-[.8rem] h-[40px] md:h-[32px] w-full max-w-[320px] mx-auto sm:mx-0">
+              <div className="pip-install-container rounded-xl flex items-center border-2 border-black bg-[#141418] font-mono text-[.8rem] h-[40px] md:h-[32px] w-full max-w-[320px] mx-auto sm:mx-0">
                 <div className="flex items-center flex-1 px-4 gap-2 overflow-hidden">
                   <span className="text-zinc-500">$</span>
                   <span className="text-zinc-100 font-bold truncate">
                     pip install trackly
                   </span>
                 </div>
-                <button
+                <Button
                   onClick={() => {
                     navigator.clipboard.writeText("pip install trackly");
                     setCopied(true);
@@ -282,7 +290,7 @@ export default function Hero() {
                   className="h-full px-5 bg-white text-black font-bold border-l-2 border-black hover:bg-indigo-300 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   {copied ? "Copied!" : "Copy"}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -293,6 +301,47 @@ export default function Hero() {
                   support@tracklyai.in
                 </a>
               </p>
+
+              <div className="mt-6 flex flex-col items-center gap-3">
+                <div className="flex -space-x-3">
+                  {featuredUsers.length > 0 ? (
+                    featuredUsers.slice(0, 5).map((u, i) => (
+                      <div key={i} className="size-8 rounded-full border-2 border-[#09090b] bg-zinc-900 overflow-hidden ring-1 ring-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                        {u.profile_photo ? (
+                          <img
+                            src={u.profile_photo}
+                            alt="Developer"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          (u.name || u.email)[0].toUpperCase()
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    [
+                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=64&h=64&q=80",
+                      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64&q=80",
+                      "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=64&h=64&q=80",
+                      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=64&h=64&q=80",
+                      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=64&h=64&q=80",
+                    ].map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt="Developer"
+                        className="size-8 rounded-full border-2 border-[#09090b] object-cover ring-1 ring-white/10"
+                      />
+                    ))
+                  )}
+                  <div className="flex size-8 items-center justify-center rounded-full border-2 border-[#09090b] bg-zinc-900 text-[10px] font-bold text-zinc-400 ring-1 ring-white/10">
+                    +{totalUsers > 1000 ? (totalUsers / 1000).toFixed(1) + "k" : totalUsers}
+                  </div>
+                </div>
+                <p className="text-xs font-medium text-zinc-500">
+                  Join <span className="text-zinc-200">{totalUsers.toLocaleString()}+</span> developers building the future of AI
+                </p>
+              </div>
             </div>
 
             <div

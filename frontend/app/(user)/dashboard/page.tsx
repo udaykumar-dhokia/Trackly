@@ -41,6 +41,7 @@ import {
   Cell,
 } from "recharts";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
 
 const CHART_COLORS = ["#6366f1", "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308"];
 
@@ -187,7 +188,7 @@ export default function DashboardPage() {
           <button
             onClick={refreshStats}
             disabled={statsStatus === "loading"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-white/10 bg-[#1a1a24] text-zinc-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-zinc-400 transition-colors cursor-pointer hover:text-white disabled:opacity-50"
             title="Reload Dashboard Stats"
           >
             <ArrowClockwise
@@ -198,17 +199,17 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="border-2 border-white/10 bg-[#1a1a24] p-4">
+        <div className="border-2 rounded-xl border-white/10 bg-[#1a1a24] p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
             <Funnel size={14} className="text-zinc-500" />
             Filters
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 rounded-xl">
             <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger className="h-10 rounded-none border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
                 <SelectValue placeholder="All Providers" />
               </SelectTrigger>
-              <SelectContent className="rounded-none border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
+              <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
                 <SelectItem value="all">All Providers</SelectItem>
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="anthropic">Anthropic</SelectItem>
@@ -222,10 +223,10 @@ export default function DashboardPage() {
             </Select>
 
             <Select value={memberFilter} onValueChange={setMemberFilter}>
-              <SelectTrigger className="h-10 rounded-none border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
                 <SelectValue placeholder="All Members" />
               </SelectTrigger>
-              <SelectContent className="rounded-none border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
+              <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
                 <SelectItem value="all">All Members</SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.user_id} value={member.user_id}>
@@ -235,29 +236,29 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
 
-            <input
+            <Input
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
               placeholder="Model"
-              className="h-10 border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-indigo-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-indigo-400"
             />
-            <input
+            <Input
               value={featureFilter}
               onChange={(e) => setFeatureFilter(e.target.value)}
               placeholder="Feature"
-              className="h-10 border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
             />
-            <input
+            <Input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
-            <input
+            <Input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="h-10 border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
+              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
           </div>
         </div>
@@ -280,36 +281,36 @@ export default function DashboardPage() {
             title="Estimated Cost"
             value={`$${summary.total_cost_usd.toFixed(4)}`}
             icon={<Coins weight="duotone" className="text-emerald-400" size={32} />}
-            colorClass="border-emerald-500 shadow-[6px_6px_0_0_#10b981]"
+            colorClass="border-emerald-500 rounded-xl shadow-[6px_6px_0_0_#10b981]"
           />
           <MetricCard
             title="Total Events"
             value={summary.total_events.toLocaleString()}
             icon={<ChartBar weight="duotone" className="text-indigo-400" size={32} />}
-            colorClass="border-indigo-500 shadow-[6px_6px_0_0_#4f46e5]"
+            colorClass="border-indigo-500 rounded-xl shadow-[6px_6px_0_0_#4f46e5]"
           />
           <MetricCard
             title="Total Tokens"
             value={summary.total_tokens.toLocaleString()}
             icon={<Database weight="duotone" className="text-fuchsia-400" size={32} />}
-            colorClass="border-fuchsia-500 shadow-[6px_6px_0_0_#d946ef]"
+            colorClass="border-fuchsia-500 rounded-xl shadow-[6px_6px_0_0_#d946ef]"
           />
           <MetricCard
             title="Avg Latency"
             value={summary.avg_latency_ms ? `${summary.avg_latency_ms.toFixed(0)} ms` : "N/A"}
             icon={<Clock weight="duotone" className="text-amber-400" size={32} />}
-            colorClass="border-amber-500 shadow-[6px_6px_0_0_#f59e0b]"
+            colorClass="border-amber-500 rounded-xl shadow-[6px_6px_0_0_#f59e0b]"
           />
         </section>
       )}
 
       {statsStatus === "succeeded" && (
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className="border-2 border-white/10 bg-[#141418] p-6 shadow-[8px_8px_0_0_rgba(99,102,241,0.1)]">
+          <div className="border-2 border-white/10 bg-[#141418] p-6 rounded-xl">
             <h3 className="mb-6 flex items-center gap-2 text-lg font-bold uppercase tracking-wider text-white">
               <Coins className="text-emerald-400" /> Cost Trend
             </h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full rounded-xl">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dailyUsage}>
                   <defs>
@@ -345,7 +346,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="border-2 border-white/10 bg-[#141418] p-6 shadow-[8px_8px_0_0_rgba(168,85,247,0.1)]">
+          <div className="border-2 border-white/10 bg-[#141418] p-6 rounded-xl">
             <h3 className="mb-6 flex items-center gap-2 text-lg font-bold uppercase tracking-wider text-white">
               <ChartBar className="text-indigo-400" /> Cost Distribution
             </h3>
@@ -396,7 +397,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="border-2 border-white/10 bg-[#141418] p-6 shadow-[8px_8px_0_0_rgba(217,70,239,0.1)] lg:col-span-2">
+          <div className="border-2 border-white/10 bg-[#141418] p-6 rounded-xl lg:col-span-2">
             <h3 className="mb-6 flex items-center gap-2 text-lg font-bold uppercase tracking-wider text-white">
               <Database className="text-fuchsia-400" /> Daily Token Volume
             </h3>
@@ -415,7 +416,7 @@ export default function DashboardPage() {
                     contentStyle={{
                       backgroundColor: "#1a1a24",
                       border: "2px solid #ffffff10",
-                      borderRadius: "0px",
+                      borderRadius: "20px",
                       fontSize: "12px",
                       fontFamily: "monospace",
                     }}
@@ -436,11 +437,11 @@ export default function DashboardPage() {
             Usage By Model
           </h2>
           {models.length === 0 ? (
-            <div className="border-2 border-white/10 bg-[#141418] p-8 font-mono text-zinc-500">
+            <div className="border-2 border-white/10 bg-[#141418] p-8 font-mono text-zinc-500 rounded-xl">
               No models matched the current filters.
             </div>
           ) : (
-            <div className="overflow-hidden border-2 border-white/10 bg-[#141418] shadow-[8px_8px_0_0_rgba(255,255,255,0.05)]">
+            <div className="overflow-hidden border-2 border-white/10 bg-[#141418] rounded-xl">
               <table className="w-full text-left font-mono text-sm">
                 <thead className="border-b-2 border-white/10 bg-[#1a1a24] text-xs uppercase text-zinc-400">
                   <tr>

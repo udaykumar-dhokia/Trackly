@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.models.orm import ApiKey, LlmEvent
 from app.models.schemas import (
     DailyUsage,
+    FeaturedUser,
     GlobalStats,
     UsageByFeature,
     UsageByModel,
@@ -265,15 +266,37 @@ async def get_global_stats(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> GlobalStats:
+    from app.models.orm import User
+    
+    # Events and Tokens
     stmt = select(
         func.count(LlmEvent.id).label("total_events"),
         func.coalesce(func.sum(LlmEvent.total_tokens), 0).label("total_tokens"),
     )
     result = await db.execute(stmt)
     row = result.one()
+    
+    # Total Users
+    user_count_stmt = select(func.count(User.id))
+    total_users = await db.scalar(user_count_stmt)
+    
+    # Featured Users (get up to 10 users)
+    users_stmt = (
+        select(User.name, User.email, User.profile_photo)
+        .order_by(func.random() if total_users > 10 else User.created_at.desc())
+        .limit(10)
+    )
+    users_result = await db.execute(users_stmt)
+    featured_users = [
+        FeaturedUser(name=r.name, email=r.email, profile_photo=r.profile_photo)
+        for r in users_result.all()
+    ]
+
     return GlobalStats(
         total_events=row.total_events,
         total_tokens=row.total_tokens,
+        total_users=total_users or 0,
+        featured_users=featured_users,
     )
 
 

@@ -88,8 +88,6 @@ export default function HowItWorks() {
           width: 36px; height: 36px;
           display: flex; align-items: center; justify-content: center;
           font-size: 13px; font-weight: 800;
-          background: #a78bfa; color: #09090b;
-          border-radius: 0;
           flex-shrink: 0;
         }
         .hiw-connector {
@@ -125,14 +123,14 @@ export default function HowItWorks() {
           <div className="flex flex-col gap-0">
             {STEPS.map((step, i) => (
               <div key={step.n} className="flex gap-6">
-                <div className="hidden md:flex flex-col items-center">
+                <div className="hidden md:flex rounded-xl flex-col items-center">
                   <div
-                    className={`hiw-step-badge hiw-reveal ${mounted ? "in" : ""}`}
+                    className={`hiw-step-badge bg-white/20 inset-shadow-2xs inset-shadow-white/30 rounded-xl hiw-reveal ${mounted ? "in" : ""}`}
                     style={{ transitionDelay: `${0.1 + i * 0.1}s` }}
                   >
                     {step.n}
                   </div>
-                  {i < STEPS.length - 1 && <div className="hiw-connector" />}
+                  {i < STEPS.length - 1 && <div className="hiw-connector rounded-xl" />}
                 </div>
 
                 <div

@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   Planet,
 } from "@phosphor-icons/react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function OrganizationMembersPage() {
   const { user } = useUser();
@@ -103,7 +105,7 @@ export default function OrganizationMembersPage() {
       </section>
 
       <section>
-        <div className="border border-white/10 bg-[#141418] p-8 relative overflow-hidden shadow-[6px_6px_0_0_#4f46e5]">
+        <div className="border border-white/10 bg-[#141418] p-8 relative overflow-hidden rounded-xl">
           <div className="flex flex-col gap-4 relative z-10">
             <div>
               <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-1">
@@ -146,12 +148,20 @@ export default function OrganizationMembersPage() {
             {orgMembers.map((member) => (
               <div
                 key={member.id}
-                className="p-5 border-2 border-white/5 bg-[#141418] flex items-center justify-between group shadow-[4px_4px_0_0_rgba(0,0,0,0.2)]"
+                className="p-5 border-2 border-white/5 bg-[#141418] flex items-center justify-between group rounded-xl"
               >
                 <div className="flex items-center gap-4">
-                  <div className="size-10 bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
-                    {member.name?.[0]?.toUpperCase() ||
-                      member.email[0].toUpperCase()}
+                  <div className="size-10 bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center rounded-xl overflow-hidden text-indigo-400 font-bold shrink-0">
+                    {member.profile_photo ? (
+                      <img
+                        src={member.profile_photo}
+                        alt={member.name || "Member"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      member.name?.[0]?.toUpperCase() ||
+                      member.email[0].toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-white flex items-center gap-2">
@@ -177,7 +187,7 @@ export default function OrganizationMembersPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="border shadow-lg bg-[#0f0f12] p-6 space-y-6 sticky top-8">
+          <div className="border shadow-lg bg-[#0f0f12] p-6 space-y-6 sticky top-8 rounded-xl">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <UserPlus size={20} className="text-indigo-400" />
               Invite Member
@@ -188,21 +198,20 @@ export default function OrganizationMembersPage() {
                   <Envelope size={14} /> Email Address
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     type="email"
                     placeholder="teammate@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full bg-[#141418] border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
-                      ${
-                        emailStatus?.inOrg
-                          ? "border-emerald-500/50"
-                          : emailStatus?.exists
-                            ? "border-indigo-500/50"
-                            : emailStatus?.exists === false &&
-                                email.includes("@")
-                              ? "border-amber-500/50"
-                              : "border-white/10 focus:border-indigo-500"
+                    className={`w-full bg-[#141418] rounded-xl border-2 px-4 py-3 text-zinc-100 placeholder:text-zinc-700 focus:outline-none transition-colors font-mono
+                      ${emailStatus?.inOrg
+                        ? "border-emerald-500/50"
+                        : emailStatus?.exists
+                          ? "border-indigo-500/50"
+                          : emailStatus?.exists === false &&
+                            email.includes("@")
+                            ? "border-amber-500/50"
+                            : "border-white/10 focus:border-indigo-500"
                       }`}
                     required
                   />
@@ -263,13 +272,13 @@ export default function OrganizationMembersPage() {
                 </p>
               )}
 
-              <button
+              <Button
                 type="submit"
                 disabled={isInviting || !email.trim() || emailStatus?.inOrg}
-                className="w-full bg-indigo-600 text-white font-bold py-3 hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
+                className="w-full bg-white/20 text-white font-bold py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
               >
                 {isInviting ? "Adding..." : "Add to Organization"}
-              </button>
+              </Button>
               {emailStatus?.inOrg && (
                 <p className="text-[10px] text-zinc-500 font-mono italic text-center">
                   User is already a member of this organization.

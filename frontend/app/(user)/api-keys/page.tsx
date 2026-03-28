@@ -173,7 +173,7 @@ export default function ApiKeysPage() {
   ) => {
     if (keys.length === 0) {
       return (
-        <div className="p-8 border-2 border-dashed border-white/5 bg-white/5 text-center text-zinc-600 text-xs font-mono italic">
+        <div className="p-8 border-2 border-dashed border-white/5 bg-white/5 text-center text-zinc-600 text-xs font-mono italic rounded-xl">
           No {type === "master" ? "master" : "access"} keys found for this
           project scope.
         </div>
@@ -181,7 +181,7 @@ export default function ApiKeysPage() {
     }
 
     return (
-      <div className="w-full overflow-x-auto border-2 border-white/10 bg-[#141418]">
+      <div className="w-full overflow-x-auto border-2 border-white/10 bg-[#141418] rounded-xl">
         <table className="w-full text-left border-collapse min-w-[600px]">
           <thead>
             <tr className="border-b-2 border-white/10 bg-white/5 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
@@ -307,10 +307,10 @@ export default function ApiKeysPage() {
         {isAdminOrOwner && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-black px-6 py-3 shadow-[4px_4px_0_0_#b45309] active:translate-y-px active:shadow-none transition-all cursor-pointer">
+              <Button className="flex items-center gap-2 bg-white/20 text-white font-black px-6 py-3 active:translate-y-px active:shadow-none transition-all cursor-pointer">
                 <Plus weight="bold" />
                 Create API Key
-              </button>
+              </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 max-w-md p-8 rounded-none">
               <DialogHeader>
@@ -435,7 +435,7 @@ export default function ApiKeysPage() {
               }
             }}
             disabled={status === "loading"}
-            className="flex items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+            className="flex cursor-pointer items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
             title="Refresh API Keys"
           >
             <ArrowClockwise

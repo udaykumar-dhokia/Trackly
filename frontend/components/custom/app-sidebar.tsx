@@ -38,6 +38,7 @@ import {
   Monitor,
   ChartLineUp,
   Wallet,
+  CircleIcon,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -91,6 +92,11 @@ const navItems = [
     icon: Book,
   },
 ];
+
+const activeClass =
+  "bg-white/20 inset-shadow-2xs inset-shadow-white/30 px-5 py-2 font-semibold text-white hover:bg-white/30 hover:text-white focus:ring-2 focus:ring-white/30 focus:outline-0 h-auto rounded-xl";
+const inactiveClass =
+  "hover:bg-white/5 text-zinc-300 hover:text-white py-3 h-auto rounded-xl";
 
 export function AppSidebar({
   user,
@@ -162,9 +168,9 @@ export function AppSidebar({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-none h-14"
+                  className="bg-white/5 border border-white/10 inset-shadow-2xs inset-shadow-white/30 hover:bg-white/10 transition-colors cursor-pointer rounded-xl h-14"
                 >
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-indigo-500 text-white shadow-[2px_2px_0_0_#000]">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-indigo-500 text-white">
                     <Users className="size-4" weight="bold" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight ml-3">
@@ -182,7 +188,7 @@ export function AppSidebar({
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200 p-2 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)]"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-xl bg-[#141418] border-2 border-white/10 text-zinc-200 p-2 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)]"
                 align="start"
                 side={isMobile ? "bottom" : "right"}
                 sideOffset={12}
@@ -201,14 +207,13 @@ export function AppSidebar({
                           router.push("/dashboard");
                         }
                       }}
-                      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-none border border-transparent transition-all focus:bg-indigo-500/10 focus:border-indigo-500/30 focus:text-white ${
-                        org.id === activeOrgId
-                          ? "bg-indigo-500/10 border-indigo-500/30 text-white font-bold"
-                          : ""
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-xl border border-transparent transition-all focus:bg-indigo-500/10 focus:border-indigo-500/30 focus:text-white ${org.id === activeOrgId
+                        ? "bg-white/5 border-white/10 inset-shadow-2xs inset-shadow-white/30 text-white font-bold"
+                        : ""
+                        }`}
                     >
                       <div
-                        className={`size-2 rounded-full ${org.id === activeOrgId ? "bg-indigo-500 animate-pulse" : "bg-zinc-700"}`}
+                        className={`size-2 rounded-full ${org.id === activeOrgId ? "bg-white/20 inset-shadow-2xs inset-shadow-white/30 animate-pulse" : "bg-zinc-700"}`}
                       />
                       <span className="flex-1 truncate">{org.name}</span>
                       <span className="text-[8px] px-1.5 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
@@ -236,11 +241,7 @@ export function AppSidebar({
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
-                    className={
-                      isActive
-                        ? "border-2 border-black bg-white px-5 py-2 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
-                        : "hover:bg-white/5 text-zinc-300 hover:text-white py-3 h-auto"
-                    }
+                    className={isActive ? activeClass : inactiveClass}
                   >
                     <Link
                       href={item.url}
@@ -250,7 +251,7 @@ export function AppSidebar({
                         weight={isActive ? "fill" : "duotone"}
                         className={
                           isActive
-                            ? "text-black size-5"
+                            ? "text-white size-5"
                             : "text-zinc-400 size-5"
                         }
                       />
@@ -269,83 +270,31 @@ export function AppSidebar({
               Organization Settings
             </SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                {(() => {
-                  const projectsUrl = `/organizations`;
-                  const isActive = pathname === projectsUrl;
-                  return (
+              {[
+                { url: "/organizations", label: "Projects", Icon: Database },
+                { url: "/organizations/members", label: "Members", Icon: Users },
+                { url: "/organizations/usage", label: "Usage & Billing", Icon: ChartLineUp },
+              ].map(({ url, label, Icon }) => {
+                const isActive = pathname === url;
+                return (
+                  <SidebarMenuItem key={url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
-                      className={
-                        isActive
-                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
-                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
-                      }
+                      className={isActive ? activeClass : inactiveClass}
                     >
-                      <Link href={projectsUrl}>
-                        <Database
+                      <Link href={url}>
+                        <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
-                          className={isActive ? "text-black" : "text-zinc-400"}
+                          className={isActive ? "text-white size-5" : "text-zinc-400 size-5"}
                         />
-                        <span>Projects</span>
+                        <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
-                  );
-                })()}
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                {(() => {
-                  const membersUrl = `/organizations/members`;
-                  const isActive = pathname === membersUrl;
-                  return (
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={
-                        isActive
-                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
-                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
-                      }
-                    >
-                      <Link href={membersUrl}>
-                        <Users
-                          size={20}
-                          weight={isActive ? "fill" : "duotone"}
-                          className={isActive ? "text-black" : "text-zinc-400"}
-                        />
-                        <span>Members</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  );
-                })()}
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                {(() => {
-                  const usageUrl = `/organizations/usage`;
-                  const isActive = pathname === usageUrl;
-                  return (
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={
-                        isActive
-                          ? "border-2 border-foreground bg-foreground text-background px-5 py-3 font-bold shadow-primary shadow-[4px_4px_0_0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none focus:outline-0 h-auto rounded-none transition-all tracking-wider"
-                          : "hover:bg-secondary text-muted-foreground hover:text-foreground font-semibold py-3 h-auto transition-all rounded-none tracking-wider"
-                      }
-                    >
-                      <Link href={usageUrl}>
-                        <ChartLineUp
-                          size={20}
-                          weight={isActive ? "bold" : "duotone"}
-                        />
-                        <span>Usage & Billing</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  );
-                })()}
-              </SidebarMenuItem>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         )}
@@ -359,32 +308,29 @@ export function AppSidebar({
               </span>
             </SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                {(() => {
-                  const membersUrl = `/projects/${activeProjectId}/members`;
-                  const isActive = pathname === membersUrl;
-                  return (
+              {[
+                { url: `/projects/${activeProjectId}/members`, label: "Project Members", Icon: Users },
+              ].map(({ url, label, Icon }) => {
+                const isActive = pathname === url;
+                return (
+                  <SidebarMenuItem key={url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
-                      className={
-                        isActive
-                          ? "border-2 border-black bg-white! px-5 py-2 font-semibold text-black! shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 h-auto"
-                          : "hover:bg-white/10 text-zinc-300 hover:text-white py-3 h-auto"
-                      }
+                      className={isActive ? activeClass : inactiveClass}
                     >
-                      <Link href={membersUrl}>
-                        <Users
+                      <Link href={url}>
+                        <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
-                          className={isActive ? "text-black" : "text-zinc-400"}
+                          className={isActive ? "text-white size-5" : "text-zinc-400 size-5"}
                         />
-                        <span>Project Members</span>
+                        <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
-                  );
-                })()}
-              </SidebarMenuItem>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         )}
@@ -399,11 +345,11 @@ export function AppSidebar({
                   <SidebarMenuButton
                     size="lg"
                     disabled={projectsStatus === "loading"}
-                    className="bg-[#0c0c0e] border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-none disabled:opacity-50"
+                    className="bg-[#0c0c0e] border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-xl disabled:opacity-50"
                   >
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-zinc-800 text-zinc-400">
+                    <div className="flex rounded-xl aspect-square size-8 items-center justify-center bg-zinc-800 text-zinc-400">
                       {projectsStatus === "loading" ? (
-                        <div className="size-4 border-2 border-zinc-500 border-t-transparent animate-spin" />
+                        <CircleIcon className="size-4 border-zinc-500 animate-spin" />
                       ) : (
                         <Database className="size-4" weight="bold" />
                       )}
@@ -424,7 +370,7 @@ export function AppSidebar({
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none bg-[#141418] border-2 border-white/10 text-zinc-200 p-2"
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl bg-[#141418] border-2 border-white/10 text-zinc-200 p-2"
                   align="start"
                   side={isMobile ? "bottom" : "right"}
                   sideOffset={8}
@@ -438,11 +384,10 @@ export function AppSidebar({
                       <DropdownMenuItem
                         key={project.id}
                         onClick={() => handleProjectSwitch(project.id)}
-                        className={`flex items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white border border-transparent ${
-                          project.id === activeProjectId
-                            ? "bg-white/5 border-white/10 text-white font-bold"
-                            : ""
-                        }`}
+                        className={`flex rounded-xl items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white border border-transparent ${project.id === activeProjectId
+                          ? "bg-white/5 border-white/10 text-white font-bold inset-shadow-2xs inset-shadow-white/30"
+                          : ""
+                          }`}
                       >
                         <span className="flex-1 truncate">{project.name}</span>
                         {project.environment && (
@@ -462,7 +407,7 @@ export function AppSidebar({
                   <DropdownMenuItem asChild>
                     <Link
                       href="/organizations"
-                      className="flex items-center w-full px-2 py-2 hover:bg-white/5 cursor-pointer text-xs font-bold text-indigo-400"
+                      className="flex items-center w-full px-2 py-2 hover:bg-white/5 rounded-xl cursor-pointer text-xs font-bold text-indigo-400"
                     >
                       <Gear size={16} className="mr-2" />
                       Project Settings
@@ -480,7 +425,7 @@ export function AppSidebar({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-white/5"
+                  className="rounded-xl data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-white/5"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage

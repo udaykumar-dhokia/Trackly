@@ -48,13 +48,13 @@ const Header = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3">
             <a href="/auth/login" className="hidden sm:block">
-              <Button className="cursor-pointer border-2 border-black bg-white px-4 py-2 sm:px-5 sm:py-3 text-[13px] sm:text-sm font-bold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all">
+              <Button className="rounded-xl cursor-pointer bg-transparent px-4 py-2 sm:px-5 sm:py-3 text-[13px] sm:text-sm font-bold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all">
                 Login
               </Button>
             </a>
 
             <Link href="/auth/login?screen_hint=signup">
-              <Button className="cursor-pointer border-2 border-black bg-white px-4 py-2 sm:px-5 sm:py-3 text-[13px] sm:text-sm font-bold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all flex items-center gap-1.5">
+              <Button className="rounded-xl inset-shadow-2xs inset-shadow-white/30 cursor-pointer border-black bg-white/20 px-4 sm:px-5 text-[13px] sm:text-sm font-bold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all flex items-center gap-1.5">
                 <span className="hidden xs:inline">Get Started Free</span>
                 <span className="xs:hidden">Get Started</span>
                 <ArrowUpRightIcon weight="bold" className="size-3.5" />

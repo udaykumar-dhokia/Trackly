@@ -126,7 +126,7 @@ export default function AboutContact() {
 
       <section className="ac-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100">
         <div className="mx-auto max-w-[1080px] grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-          <div className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-none p-9 h-full overflow-hidden">
+          <div className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
             <div className="flex items-center gap-2 mb-5">
               <span className="block w-[18px] h-px bg-primary/60" />
               <span className="text-[11px] tracking-widest uppercase text-primary">
@@ -136,7 +136,7 @@ export default function AboutContact() {
 
             <div className="flex items-center gap-3.5 mb-6">
               <div
-                className="w-13 h-13 rounded-none bg-[#141418] border border-white/10 flex items-center justify-content-center shrink-0 overflow-hidden"
+                className="w-13 h-13 rounded-xl bg-[#141418] border border-white/10 flex items-center justify-content-center shrink-0 overflow-hidden"
                 style={{ width: 52, height: 52 }}
               >
                 <img
@@ -192,7 +192,7 @@ export default function AboutContact() {
                 <span
                   key={tag.label}
                   className={[
-                    "text-[10px] px-2.5 py-1 rounded-none border tracking-[.02em]",
+                    "text-[10px] px-2.5 py-1 rounded-xl border tracking-[.02em]",
                     tag.hi
                       ? "border-primary/30 text-primary bg-primary/10"
                       : "border-white/10 text-zinc-500 bg-[#141418]",
@@ -210,10 +210,10 @@ export default function AboutContact() {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="social-link flex items-center gap-2.5 px-3 py-2.5 rounded-[9px] border border-white/6 text-zinc-400 no-underline hover:border-white/11 hover:text-zinc-100"
+                  className="social-link flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/6 text-zinc-400 no-underline hover:border-white/11 hover:text-zinc-100"
                 >
                   <div
-                    className={`w-7 h-7 rounded-[7px] border flex items-center justify-center shrink-0 ${s.iconBg}`}
+                    className={`w-7 h-7 rounded-xl border flex items-center justify-center shrink-0 ${s.iconBg}`}
                   >
                     {s.icon}
                   </div>
@@ -231,7 +231,7 @@ export default function AboutContact() {
             </div>
           </div>
 
-          <div className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-none p-9 h-full overflow-hidden">
+          <div className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
             <div className="flex items-center gap-2 mb-5">
               <span
                 className="block w-[18px] h-px opacity-60"
@@ -319,7 +319,7 @@ export default function AboutContact() {
               </div>
 
               {!submitted ? (
-                <Button type="submit" disabled={sending} className="cursor-pointer border-2 border-black bg-white px-5 py-3 font-semibold text-black shadow-primary shadow-[4px_4px_0_0] hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed w-full">
+                <Button type="submit" disabled={sending} className="cursor-pointer border-black bg-white/20 px-5 py-3 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed w-full">
                   {sending ? (
                     <>
                       <svg
@@ -347,14 +347,14 @@ export default function AboutContact() {
                 </Button>
               ) : (
                 <div
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-[9px] border"
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
                   style={{
                     background: "rgba(52,211,153,0.08)",
                     borderColor: "rgba(52,211,153,0.2)",
                   }}
                 >
                   <span
-                    className="pulse-dot w-1.5 h-1.5 rounded-full shrink-0"
+                    className="pulse-dot w-1.5 h-1.5 rounded-xl shrink-0"
                     style={{
                       background: "#34d399",
                       boxShadow: "0 0 6px #34d399",
