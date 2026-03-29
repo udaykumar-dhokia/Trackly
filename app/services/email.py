@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from html import escape
+from urllib.parse import quote
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -215,9 +216,12 @@ def build_welcome_email_html(user: User) -> str:
     docs_url = f"{dashboard_url}/docs"
     contact_url = f"{dashboard_url}#contact"
     
-    unsubscribe_url = f"{settings.app_base_url.rstrip('/')}{settings.api_prefix}/emails/unsubscribe"
+    unsubscribe_url = f"{settings.app_base_url.rstrip('/')}/unsubscribe"
     if hasattr(user, 'resend_contact_id') and user.resend_contact_id:
-        unsubscribe_url += f"?audience_id={settings.resend_audience_id}&id={user.resend_contact_id}"
+        unsubscribe_url += (
+            f"?audience_id={quote(settings.resend_audience_id)}"
+            f"&id={quote(user.resend_contact_id)}"
+        )
     else:
         unsubscribe_url = f"mailto:{settings.support_email}?subject=Unsubscribe%20from%20Trackly%20emails"
 
