@@ -214,7 +214,12 @@ def build_welcome_email_html(user: User) -> str:
     dashboard_url = settings.app_base_url.rstrip("/")
     docs_url = f"{dashboard_url}/docs"
     contact_url = f"{dashboard_url}#contact"
-    unsubscribe_url = f"mailto:{settings.support_email}?subject=Unsubscribe%20from%20Trackly%20emails"
+    
+    unsubscribe_url = f"{settings.app_base_url.rstrip('/')}{settings.api_prefix}/emails/unsubscribe"
+    if hasattr(user, 'resend_contact_id') and user.resend_contact_id:
+        unsubscribe_url += f"?audience_id={settings.resend_audience_id}&id={user.resend_contact_id}"
+    else:
+        unsubscribe_url = f"mailto:{settings.support_email}?subject=Unsubscribe%20from%20Trackly%20emails"
 
     return (
         WELCOME_TEMPLATE
@@ -294,3 +299,26 @@ async def ensure_welcome_email_sent(db: AsyncSession, user: User) -> bool:
         delivery.provider_message_id,
     )
     return True
+
+
+def unsubscribe_contact(audience_id: str, contact_id: str) -> bool:
+    """
+    Unsubscribes a contact from a Resend audience.
+    """
+    import resend
+    if not settings.resend_api_key:
+        logger.error("RESEND_API_KEY is missing")
+        return False
+
+    resend.api_key = settings.resend_api_key
+    try:
+        resend.Contacts.update({
+            "audience_id": audience_id,
+            "id": contact_id,
+            "unsubscribed": True,
+        })
+        logger.info("Successfully unsubscribed contact %s from audience %s", contact_id, audience_id)
+        return True
+    except Exception as exc:
+        logger.exception("Failed to unsubscribe contact %s: %s", contact_id, exc)
+        return False

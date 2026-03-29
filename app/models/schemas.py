@@ -126,6 +126,29 @@ class UserRegisterRequest(BaseModel):
     profile_photo: str | None = None
 
 
+class ProjectCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    environment: str | None = Field(default=None, max_length=50)
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    environment: str | None = Field(default=None, max_length=50)
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class ProjectResponse(BaseModel):
+    id: uuid.UUID
+    org_id: uuid.UUID
+    name: str
+    environment: str | None
+    description: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProjectMemberResponse(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID

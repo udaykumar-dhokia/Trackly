@@ -9,20 +9,14 @@ import {
   setActiveProject,
   fetchOrgMembers,
   addOrgUser,
+  updateProject,
 } from "@/lib/store/features/projectsSlice";
 import {
   Plus,
   CaretRight,
-  Planet,
-  House,
-  Users,
-  UserPlus,
-  CheckCircle,
-  XCircle,
-  ArrowClockwise,
-  Envelope,
-  ShieldCheck,
-  Database,
+  Sparkle,
+  PencilSimple,
+  Stack,
 } from "@phosphor-icons/react";
 import {
   Dialog,
@@ -33,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function OrganizationsPage() {
   const { user } = useUser();
@@ -43,13 +38,24 @@ export default function OrganizationsPage() {
     error,
     activeProjectId,
     activeOrgId,
+    organizations,
     orgMembers,
     orgMembersStatus,
   } = useAppSelector((state) => state.projects);
+  const activeOrg = organizations.find((org) => org.id === activeOrgId);
+  const canManageProjects =
+    activeOrg?.role === "admin" || activeOrg?.role === "owner";
 
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectEnvironment, setNewProjectEnvironment] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingEnvironment, setEditingEnvironment] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [email, setEmail] = useState("");
   const [checkingEmail, setCheckingEmail] = useState(false);
@@ -105,14 +111,58 @@ export default function OrganizationsPage() {
     setIsCreating(true);
     try {
       await dispatch(
-        createProject({ orgId: activeOrgId, name: newProjectName }),
+        createProject({
+          orgId: activeOrgId,
+          name: newProjectName.trim(),
+          environment: newProjectEnvironment.trim() || null,
+          description: newProjectDescription.trim() || null,
+        }),
       ).unwrap();
       setNewProjectName("");
+      setNewProjectEnvironment("");
+      setNewProjectDescription("");
       setIsDialogOpen(false);
     } catch (err) {
       console.error("Failed to create project", err);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const openEditDialog = (
+    projectId: string,
+    name: string,
+    environment: string | null,
+    description: string | null,
+  ) => {
+    setEditingProjectId(projectId);
+    setEditingName(name);
+    setEditingEnvironment(environment || "");
+    setEditingDescription(description || "");
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProjectId || !user?.sub) return;
+    setIsUpdating(true);
+    try {
+      await dispatch(
+        updateProject({
+          projectId: editingProjectId,
+          auth0Id: user.sub,
+          name: editingName.trim(),
+          environment: editingEnvironment.trim() || null,
+          description: editingDescription.trim() || null,
+        }),
+      ).unwrap();
+      setEditingProjectId(null);
+      setEditingName("");
+      setEditingEnvironment("");
+      setEditingDescription("");
+    } catch (err) {
+      console.error("Failed to update project", err);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -149,52 +199,66 @@ export default function OrganizationsPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <h2 className="text-2xl font-bold text-white">Available Projects</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 bg-white/20 px-4 py-2 text-sm font-bold text-white active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all border-2 border-transparent">
-                <Plus weight="bold" /> New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-2 border-white/10 bg-[#141418] text-white">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">
-                  Create New Project
-                </DialogTitle>
-              </DialogHeader>
-              <form
-                onSubmit={handleCreateProject}
-                className="flex flex-col gap-4 mt-2"
-              >
-                <div>
-                  <label htmlFor="projectName" className="sr-only">
-                    Project Name
-                  </label>
+          {canManageProjects && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white bg-white/20">
+                  <Plus weight="bold" /> New Project
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="overflow-hidden rounded-xl border border-white/10 bg-[#111218] p-0 text-white shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
+                <div className="border-b border-white/8 px-6 py-5">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3 text-xl font-black tracking-tight">
+                      Create New Project
+                    </DialogTitle>
+                  </DialogHeader>
+                  <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
+                    Define the project name, environment, and a short operating note so your team can recognize this workspace instantly.
+                  </p>
+                </div>
+                <form onSubmit={handleCreateProject} className="space-y-4 px-6 py-6">
                   <Input
                     id="projectName"
                     type="text"
                     placeholder="e.g. Production API"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    className="w-full bg-[#0f0f12] border-2 rounded-xl border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                    className="h-12 rounded-2xl border-white/10 bg-white/[0.03] px-4 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
                     required
                   />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isCreating || !newProjectName.trim()}
-                  className="group flex items-center justify-center gap-2 border-2 border-transparent bg-white/20 px-5 py-3 font-bold text-white hover:bg-white/30 focus:ring-2 focus:ring-white/20 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {isCreating ? "Creating..." : "Launch Project"}
-                  {!isCreating && (
-                    <Plus
-                      weight="bold"
-                      className="group-hover:rotate-90 transition-transform"
-                    />
-                  )}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <Input
+                    id="projectEnvironment"
+                    type="text"
+                    placeholder="Environment, e.g. prod, staging, dev"
+                    value={newProjectEnvironment}
+                    onChange={(e) => setNewProjectEnvironment(e.target.value)}
+                    className="h-12 rounded-2xl border-white/10 bg-white/[0.03] px-4 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
+                  />
+                  <Textarea
+                    id="projectDescription"
+                    placeholder="What is this project used for? Team, traffic, scope, or deployment notes."
+                    value={newProjectDescription}
+                    onChange={(e) => setNewProjectDescription(e.target.value)}
+                    className="min-h-32 rounded-2xl border-white/10 bg-white/[0.03] px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
+                    maxLength={2000}
+                  />
+                  <div className="flex items-center justify-between text-xs text-zinc-500">
+                    <span>Optional fields help distinguish environments faster.</span>
+                    <span>{newProjectDescription.length}/2000</span>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isCreating || !newProjectName.trim()}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/20 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isCreating ? "Creating..." : "Launch Project"}
+                    {!isCreating && <Plus weight="bold" />}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {status === "loading" && (
@@ -223,33 +287,116 @@ export default function OrganizationsPage() {
             {projects.map((proj) => (
               <div
                 key={proj.id}
-                className={`group border-2 p-6 flex flex-col justify-between min-h-[160px] transition-all rounded-xl
+                className={`group relative overflow-hidden border p-6 flex flex-col justify-between min-h-[220px] transition-all rounded-xl
                   ${activeProjectId === proj.id
-                    ? "border-indigo-400 bg-[#1a1a24]"
-                    : "border-white/10 bg-[#0f0f12] hover:border-white/30 hover:-translate-y-1"
+                    ? "border-white/20"
+                    : "border-white/10 bg-[#0f0f12] hover:border-white/20 hover:-translate-y-1"
                   }
                 `}
               >
+                <div className="pointer-events-none absolute inset-0" />
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg text-white truncate pr-4">
-                      {proj.name}
-                    </h3>
-                    {activeProjectId === proj.id && (
-                      <span className="text-[10px] px-2 py-0.5 border border-indigo-400/30 text-indigo-400 bg-indigo-400/10 uppercase tracking-wider font-bold">
-                        Active
+                  <div className="relative z-10 flex items-start justify-between gap-3 mb-4">
+                    <div className="space-y-3">
+                      <h3 className="font-bold text-lg text-white truncate pr-4">
+                        {proj.name}
+                      </h3>
+                    </div>
+                    {canManageProjects && user?.sub && (
+                      <Dialog
+                        open={editingProjectId === proj.id}
+                        onOpenChange={(open) => {
+                          if (!open) {
+                            setEditingProjectId(null);
+                          } else {
+                            openEditDialog(
+                              proj.id,
+                              proj.name,
+                              proj.environment,
+                              proj.description,
+                            );
+                          }
+                        }}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              openEditDialog(
+                                proj.id,
+                                proj.name,
+                                proj.environment,
+                                proj.description,
+                              )
+                            }
+                            className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 hover:text-white"
+                          >
+                            <PencilSimple size={18} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="overflow-hidden rounded-xl border border-white/10 bg-[#111218] p-0 text-white">
+                          <div className="border-b border-white/8 px-6 py-5">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl font-black tracking-tight">
+                                Edit Project
+                              </DialogTitle>
+                            </DialogHeader>
+                            <p className="mt-2 text-sm text-zinc-400">
+                              Update the details your organization sees when choosing this project.
+                            </p>
+                          </div>
+                          <form onSubmit={handleUpdateProject} className="space-y-4 px-6 py-6">
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="h-12 rounded-xl border-white/10 bg-white/[0.03] px-4 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
+                              required
+                            />
+                            <Input
+                              value={editingEnvironment}
+                              onChange={(e) => setEditingEnvironment(e.target.value)}
+                              placeholder="Environment"
+                              className="h-12 rounded-xl border-white/10 bg-white/[0.03] px-4 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
+                            />
+                            <Textarea
+                              value={editingDescription}
+                              onChange={(e) => setEditingDescription(e.target.value)}
+                              placeholder="Describe the purpose, systems, or ownership of this project."
+                              maxLength={2000}
+                              className="min-h-32 rounded-xl border-white/10 bg-white/[0.03] px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-primary"
+                            />
+                            <div className="flex items-center justify-between text-xs text-zinc-500">
+                              <span>Keep it short and useful for the team.</span>
+                              <span>{editingDescription.length}/2000</span>
+                            </div>
+                            <Button
+                              type="submit"
+                              disabled={isUpdating || !editingName.trim()}
+                              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 bg-white/20"
+                            >
+                              {isUpdating ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                  <div className="relative z-10 mb-5 flex flex-wrap items-center gap-2">
+                    {proj.environment && (
+                      <span className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-300">
+                        {proj.environment}
                       </span>
                     )}
                   </div>
-                  <p className="font-mono text-[10px] text-zinc-500 break-all mb-4">
-                    ID: {proj.id}
+                  <p className="relative z-10 mb-4 line-clamp-4 text-sm leading-6 text-zinc-400">
+                    {proj.description || "No project description yet. Add one to clarify intent, ownership, or deployment scope."}
                   </p>
                 </div>
 
                 <button
                   onClick={() => dispatch(setActiveProject(proj.id))}
-                  className={`flex items-center gap-1 text-sm font-semibold transition-colors w-max cursor-pointer
-                    ${activeProjectId === proj.id ? "text-indigo-400" : "text-zinc-400 group-hover:text-zinc-200"}
+                  className={`relative z-10 flex items-center gap-1 text-sm font-semibold transition-colors w-max cursor-pointer
+                    ${activeProjectId === proj.id ? "text-primary" : "text-zinc-400 group-hover:text-zinc-200"}
                   `}
                 >
                   {activeProjectId === proj.id

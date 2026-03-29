@@ -64,6 +64,8 @@ def _make_project(**kwargs) -> Project:
     p.org_id = kwargs.get("org_id", uuid.uuid4())
     p.name = kwargs.get("name", "Production")
     p.environment = kwargs.get("environment", "prod")
+    p.description = kwargs.get("description", "Primary production workloads")
+    p.created_at = kwargs.get("created_at", datetime.now(timezone.utc))
     return p
 
 
@@ -203,19 +205,27 @@ class TestProjects:
             obj.org_id = org.id
             obj.name = "Production"
             obj.environment = "prod"
+            obj.description = "Primary production workloads"
+            obj.created_at = project.created_at
 
         db.refresh = fake_refresh
         _override_db(db)
 
         resp = client.post(
             f"/v1/organizations/{org.id}/projects",
-            json={"name": "Production", "environment": "prod"},
+            json={
+                "name": "Production",
+                "environment": "prod",
+                "description": "Primary production workloads",
+            },
         )
         _clear()
 
         assert resp.status_code == 201
         assert resp.json()["name"] == "Production"
         assert resp.json()["environment"] == "prod"
+        assert resp.json()["description"] == "Primary production workloads"
+        assert resp.json()["created_at"] == project.created_at.isoformat()
 
     def test_create_project_org_not_found(self):
         db = _mock_db(query_return=None)
@@ -249,6 +259,79 @@ class TestProjects:
 
         assert resp.status_code == 200
         assert len(resp.json()) == 3
+
+    def test_update_project_as_org_admin(self):
+        org_id = uuid.uuid4()
+        project = _make_project(
+            org_id=org_id,
+            name="Before",
+            environment="dev",
+            description="Before description",
+        )
+        requester = MagicMock()
+        requester.id = uuid.uuid4()
+        membership = MagicMock()
+        membership.role = "admin"
+
+        db = AsyncMock()
+        project_result = MagicMock()
+        project_result.scalar_one_or_none.return_value = project
+        user_result = MagicMock()
+        user_result.scalar_one_or_none.return_value = requester
+        membership_result = MagicMock()
+        membership_result.scalar_one_or_none.return_value = membership
+
+        async def fake_refresh(obj):
+            obj.created_at = project.created_at
+
+        db.execute = AsyncMock(side_effect=[project_result, user_result, membership_result])
+        db.flush = AsyncMock()
+        db.refresh = fake_refresh
+        _override_db(db)
+
+        resp = client.put(
+            f"/v1/projects/{project.id}?auth0_id=auth0|admin",
+            json={
+                "name": "After",
+                "environment": "prod",
+                "description": "After description",
+            },
+        )
+        _clear()
+
+        assert resp.status_code == 200
+        assert project.name == "After"
+        assert project.environment == "prod"
+        assert project.description == "After description"
+        assert resp.json()["name"] == "After"
+        assert resp.json()["environment"] == "prod"
+        assert resp.json()["description"] == "After description"
+
+    def test_update_project_requires_org_admin(self):
+        org_id = uuid.uuid4()
+        project = _make_project(org_id=org_id)
+        requester = MagicMock()
+        requester.id = uuid.uuid4()
+
+        db = AsyncMock()
+        project_result = MagicMock()
+        project_result.scalar_one_or_none.return_value = project
+        user_result = MagicMock()
+        user_result.scalar_one_or_none.return_value = requester
+        membership_result = MagicMock()
+        membership_result.scalar_one_or_none.return_value = None
+
+        db.execute = AsyncMock(side_effect=[project_result, user_result, membership_result])
+        _override_db(db)
+
+        resp = client.put(
+            f"/v1/projects/{project.id}?auth0_id=auth0|member",
+            json={"name": "After"},
+        )
+        _clear()
+
+        assert resp.status_code == 403
+        assert "edit project details" in resp.json()["detail"]
 
 
 # ── API key endpoints ─────────────────────────────────────────────────────────

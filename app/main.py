@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import ingest, stats, organizations, api_keys, events, users, feedback, admin
+from app.routers import ingest, stats, organizations, api_keys, events, users, feedback, admin, emails
 from app.services.rate_limit import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -57,6 +57,7 @@ for prefix in api_prefixes:
     app.include_router(users.router,         prefix=prefix, tags=["users"])
     app.include_router(feedback.router,      prefix=prefix, tags=["feedback"])
     app.include_router(admin.router,         prefix=prefix, tags=["admin"])
+    app.include_router(emails.router,        prefix=prefix, tags=["emails"])
 
 
 @app.get("/health", tags=["ops"])

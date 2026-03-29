@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -38,6 +39,7 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         from app.models import orm
         await conn.run_sync(Base.metadata.create_all)
+        await _apply_schema_backfills(conn)
 
     async with AsyncSessionLocal() as session:
         try:
@@ -47,3 +49,9 @@ async def init_db() -> None:
             await session.commit()
         except Exception:
             await session.rollback()
+
+
+async def _apply_schema_backfills(conn) -> None:
+    await conn.execute(
+        text("ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT")
+    )

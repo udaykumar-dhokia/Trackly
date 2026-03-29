@@ -24,8 +24,11 @@ from app.models.schemas import (
     OrganizationBudgetUpdate,
     OrganizationMemberAdd,
     OrganizationUsageResponse,
+    ProjectCreate,
     ProjectMemberAdd,
     ProjectMemberResponse,
+    ProjectResponse,
+    ProjectUpdate,
     UserResponse,
 )
 from app.services.billing import (
@@ -54,20 +57,6 @@ class OrganizationResponse(BaseModel):
     name: str
     slug: str
     plan: str
-
-    model_config = {"from_attributes": True}
-
-
-class ProjectCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    environment: str | None = Field(default=None, max_length=50)
-
-
-class ProjectResponse(BaseModel):
-    id: uuid.UUID
-    org_id: uuid.UUID
-    name: str
-    environment: str | None
 
     model_config = {"from_attributes": True}
 
@@ -126,6 +115,7 @@ async def create_project(
         org_id=org_id,
         name=body.name,
         environment=body.environment,
+        description=body.description,
     )
     db.add(project)
     await db.flush()
@@ -165,6 +155,44 @@ async def get_project(
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+    return project
+
+
+@router.put(
+    "/projects/{project_id}",
+    response_model=ProjectResponse,
+    summary="Update a project",
+)
+async def update_project(
+    project_id: uuid.UUID,
+    body: ProjectUpdate,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> ProjectResponse:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    await _require_org_admin(
+        db,
+        project.org_id,
+        auth0_id,
+        detail="Only organization admins can edit project details.",
+    )
+
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide at least one project field to update.",
+        )
+
+    for field, value in updates.items():
+        setattr(project, field, value)
+
+    await db.flush()
+    await db.refresh(project)
     return project
 
 @router.get(
@@ -512,6 +540,8 @@ async def _require_org_admin(
     db: AsyncSession,
     org_id: uuid.UUID,
     auth0_id: str,
+    *,
+    detail: str = "Only organization admins can manage budgets.",
 ) -> User:
     result = await db.execute(select(User).where(User.auth0_id == auth0_id))
     user = result.scalar_one_or_none()
@@ -528,7 +558,7 @@ async def _require_org_admin(
     if membership is None or membership.role not in ("owner", "admin"):
         raise HTTPException(
             status_code=403,
-            detail="Only organization admins can manage budgets.",
+            detail=detail,
         )
     return user
 

@@ -5,6 +5,8 @@ export interface Project {
   org_id: string;
   name: string;
   environment: string | null;
+  description: string | null;
+  created_at: string;
 }
 
 export interface ProjectMember {
@@ -100,10 +102,12 @@ export const createProject = createAsyncThunk(
     orgId,
     name,
     environment,
+    description,
   }: {
     orgId: string;
     name: string;
     environment?: string | null;
+    description?: string | null;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
@@ -111,11 +115,43 @@ export const createProject = createAsyncThunk(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, environment }),
+        body: JSON.stringify({ name, environment, description }),
       },
     );
     if (!response.ok) {
       throw new Error("Failed to create project");
+    }
+    return (await response.json()) as Project;
+  },
+);
+
+export const updateProject = createAsyncThunk(
+  "projects/updateProject",
+  async ({
+    projectId,
+    auth0Id,
+    name,
+    environment,
+    description,
+  }: {
+    projectId: string;
+    auth0Id: string;
+    name?: string;
+    environment?: string | null;
+    description?: string | null;
+  }) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const response = await fetch(
+      `${apiUrl}/api/v1/projects/${projectId}?auth0_id=${encodeURIComponent(auth0Id)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, environment, description }),
+      },
+    );
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to update project");
     }
     return (await response.json()) as Project;
   },
@@ -262,6 +298,11 @@ export const projectsSlice = createSlice({
       .addCase(createProject.fulfilled, (state, action) => {
         state.items.push(action.payload);
         state.activeProjectId = action.payload.id;
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        state.items = state.items.map((project) =>
+          project.id === action.payload.id ? action.payload : project,
+        );
       })
       .addCase(fetchProjectMembers.pending, (state) => {
         state.membersStatus = "loading";

@@ -55,6 +55,7 @@ class Project(Base):
     org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     environment: Mapped[str | None] = mapped_column(String(50))
+    description: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     organization: Mapped[Organization] = relationship(back_populates="projects")
