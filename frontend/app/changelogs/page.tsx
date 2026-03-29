@@ -103,7 +103,7 @@ export default function ChangelogPage() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-white/5 bg-white/2 p-6 sm:p-8 rounded-none shadow-[8px_8px_0_0_#000] group-hover:shadow-[12px_12px_0_0_#000] transition-all duration-300">
+                  <div className="border-2 border-white/5 bg-white/2 p-6 sm:p-8 rounded-xl shadow-[8px_8px_0_0_#000] group-hover:shadow-[12px_12px_0_0_#000] transition-all duration-300">
                     <h3 className="text-xl font-bold text-white mb-6 tracking-tight">
                       {release.title}
                     </h3>

@@ -2,8 +2,9 @@ import { Auth0Client } from "@auth0/nextjs-auth0/server";
 
 export const auth0 = new Auth0Client({
   signInReturnToPath: "/dashboard",
-  beforeSessionSaved: async (session, idToken) => {
+  beforeSessionSaved: async (session) => {
     const { user } = session;
+    let isNewUser = false;
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -13,6 +14,7 @@ export const auth0 = new Auth0Client({
       );
 
       if (response.status === 404) {
+        isNewUser = true;
         response = await fetch(`${apiUrl}/api/v1/users/register`, {
           method: "POST",
           headers: {
@@ -34,6 +36,7 @@ export const auth0 = new Auth0Client({
         const data = await response.json();
 
         session.user.app_user_id = data.id;
+        session.user.is_new_user = isNewUser;
         if (data.org_id) {
           session.user.org_id = data.org_id;
         }

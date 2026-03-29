@@ -16,7 +16,7 @@ export function DynamicBreadcrumb() {
   const segments = pathname.split("/").filter(Boolean);
 
   return (
-    <Breadcrumb>
+    <Breadcrumb data-tour="page-breadcrumb">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/dashboard" className="font-bold text-white">Trackly</BreadcrumbLink>
@@ -30,7 +30,7 @@ export function DynamicBreadcrumb() {
           let label = segment.charAt(0).toUpperCase() + segment.slice(1);
           
           // Handle specific cases (like IDs or groups)
-          if (segment.length > 20) { // Likely a UUID
+          if (segment.length > 20) {
              label = "Details";
           }
 
