@@ -11,6 +11,10 @@ async def unsubscribe(
     audience_id: str = Query(..., description="The Resend audience ID"),
 ):
     success = unsubscribe_contact(audience_id, id)
+    title = "Unsubscribed" if success else "Error"
+    status_msg = "You have been successfully removed from our mailing list. We're sorry to see you go!" if success else "Something went wrong while processing your request. Please try again or contact support."
+    footer_msg = "Request processed successfully." if success else "Error: We couldn't find your contact information."
+    status_color = "#86efac" if success else "#fca5a5"
     
     html_content = f"""
     <!DOCTYPE html>
@@ -18,7 +22,7 @@ async def unsubscribe(
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Unsubscribed | Trackly</title>
+        <title>{title} | Trackly</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
         <style>
             body {{
@@ -83,7 +87,7 @@ async def unsubscribe(
             .status-msg {{
                 font-size: 13px;
                 margin-top: 24px;
-                color: { "#86efac" if success else "#fca5a5" };
+                color: {status_color};
             }}
         </style>
     </head>
@@ -95,12 +99,10 @@ async def unsubscribe(
                     <path d="m6 6 12 12"></path>
                 </svg>
             </div>
-            <h1>{"Unsubscribed" if success else "Error"}</h1>
-            <p>
-                {"You have been successfully removed from our mailing list. We're sorry to see you go!" if success else "Something went wrong while processing your request. Please try again or contact support."}
-            </p>
+            <h1>{title}</h1>
+            <p>{status_msg}</p>
             <a href="{settings.app_base_url}" class="btn">Back to Trackly</a>
-            {f'<div class="status-msg">Request processed successfully.</div>' if success else f'<div class="status-msg">Error: We couldn\'t find your contact information.</div>'}
+            <div class="status-msg">{footer_msg}</div>
         </div>
     </body>
     </html>
