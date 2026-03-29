@@ -63,7 +63,7 @@ export function FeedbackDialog() {
       } else {
         toast.error("Failed to submit feedback.");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -90,6 +90,7 @@ export function FeedbackDialog() {
                   showTooltip && "text-indigo-400 scale-110",
                 )}
                 title="Give Feedback"
+                data-tour="feedback-trigger"
               >
                 <ChatTeardropText
                   size={20}

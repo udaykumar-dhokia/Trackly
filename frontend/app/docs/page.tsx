@@ -1256,6 +1256,8 @@ asyncio.run(main())`}</CodeBlock>
             />
           </>
         );
+
+      case "Ollama native":
         return (
           <>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">

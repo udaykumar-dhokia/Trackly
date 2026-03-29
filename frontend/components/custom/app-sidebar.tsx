@@ -24,6 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   ChartBar,
   Key,
@@ -31,11 +32,9 @@ import {
   Gear,
   SignOut,
   CaretUpDown,
-  UserCircle,
   ActivityIcon,
   Book,
   Users,
-  Monitor,
   ChartLineUp,
   Wallet,
   CircleIcon,
@@ -56,7 +55,7 @@ type UserProps = {
     email?: string | null;
     picture?: string | null;
     org_id?: string | null;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 };
 
@@ -97,6 +96,11 @@ const activeClass =
   "bg-white/20 inset-shadow-2xs inset-shadow-white/30 px-5 py-2 font-semibold text-white hover:bg-white/30 hover:text-white focus:ring-2 focus:ring-white/30 focus:outline-0 h-auto rounded-xl";
 const inactiveClass =
   "hover:bg-white/5 text-zinc-300 hover:text-white py-3 h-auto rounded-xl";
+const navTourIds: Record<string, string> = {
+  Dashboard: "dashboard-nav",
+  Budgets: "budgets-nav",
+  "API Keys": "api-keys-nav",
+};
 
 export function AppSidebar({
   user,
@@ -151,7 +155,13 @@ export function AppSidebar({
     >
       <SidebarHeader className="border-b border-white/5 pb-6 pt-6 px-4 space-y-4">
         <div className="flex items-center gap-3 px-2">
-          <img src="/logo/logo-48.png" className="w-10 h-10" />
+          <Image
+            src="/logo/logo-48.png"
+            alt="Trackly logo"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
           <div className="flex flex-col">
             <span className="text-xl font-black tracking-tighter text-white leading-none">
               Trackly
@@ -169,6 +179,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   size="lg"
                   className="bg-white/5 border border-white/10 inset-shadow-2xs inset-shadow-white/30 hover:bg-white/10 transition-colors cursor-pointer rounded-xl h-14"
+                  data-tour="workspace-switcher"
                 >
                   <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-indigo-500 text-white">
                     <Users className="size-4" weight="bold" />
@@ -246,6 +257,7 @@ export function AppSidebar({
                     <Link
                       href={item.url}
                       target={item.title === "Docs" ? "_blank" : ""}
+                      data-tour={navTourIds[item.title]}
                     >
                       <item.icon
                         weight={isActive ? "fill" : "duotone"}
@@ -283,7 +295,10 @@ export function AppSidebar({
                       isActive={isActive}
                       className={isActive ? activeClass : inactiveClass}
                     >
-                      <Link href={url}>
+                      <Link
+                        href={url}
+                        data-tour={label === "Projects" ? "org-projects-nav" : undefined}
+                      >
                         <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
@@ -319,7 +334,7 @@ export function AppSidebar({
                       isActive={isActive}
                       className={isActive ? activeClass : inactiveClass}
                     >
-                      <Link href={url}>
+                      <Link href={url} data-tour="project-context-nav">
                         <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
@@ -346,6 +361,7 @@ export function AppSidebar({
                     size="lg"
                     disabled={projectsStatus === "loading"}
                     className="bg-[#0c0c0e] border border-white/10 hover:bg-white/10 transition-colors cursor-pointer rounded-xl disabled:opacity-50"
+                    data-tour="project-switcher"
                   >
                     <div className="flex rounded-xl aspect-square size-8 items-center justify-center bg-zinc-800 text-zinc-400">
                       {projectsStatus === "loading" ? (

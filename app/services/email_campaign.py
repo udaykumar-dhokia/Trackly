@@ -91,7 +91,7 @@ def load_recipients(csv_path: str | Path) -> list[Recipient]:
 def build_unsubscribe_url(contact_id: str | None) -> str:
     if contact_id and settings.resend_audience_id:
         return (
-            f"{settings.app_base_url.rstrip('/')}{settings.api_prefix}/emails/unsubscribe"
+            f"{settings.app_base_url.rstrip('/')}/unsubscribe"
             f"?audience_id={quote(settings.resend_audience_id)}&id={quote(contact_id)}"
         )
     return f"mailto:{settings.support_email}?subject=Unsubscribe%20from%20Trackly%20emails"

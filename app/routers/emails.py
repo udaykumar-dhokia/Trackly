@@ -1,9 +1,30 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 from app.services.email import unsubscribe_contact
 from app.config import settings
 
 router = APIRouter()
+
+
+class UnsubscribeRequest(BaseModel):
+    id: str
+    audience_id: str
+
+
+@router.post("/unsubscribe")
+async def unsubscribe_submit(payload: UnsubscribeRequest):
+    success = unsubscribe_contact(payload.audience_id, payload.id)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="We couldn't unsubscribe this contact. Please try again or contact support.",
+        )
+
+    return {
+        "success": True,
+        "message": "You have been successfully removed from our mailing list.",
+    }
 
 @router.get("/unsubscribe", response_class=HTMLResponse)
 async def unsubscribe(

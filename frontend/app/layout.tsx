@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
@@ -8,6 +8,11 @@ import StoreProvider from "@/lib/store/StoreProvider";
 import { Analytics } from "@vercel/analytics/next";
 
 const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
+
+const notoSans = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-mono",
 });
@@ -104,8 +109,7 @@ export default function RootLayout({
         "antialiased",
         geistSans.variable,
         geistMono.variable,
-        "font-mono",
-        jetbrainsMono.variable,
+        notoSans.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

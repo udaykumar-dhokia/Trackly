@@ -115,7 +115,9 @@ status = trackly.batches.get(name=job.name)
 
 #### Ollama (Local LLMs)
 
-Trackly provides a first-class wrapper for the `ollama` Python library.
+Trackly provides a first-class wrapper for the official `ollama` Python
+library, including sync calls, async calls, streaming, embeddings, and local
+model utility helpers.
 
 ```python
 from trackly import Trackly
@@ -127,6 +129,16 @@ response = trackly.chat(
     model="llama3",
     messages=[{"role": "user", "content": "Why is the sky blue?"}]
 )
+
+# Async wrappers are available too
+# await trackly.chat_async(...)
+# await trackly.generate_async(...)
+# await trackly.embed_async(...)
+
+# Local model utilities are exposed directly
+# trackly.list()
+# trackly.show("llama3")
+# trackly.pull("llama3")
 ```
 
 ### Annotating Calls with Metadata
