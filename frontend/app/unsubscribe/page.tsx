@@ -32,7 +32,7 @@ function UnsubscribePageContent() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiUrl}/api/v1/emails/unsubscribe`, {
+      let response = await fetch(`${apiUrl}/api/v1/emails/unsubscribe`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,13 +40,20 @@ function UnsubscribePageContent() {
         body: JSON.stringify(payload),
       });
 
+      if (response.status === 404) {
+        const query = new URLSearchParams(payload).toString();
+        response = await fetch(`${apiUrl}/api/v1/emails/unsubscribe?${query}`, {
+          method: "GET",
+        });
+      }
+
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         throw new Error(
           data?.detail ||
-            data?.message ||
-            "Something went wrong while unsubscribing. Please try again.",
+          data?.message ||
+          "Something went wrong while unsubscribing. Please try again.",
         );
       }
 
