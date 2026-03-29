@@ -216,7 +216,7 @@ export function AppSidebar({
                         className={`size-2 rounded-full ${org.id === activeOrgId ? "bg-white/20 inset-shadow-2xs inset-shadow-white/30 animate-pulse" : "bg-zinc-700"}`}
                       />
                       <span className="flex-1 truncate">{org.name}</span>
-                      <span className="text-[8px] px-1.5 py-0.5 border border-white/10 text-zinc-500 font-mono uppercase">
+                      <span className="text-[8px] px-1.5 py-0.5 text-zinc-500 font-mono">
                         {org.role}
                       </span>
                     </DropdownMenuItem>

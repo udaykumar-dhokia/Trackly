@@ -3,7 +3,7 @@ import React from 'react'
 const NAV_LINKS = [
     { label: 'Docs', href: '/docs' },
     { label: 'GitHub', href: 'https://github.com/udaykumar-dhokia' },
-    { label: 'Changelog', href: '#' },
+    { label: 'Changelog', href: '/changelogs' },
     { label: 'Privacy', href: '#' },
     { label: 'Terms', href: '#' },
     { label: 'Support', href: 'mailto:support@tracklyai.in' },

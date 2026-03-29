@@ -76,6 +76,27 @@ response = trackly.models.generate_content(
 print(response.text)
 ```
 
+#### Anthropic (Native SDK)
+
+Trackly supports the official `anthropic` messages API.
+
+```python
+from trackly import Trackly
+
+# Initialize for Anthropic (Reads ANTHROPIC_API_KEY from environment)
+trackly = Trackly(provider="anthropic")
+
+# Use the .messages wrapper
+response = trackly.messages.create(
+    model="claude-3-5-sonnet-latest",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Hello, Claude"}
+    ]
+)
+print(response.content[0].text)
+```
+
 #### Gemini Batch API
 
 Trackly automatically tracks batch job creation and status.

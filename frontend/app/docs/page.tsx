@@ -42,10 +42,17 @@ const NAV: NavGroup[] = [
   {
     group: "Native SDKs",
     items: [
-      "Ollama native",
-      "Ollama async + utilities",
+      "Introduction to native SDKs",
+    ],
+  },
+  {
+    group: "Individual SDK Support",
+    items: [
+      "Anthropic messages",
       "Gemini models",
       "Gemini batches",
+      "Ollama native",
+      "Ollama async + utilities",
     ],
   },
   {
@@ -129,6 +136,16 @@ const CONSTRUCTOR_PARAMS: ParamSpec[] = [
     example:
       'Trackly(provider=providers.GEMINI, gemini_api_key="AIza...")',
   },
+  {
+    name: "anthropic_api_key",
+    type: "str | None",
+    required: false,
+    defaultValue: "ANTHROPIC_API_KEY",
+    description:
+      "Credential used by `trackly.messages` when you use the native Anthropic wrappers.",
+    example:
+      'Trackly(provider=providers.ANTHROPIC, anthropic_api_key="sk-ant-...")',
+  },
 ];
 
 const ENV_VARS: ParamSpec[] = [
@@ -159,6 +176,13 @@ const ENV_VARS: ParamSpec[] = [
     description:
       "Default Gemini credential for the native Gemini wrappers.",
     example: "GEMINI_API_KEY=AIza_your_gemini_key",
+  },
+  {
+    name: "ANTHROPIC_API_KEY",
+    type: "string",
+    description:
+      "Default Anthropic credential for the native Anthropic wrappers.",
+    example: "ANTHROPIC_API_KEY=sk-ant-your_anthropic_key",
   },
 ];
 
@@ -613,11 +637,10 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
         </div>
         <button
           onClick={copy}
-          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${
-            copied
+          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${copied
               ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
               : "text-zinc-400 border-zinc-700 bg-[#141822] hover:text-white hover:border-white"
-          }`}
+            }`}
         >
           {copied ? "COPIED" : "COPY"}
         </button>
@@ -733,9 +756,8 @@ function ParameterGrid({ items }: { items: ParamSpec[] }) {
           <div className="flex items-start justify-between gap-4 mb-3">
             <Ic>{item.name}</Ic>
             <span
-              className={`text-[10px] uppercase tracking-[0.22em] ${
-                item.required ? "text-[#f59e0b]" : "text-zinc-500"
-              }`}
+              className={`text-[10px] uppercase tracking-[0.22em] ${item.required ? "text-[#f59e0b]" : "text-zinc-500"
+                }`}
             >
               {item.required ? "Required" : "Optional"}
             </span>
@@ -801,11 +823,10 @@ const DocsNav = ({
                     onItemSelected?.();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${
-                    isActive
+                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${isActive
                       ? "border-[#f59e0b] bg-white/[0.06] text-white translate-x-1"
                       : "border-transparent text-zinc-500 hover:text-zinc-200 hover:border-white/20"
-                  }`}
+                    }`}
                 >
                   {item}
                 </button>
@@ -835,17 +856,10 @@ export default function DocsPage() {
             </h1>
             <p className="text-[.96rem] text-zinc-300 leading-[1.8] mb-6">
               Trackly is a Python usage-tracking layer for LLM apps. It hooks
-              into LangChain callbacks or native Ollama and Gemini SDK calls,
-              then records provider, model, tokens, latency, and your own
-              labels in the background.
+              into LangChain callbacks or native Anthropic, Ollama, and Gemini
+              SDK calls, then records provider, model, tokens, latency, and
+              your own labels in the background.
             </p>
-            <Callout type="info">
-              This page is written from the actual repository code, not just the
-              README. A few important details are easy to miss otherwise:
-              <Ic>callback()</Ic> takes no arguments, native Ollama uses the
-              <Ic>ollama</Ic> package, native Gemini uses <Ic>google-genai</Ic>,
-              and the ingest route is <Ic>/api/v1/events</Ic>.
-            </Callout>
 
             <SectionTitle accentColor="#14b8a6">What Trackly records</SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -889,6 +903,7 @@ export default function DocsPage() {
             <CodeBlock lang="python">{`from trackly import providers
 
 print(providers.LANGCHAIN)  # "langchain"
+print(providers.ANTHROPIC)  # "anthropic"
 print(providers.OLLAMA)     # "ollama"
 print(providers.GEMINI)     # "gemini"`}</CodeBlock>
           </>
@@ -921,7 +936,10 @@ pip install "trackly[all]"`}</CodeBlock>
             </Step>
 
             <Step n={3} label="Install native SDKs when needed">
-              <CodeBlock lang="bash">{`# Needed for Trackly(provider="ollama")
+              <CodeBlock lang="bash">{`# Needed for Trackly(provider="anthropic")
+pip install anthropic
+
+# Needed for Trackly(provider="ollama")
 pip install ollama
 
 # Needed for Trackly(provider="gemini")
@@ -1123,7 +1141,121 @@ callback_handler = trackly.callback()`}</CodeBlock>
           </>
         );
 
-      case "Ollama native":
+      case "Introduction to native SDKs":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Direct integration
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Native SDKs
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly provides direct wrappers for official provider SDKs. This
+              is the best way to track usage if you aren&apos;t using LangChain.
+              When you use a native wrapper, Trackly automatically manages the
+              underlying client and transparently logs events for you.
+            </p>
+            <Callout type="info">
+              To use these, initialize Trackly with <Ic>provider=&quot;provider_name&quot;</Ic> and
+              provide the corresponding API key.
+            </Callout>
+            <SectionTitle>Supported Individual SDKs</SectionTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { name: "Anthropic", desc: "Native messages API support" },
+                { name: "Google Gemini", desc: "Models and Batches support" },
+                { name: "Ollama", desc: "Local LLM tracking and management" },
+              ].map((sdk) => (
+                <div
+                  key={sdk.name}
+                  className="border-2 border-white/8 bg-white/[0.03] p-4 shadow-[4px_4px_0_0_#000]"
+                >
+                  <h3 className="text-[.82rem] font-bold uppercase tracking-[0.18em] text-white mb-2">
+                    {sdk.name}
+                  </h3>
+                  <p className="text-[.83rem] text-zinc-400">{sdk.desc}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
+      case "Anthropic messages":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Native wrapper
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Anthropic messages
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              When <Ic>provider=&quot;anthropic&quot;</Ic>, Trackly exposes
+              <Ic>trackly.messages</Ic> and wraps the official
+              <Ic>anthropic.resources.Messages</Ic> API. It records input tokens,
+              output tokens, latency, stop reason, and message IDs.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, providers
+            
+trackly = Trackly(
+    provider=providers.ANTHROPIC,
+    api_key="tk_live_...",
+    anthropic_api_key="sk-ant-...",
+    feature="customer-support",
+)
+
+response = trackly.messages.create(
+    model="claude-3-5-sonnet-latest",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain data observability in one sentence."}
+    ],
+)
+
+print(response.content[0].text)`}</CodeBlock>
+
+            <CodeBlock lang="python">{`import asyncio
+from trackly import Trackly, providers
+
+async def main():
+    trackly = Trackly(provider=providers.ANTHROPIC)
+
+    response = await trackly.messages.create_async(
+        model="claude-3-sonnet-20240229",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Hello!"}],
+    )
+    print(response.content[0].text)
+
+asyncio.run(main())`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">Method parameters</SectionTitle>
+            <ParameterGrid
+              items={[
+                {
+                  name: "create(**kwargs)",
+                  type: "official anthropic signals",
+                  description:
+                    "Synchronous message creation. Trackly times the call and logs usage from the final response object.",
+                  example: 'trackly.messages.create(model="...", messages=[...])',
+                },
+                {
+                  name: "create_async(**kwargs)",
+                  type: "official anthropic signals",
+                  description:
+                    "Async message creation. Uses the Anthropic AsyncClient internally.",
+                },
+                {
+                  name: "api_key",
+                  type: "string | null",
+                  description:
+                    "Optional per-call override for the Anthropic API key.",
+                },
+              ]}
+            />
+          </>
+        );
         return (
           <>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">

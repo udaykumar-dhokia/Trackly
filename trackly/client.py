@@ -10,6 +10,8 @@ from .worker import _TracklyWorker
 from .utils import _detect_provider
 from .providers_impl.ollama import _OllamaHandler
 from .providers_impl.gemini import GeminiModelsWrapper, GeminiBatchesWrapper
+from .providers_impl.anthropic import AnthropicMessagesWrapper
+from .constants import Providers
 
 
 class Trackly(BaseCallbackHandler):
@@ -22,12 +24,14 @@ class Trackly(BaseCallbackHandler):
         feature: str = "default",
         environment: str = "production",
         gemini_api_key: Optional[str] = None,
+        anthropic_api_key: Optional[str] = None,
     ):
         super().__init__()
         self.provider = provider
         self.feature = feature
         self.environment = environment
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
+        self.anthropic_api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
         
         self._worker = _TracklyWorker(api_key, base_url, debug)
         
@@ -35,6 +39,7 @@ class Trackly(BaseCallbackHandler):
         self._ollama_async_client = None
         self._gemini_wrapper = None
         self._gemini_batches_wrapper = None
+        self._anthropic_messages_wrapper = None
 
         self._start_times: Dict[Any, float] = {}
         self._serialized: Dict[Any, Dict] = {}
@@ -74,6 +79,19 @@ class Trackly(BaseCallbackHandler):
         if self._gemini_batches_wrapper is None:
             self._gemini_batches_wrapper = GeminiBatchesWrapper(self)
         return self._gemini_batches_wrapper
+
+    @property
+    def messages(self):
+        """Access Anthropic messages wrapper."""
+        if self.provider != Providers.ANTHROPIC:
+            raise ValueError(
+                "Trackly instance not configured for Anthropic provider. "
+                "Initialize with provider='anthropic'."
+            )
+        if self._anthropic_messages_wrapper is None:
+            self._anthropic_messages_wrapper = AnthropicMessagesWrapper(self)
+        return self._anthropic_messages_wrapper
+
 
     # --- LangChain Callback Implementation ---
 
@@ -340,6 +358,38 @@ class Trackly(BaseCallbackHandler):
         except Exception as exc:
             if self._worker.debug:
                 print(f"[Trackly] warning: failed to process Gemini Batch event: {exc}")
+
+    def _log_anthropic_event(self, response: Any, latency_ms: int):
+        """Log a cost event for Anthropic usage."""
+        try:
+            usage = getattr(response, "usage", None)
+            prompt_tokens = getattr(usage, "input_tokens", None)
+            completion_tokens = getattr(usage, "output_tokens", None)
+            
+            total_tokens = None
+            if prompt_tokens is not None or completion_tokens is not None:
+                total_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
+
+            event = {
+                "provider": Providers.ANTHROPIC,
+                "model": getattr(response, "model", "unknown"),
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "latency_ms": latency_ms,
+                "finish_reason": getattr(response, "stop_reason", None),
+                "feature": self.feature,
+                "environment": self.environment,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "metadata": {
+                    "message_id": getattr(response, "id", None)
+                }
+            }
+            
+            self._worker._enqueue(event)
+        except Exception as exc:
+            if self._worker.debug:
+                print(f"[Trackly] warning: failed to process Anthropic event: {exc}")
 
     def shutdown(self, timeout: float = 5.0):
         """Flush remaining events and stop the background thread."""

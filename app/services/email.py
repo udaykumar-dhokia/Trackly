@@ -17,363 +17,191 @@ logger = logging.getLogger(__name__)
 WELCOME_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>Welcome to Trackly</title>
 <!--[if mso]>
 <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
 <![endif]-->
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .email-wrapper { background: #09090b; padding: 40px 16px; }
-  .email-card {
-    max-width: 560px; margin: 0 auto;
-    background: #0f0f12;
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    overflow: hidden;
+  html, body { margin: 0; padding: 0; height: 100% !important; width: 100% !important; background: #09090b; }
+  * { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; box-sizing: border-box; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  table { border-spacing: 0 !important; border-collapse: collapse; margin: 0 auto; }
+  img { -ms-interpolation-mode: bicubic; border: 0 !important; outline: none !important; text-decoration: none !important; }
+  
+  body { 
+    background-color: #09090b; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+    font-size: 15px; 
+    line-height: 1.6; 
+    color: #a1a1aa;
+    -webkit-font-smoothing: antialiased;
   }
-  .header {
-    background: linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.03) 100%);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding: 36px 40px 32px;
+
+  .email-container { width: 600px; max-width: 600px; margin: 40px auto; }
+  .email-card { 
+    background: #0f0f12; 
+    border: 1px solid rgba(255,255,255,0.06); 
+    border-radius: 16px; 
+    overflow: hidden; 
+  }
+  
+  .header { padding: 40px 48px 32px; text-align: center; }
+  .logo-dot { height: 10px; width: 10px; background-color: #a78bfa; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px rgba(167,139,250,0.5); }
+  .logo-text { font-size: 18px; font-weight: 800; color: #f4f4f5; letter-spacing: -0.02em; margin-left: 8px; vertical-align: middle; }
+  
+  .hero-text { font-size: 28px; font-weight: 800; color: #f8fafc; line-height: 1.2; margin: 24px 0 12px; letter-spacing: -0.03em; }
+  .accent { color: #a78bfa; }
+  .sub-text { font-size: 14px; color: #71717a; margin-bottom: 0; }
+  
+  .body-content { padding: 0 48px 40px; }
+  .section-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 32px 0; }
+  
+  .step-row { margin-bottom: 24px; }
+  .step-num { 
+    width: 28px; height: 28px; 
+    background: rgba(167,139,250,0.1); 
+    border: 1px solid rgba(167,139,250,0.2); 
+    border-radius: 7px; 
+    color: #a78bfa; 
+    font-size: 12px; 
+    font-weight: 700; 
     text-align: center;
-    position: relative;
-  }
-  .logo-row {
-    display: inline-flex; align-items: center; gap: 8px;
-    margin-bottom: 24px;
-  }
-  .logo-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #a78bfa;
-    box-shadow: 0 0 8px #a78bfa;
+    line-height: 26px;
     display: inline-block;
+    margin-right: 12px;
   }
-  .logo-text {
-    font-size: 15px; font-weight: 700;
-    letter-spacing: -0.02em; color: #f4f4f5;
+  .step-title { font-size: 14px; font-weight: 600; color: #f4f4f5; display: inline-block; vertical-align: top; margin-top: 4px; }
+  .step-desc { font-size: 13px; color: #71717a; padding-left: 40px; margin-top: 4px; }
+  
+  .code-block { 
+    background: #060608; 
+    border: 1px solid rgba(255,255,255,0.05); 
+    border-radius: 10px; 
+    padding: 16px; 
+    margin-top: 12px; 
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; 
+    font-size: 12px; 
+    color: #a1a1aa; 
+    line-height: 1.5;
   }
-  .header-greeting {
-    font-size: 26px; font-weight: 800;
-    letter-spacing: -0.035em; color: #f4f4f5;
-    line-height: 1.2; margin-bottom: 10px;
+  .kw { color: #c084fc; }
+  .st { color: #86efac; }
+  .cm { color: #52525b; }
+  
+  .cta-button { 
+    display: block; 
+    background: #a78bfa; 
+    color: #09090b !important; 
+    text-decoration: none; 
+    text-align: center; 
+    padding: 14px 32px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    font-size: 15px; 
+    margin: 32px 0 16px;
+    box-shadow: 0 4px 15px rgba(167,139,250,0.3);
   }
-  .header-greeting .accent { color: #a78bfa; }
-  .header-sub {
-    font-size: 14px; color: #71717a; line-height: 1.65;
+  
+  .stats-grid { table-layout: fixed; width: 100%; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; background: rgba(255,255,255,0.02); }
+  .stat-item { padding: 16px 8px; text-align: center; border-right: 1px solid rgba(255,255,255,0.05); }
+  .stat-val { display: block; font-size: 16px; font-weight: 700; color: #f4f4f5; margin-bottom: 2px; }
+  .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; }
+  
+  .footer { padding: 32px 48px; text-align: center; background: #0a0a0c; border-top: 1px solid rgba(255,255,255,0.04); }
+  .footer-links a { color: #52525b; text-decoration: none; font-size: 12px; margin: 0 12px; }
+  .footer-text { font-size: 11px; color: #3f3f46; margin-top: 16px; }
+
+  @media screen and (max-width: 600px) {
+    .email-container { width: 100% !important; margin: 0 auto !important; }
+    .email-card { border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+    .header, .body-content { padding-left: 20px !important; padding-right: 20px !important; }
+    .stat-item { padding: 12px 4px !important; }
   }
-  .body { padding: 36px 40px; }
-  .intro {
-    font-size: 14px; color: #a1a1aa; line-height: 1.75;
-    margin-bottom: 32px;
-    padding-bottom: 28px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-  .intro strong { color: #f4f4f5; font-weight: 600; }
-  .steps-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #52525b;
-    margin-bottom: 18px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .steps-label::after {
-    content: ''; flex: 1; height: 1px;
-    background: rgba(255,255,255,0.06);
-  }
-  .step {
-    display: flex; gap: 16px; margin-bottom: 0;
-    position: relative;
-  }
-  .step-line {
-    position: absolute;
-    left: 15px; top: 36px; bottom: -20px;
-    width: 1px; background: rgba(255,255,255,0.06);
-  }
-  .step:last-of-type .step-line { display: none; }
-  .step-num {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: rgba(167,139,250,0.1);
-    border: 1px solid rgba(167,139,250,0.25);
-    color: #a78bfa; font-size: 12px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; position: relative; z-index: 1;
-    margin-top: 1px;
-  }
-  .step-content { flex: 1; padding-bottom: 22px; }
-  .step-title {
-    font-size: 13px; font-weight: 600;
-    color: #f4f4f5; margin-bottom: 4px;
-  }
-  .step-desc {
-    font-size: 12.5px; color: #71717a; line-height: 1.65;
-  }
-  .step-desc code {
-    font-family: 'Courier New', monospace; font-size: 11.5px;
-    background: #141418; border: 1px solid rgba(255,255,255,0.08);
-    color: #f4f4f5; padding: 1px 6px; border-radius: 4px;
-  }
-  .code-block {
-    background: #060608; border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 10px; overflow: hidden; margin-top: 10px;
-  }
-  .code-topbar {
-    display: flex; align-items: center; gap: 5px;
-    padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.015);
-  }
-  .cd { width: 9px; height: 9px; border-radius: 50%; }
-  .code-filename {
-    font-family: monospace; font-size: 10px;
-    color: #52525b; margin-left: 6px;
-  }
-  .code-pre {
-    padding: 14px 16px; font-family: 'Courier New', monospace;
-    font-size: 11.5px; line-height: 1.8; color: #a1a1aa;
-    white-space: pre;
-  }
-  .kw  { color: #c084fc; }
-  .fn  { color: #93c5fd; }
-  .st  { color: #86efac; }
-  .cm  { color: #52525b; }
-  .va  { color: #fde68a; }
-  .cta-wrap {
-    text-align: center; padding: 28px 0 8px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    margin-top: 28px;
-  }
-  .cta-btn {
-    display: inline-block;
-    background: #a78bfa; color: #09090b;
-    font-size: 14px; font-weight: 700;
-    letter-spacing: 0.01em;
-    padding: 13px 32px; border-radius: 9px;
-    text-decoration: none;
-    box-shadow: 0 0 24px rgba(167,139,250,0.35);
-  }
-  .cta-hint {
-    font-size: 12px; color: #52525b; margin-top: 10px;
-  }
-  .stats-row {
-    display: flex; border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 10px; overflow: hidden;
-    background: #141418; margin: 28px 0;
-  }
-  .stat-cell {
-    flex: 1; padding: 14px 16px; text-align: center;
-    border-right: 1px solid rgba(255,255,255,0.06);
-  }
-  .stat-cell:last-child { border-right: none; }
-  .stat-num {
-    font-size: 18px; font-weight: 700;
-    color: #f4f4f5; letter-spacing: -0.03em;
-    display: block; margin-bottom: 3px;
-  }
-  .stat-num.purple { color: #a78bfa; }
-  .stat-num.green  { color: #34d399; }
-  .stat-label {
-    font-family: monospace; font-size: 9.5px;
-    color: #52525b; text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .footer {
-    padding: 24px 40px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    background: #0a0a0d;
-    text-align: center;
-  }
-  .footer-logo {
-    display: inline-flex; align-items: center;
-    gap: 6px; margin-bottom: 10px;
-  }
-  .footer-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #a78bfa; display: inline-block;
-  }
-  .footer-name {
-    font-size: 13px; font-weight: 700;
-    color: #f4f4f5; letter-spacing: -0.02em;
-  }
-  .footer-links {
-    margin-bottom: 10px;
-  }
-  .footer-links a {
-    font-size: 11.5px; color: #52525b;
-    text-decoration: none; margin: 0 10px;
-  }
-  .footer-copy {
-    font-size: 11px; color: #3f3f46; line-height: 1.6;
-  }
-  .footer-copy a { color: #52525b; text-decoration: none; }
-  .pre-header { display: none; max-height: 0; overflow: hidden; }
 </style>
 </head>
 <body>
-<div class="pre-header">
-  Welcome to Trackly - start tracking your LLM costs in 2 lines of code.
-</div>
-<div class="email-wrapper">
-<div class="email-card">
-  <div class="header">
-    <div class="logo-row">
-      <span class="logo-text">Trackly</span>
+<div class="email-container">
+  <div class="email-card">
+    <div class="header">
+      <h1 class="hero-text">Welcome aboard, <span class="accent">{{first_name}}</span></h1>
+      <p class="sub-text">Let's get your first LLM call tracked in under 5 minutes.</p>
     </div>
-    <h1 class="header-greeting">
-      Welcome aboard,<br>
-      <span class="accent">{{first_name}} &#128075;</span>
-    </h1>
-    <p class="header-sub">
-      You're in. Let's get your first LLM call tracked.
-    </p>
-  </div>
-  <div class="body">
-    <p class="intro">
-      Thanks for signing up for Trackly. You now have everything you need to
-      <strong>track tokens, cost, and latency</strong> across every LLM provider
-      you use - OpenAI, Anthropic, Groq, Gemini, Ollama, and more.
-      <br><br>
-      It takes <strong>under 5 minutes</strong> to go from zero to fully tracked.
-      Here's exactly how.
-    </p>
-    <div class="steps-label">Getting started</div>
-    <div class="step">
-      <div class="step-line"></div>
-      <div class="step-num">1</div>
-      <div class="step-content">
+    
+    <div class="body-content">
+      <div class="section-divider"></div>
+      
+      <div class="step-row">
+        <div class="step-num">1</div>
         <div class="step-title">Install the SDK</div>
         <div class="step-desc">
-          Open your terminal and run:
-          <div class="code-block" style="margin-top:8px">
-            <div class="code-topbar">
-              <span class="cd" style="background:#ff5f57"></span>
-              <span class="cd" style="background:#febc2e"></span>
-              <span class="cd" style="background:#28c840"></span>
-              <span class="code-filename">terminal</span>
-            </div>
-            <div class="code-pre">pip install trackly
-
-<span class="cm"># with your provider</span>
-pip install <span class="st">"trackly[openai]"</span>
-pip install <span class="st">"trackly[groq]"</span></div>
+          Run this in your terminal to get the client:
+          <div class="code-block">pip install trackly</div>
+        </div>
+      </div>
+      
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-title">Get your API Key</div>
+        <div class="step-desc">
+          Create a project in your dashboard and generate an API key from <strong style="color:#f4f4f5">Settings &gt; API Keys</strong>.
+        </div>
+      </div>
+      
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-title">Configure Environment</div>
+        <div class="step-desc">
+          Add the key to your .env file:
+          <div class="code-block"><span class="kw">TRACKLY_API_KEY</span>=<span class="st">"your_api_key_here"</span></div>
+        </div>
+      </div>
+      
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-title">Start Tracking</div>
+        <div class="step-desc">
+          Wrap your LangChain or native LLM calls:
+          <div class="code-block">
+            <span class="kw">from</span> trackly <span class="kw">import</span> Trackly<br>
+            trackly = Trackly()<br>
+            <span class="cm"># Add trackly.callback() to your model</span>
           </div>
         </div>
       </div>
+      
+      <a href="{{dashboard_url}}" class="cta-button">Open your dashboard &rarr;</a>
+      
+      <table class="stats-grid">
+        <tr>
+          <td class="stat-item"><span class="stat-val">6+</span><span class="stat-label">Providers</span></td>
+          <td class="stat-item"><span class="stat-val">2</span><span class="stat-label">LOC</span></td>
+          <td class="stat-item"><span class="stat-val">0ms</span><span class="stat-label">Latency</span></td>
+          <td style="border:none" class="stat-item"><span class="stat-val">Free</span><span class="stat-label">To Start</span></td>
+        </tr>
+      </table>
     </div>
-    <div class="step">
-      <div class="step-line"></div>
-      <div class="step-num">2</div>
-      <div class="step-content">
-        <div class="step-title">Create a project &amp; generate an API key</div>
-        <div class="step-desc">
-          Go to your <strong style="color:#f4f4f5">Dashboard -&gt; Projects -&gt; New Project</strong>,
-          then head to <strong style="color:#f4f4f5">API Keys</strong> and click Generate.
-          Copy the key immediately - it's shown only once.
-        </div>
+    
+    <div class="footer">
+      <div class="footer-links">
+        <a href="{{docs_url}}">Documentation</a>
+        <a href="https://github.com/udaykumar-dhokia/Trackly">GitHub</a>
+        <a href="{{contact_url}}">Support</a>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-line"></div>
-      <div class="step-num">3</div>
-      <div class="step-content">
-        <div class="step-title">Add your key to the environment</div>
-        <div class="step-desc">
-          <div class="code-block" style="margin-top:4px">
-            <div class="code-topbar">
-              <span class="cd" style="background:#ff5f57"></span>
-              <span class="cd" style="background:#febc2e"></span>
-              <span class="cd" style="background:#28c840"></span>
-              <span class="code-filename">.env</span>
-            </div>
-            <div class="code-pre"><span class="va">TRACKLY_API_KEY</span>=<span class="st">tk_live_your_key_here</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-content">
-        <div class="step-title">Wrap your LLM &amp; start tracking</div>
-        <div class="step-desc">
-          Two lines. Your existing code doesn't change.
-          <div class="code-block" style="margin-top:8px">
-            <div class="code-topbar">
-              <span class="cd" style="background:#ff5f57"></span>
-              <span class="cd" style="background:#febc2e"></span>
-              <span class="cd" style="background:#28c840"></span>
-              <span class="code-filename">main.py</span>
-            </div>
-            <div class="code-pre"><span class="kw">from</span> trackly <span class="kw">import</span> <span class="fn">Trackly</span>
-<span class="kw">from</span> langchain_openai <span class="kw">import</span> <span class="fn">ChatOpenAI</span>
-
-trackly = <span class="fn">Trackly</span>()  <span class="cm"># reads TRACKLY_API_KEY</span>
-
-llm = <span class="fn">ChatOpenAI</span>(
-    model=<span class="st">"gpt-4o"</span>,
-    callbacks=[trackly.callback(
-        feature=<span class="st">"chat"</span>,
-        user_id=user.id,
-    )],
-)
-
-llm.invoke(<span class="st">"Hello!"</span>)  <span class="cm"># tracked ✓</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-cell">
-        <span class="stat-num purple">6</span>
-        <span class="stat-label">Providers</span>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-num">2</span>
-        <span class="stat-label">Lines of code</span>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-num green">0ms</span>
-        <span class="stat-label">Added latency</span>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-num">Free</span>
-        <span class="stat-label">To start</span>
-      </div>
-    </div>
-    <div class="cta-wrap">
-      <a href="{{dashboard_url}}" class="cta-btn">
-        Open your dashboard -&gt;
-      </a>
-      <p class="cta-hint">
-        Or read the docs at
-        <a href="{{docs_url}}" style="color:#a78bfa;text-decoration:none">
-          {{docs_host}}
-        </a>
+      <p class="footer-text">
+        &copy; 2026 Trackly AI &middot; Ahmedabad, India<br>
+        You're receiving this because you signed up at tracklyai.in.<br>
+        <a href="{{unsubscribe_url}}" style="color:#52525b; text-decoration:underline;">Unsubscribe</a>
       </p>
     </div>
   </div>
-  <div class="footer">
-    <div class="footer-logo">
-      <span class="footer-dot"></span>
-      <span class="footer-name">Trackly</span>
-    </div>
-    <div class="footer-links">
-      <a href="{{docs_url}}">Docs</a>
-      <a href="https://github.com/udaykumar-dhokia/trackly">GitHub</a>
-      <a href="{{contact_url}}">Contact</a>
-    </div>
-    <p class="footer-copy">
-      You're receiving this because you signed up at tracklyai.in<br>
-      Built with &hearts; by
-      <a href="https://github.com/udaykumar-dhokia">Udaykumar Dhokia</a>
-      &middot; Ahmedabad, India<br>
-      <a href="{{unsubscribe_url}}">Unsubscribe</a>
-    </p>
-  </div>
-</div>
 </div>
 </body>
 </html>
 """
+
 
 
 def _first_name(user: User) -> str:

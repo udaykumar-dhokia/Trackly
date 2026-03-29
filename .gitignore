@@ -9,3 +9,4 @@ scripts/*.py
 DEPLOYMENT.md
 .pypirc
 admin/
+.agents/

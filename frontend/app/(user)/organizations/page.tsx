@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function OrganizationsPage() {
   const { user } = useUser();
@@ -168,20 +169,20 @@ export default function OrganizationsPage() {
                   <label htmlFor="projectName" className="sr-only">
                     Project Name
                   </label>
-                  <input
+                  <Input
                     id="projectName"
                     type="text"
                     placeholder="e.g. Production API"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                    className="w-full bg-[#0f0f12] border-2 rounded-xl border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                     required
                   />
                 </div>
-                <button
+                <Button
                   type="submit"
                   disabled={isCreating || !newProjectName.trim()}
-                  className="group flex items-center justify-center gap-2 border-2 border-transparent bg-indigo-600 px-5 py-3 font-bold text-white hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[4px_4px_0_0_#4338ca] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0_0_#4338ca]"
+                  className="group flex items-center justify-center gap-2 border-2 border-transparent bg-white/20 px-5 py-3 font-bold text-white hover:bg-white/30 focus:ring-2 focus:ring-white/20 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {isCreating ? "Creating..." : "Launch Project"}
                   {!isCreating && (
@@ -190,7 +191,7 @@ export default function OrganizationsPage() {
                       className="group-hover:rotate-90 transition-transform"
                     />
                   )}
-                </button>
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -208,7 +209,7 @@ export default function OrganizationsPage() {
         )}
 
         {status === "succeeded" && projects.length === 0 && (
-          <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center text-center bg-[#141418]/50">
+          <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center text-center bg-[#141418]/50 rounded-xl">
             <p className="text-zinc-300 mb-2">No projects found.</p>
             <p className="text-zinc-500 text-sm max-w-sm mb-6">
               Create your primary project below to start tracking API events and

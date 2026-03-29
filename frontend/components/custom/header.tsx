@@ -6,6 +6,10 @@ import { useState } from "react";
 
 const menuItems = [
   {
+    label: "Changelog",
+    href: "/changelogs",
+  },
+  {
     label: "Documentation",
     href: "/docs",
   },

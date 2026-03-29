@@ -42,6 +42,7 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const CHART_COLORS = ["#6366f1", "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308"];
 
@@ -155,20 +156,24 @@ export default function DashboardPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center space-y-6 border-4 border-indigo-500 bg-[#141418] p-12 text-center shadow-[12px_12px_0_0_#4f46e5]">
-        <WarningCircle size={64} weight="duotone" className="text-indigo-400" />
+      <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center space-y-6 border-2 border-white/10 bg-[#141418] p-12 text-center rounded-xl">
+        <WarningCircle size={64} weight="duotone" className="text-white" />
         <h1 className="text-3xl font-bold text-white">No Projects Found</h1>
         <p className="max-w-lg font-mono text-zinc-400">
           You need a project to start tracking your AI costs and usage. Projects
           isolate your LLM tracking environments.
         </p>
-        <Link
-          href="/organizations"
-          className="inline-flex items-center gap-2 border-2 border-black bg-indigo-500 px-6 py-3 font-bold text-white shadow-[4px_4px_0_0_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000000]"
+        <Button
+          className="bg-white/20"
         >
-          Create Your First Project
-          <CaretRight weight="bold" />
-        </Link>
+          <Link
+            href="/organizations"
+            className="inline-flex items-center gap-2 px-6 py-3 font-bold text-white"
+          >
+            Create Your First Project
+            <CaretRight weight="bold" />
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -199,14 +204,14 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="border-2 rounded-xl border-white/10 bg-[#1a1a24] p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-            <Funnel size={14} className="text-zinc-500" />
+        <div className="border-2 rounded-xl border-white/10 bg-[#1a1a24] p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+            <Funnel size={14} weight="bold" />
             Filters
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 rounded-xl">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10 w-full rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none outline-none ring-0 focus:ring-0 focus:border-white/20">
                 <SelectValue placeholder="All Providers" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
@@ -223,7 +228,7 @@ export default function DashboardPage() {
             </Select>
 
             <Select value={memberFilter} onValueChange={setMemberFilter}>
-              <SelectTrigger className="h-10! min-h-0! py-0! rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none focus:ring-0">
+              <SelectTrigger className="h-10 w-full rounded-xl border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none outline-none ring-0 focus:ring-0 focus:border-white/20">
                 <SelectValue placeholder="All Members" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 border-white/10 bg-[#1a1a24] font-mono text-white">
@@ -240,25 +245,25 @@ export default function DashboardPage() {
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
               placeholder="Model"
-              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-indigo-400"
+              className=" w-full border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-indigo-400"
             />
             <Input
               value={featureFilter}
               onChange={(e) => setFeatureFilter(e.target.value)}
               placeholder="Feature"
-              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
+              className=" w-full border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-fuchsia-400"
             />
             <Input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
+              className=" w-full border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
             <Input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="h-10 border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
+              className=" w-full border-2 rounded-xl border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition focus:border-white/30"
             />
           </div>
         </div>

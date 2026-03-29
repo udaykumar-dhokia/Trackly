@@ -25,6 +25,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface BudgetStatus {
   monthly_token_limit: number | null;
@@ -52,10 +53,10 @@ interface UsageData {
 }
 
 const filterInputClass =
-  "h-9 border border-white/10 bg-[#0f0f12] px-3 text-xs font-mono text-white outline-none transition rounded-lg focus:border-white/30 placeholder:text-zinc-600";
+  "h-10 border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono text-white outline-none transition rounded-xl focus:border-white/30 placeholder:text-zinc-600 w-full";
 
 const selectTriggerClass =
-  "h-9! min-h-0! py-0! border border-white/10 bg-[#0f0f12] px-3 text-xs font-mono font-medium text-white shadow-none rounded-lg focus:ring-0 focus:border-white/30";
+  "h-10 w-full border-2 border-white/10 bg-[#141418] px-3 text-xs font-mono font-bold text-white shadow-none rounded-xl focus:ring-0 focus:border-white/30 outline-none";
 
 export default function BudgetsPage() {
   const { user } = useUser();
@@ -240,19 +241,23 @@ export default function BudgetsPage() {
 
   if (!activeProjectId) {
     return (
-      <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center space-y-6 rounded-xl border border-emerald-500/30 bg-[#141418] p-12 text-center">
-        <WarningCircle size={64} weight="duotone" className="text-emerald-400" />
+      <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center space-y-6 rounded-xl border border-white/10 bg-[#141418] p-12 text-center">
+        <WarningCircle size={64} weight="duotone" className="text-white" />
         <h1 className="text-3xl font-bold text-white">No Active Project</h1>
         <p className="max-w-lg font-mono text-zinc-400">
           Select or create a project to manage budgets and export data.
         </p>
-        <Link
-          href="/organizations"
-          className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 font-bold text-emerald-300 transition-all hover:bg-emerald-500/20"
+        <Button
+          className="bg-white/20"
         >
-          Go to Organizations
-          <CaretRight weight="bold" />
-        </Link>
+          <Link
+            href="/organizations"
+            className="inline-flex items-center gap-2 px-6 py-3 font-bold text-white"
+          >
+            Go to Organizations
+            <CaretRight weight="bold" />
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -402,13 +407,12 @@ export default function BudgetsPage() {
               Apply filters then export analytics or raw events as CSV or PDF.
             </p>
 
-            {/* Filters */}
-            <div className="rounded-xl border border-white/8 bg-[#0f0f12] p-3">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-                <Funnel size={11} />
+            <div className="rounded-xl border-2 border-white/10 bg-[#1a1a24] p-4 shadow-sm">
+              <div className="mb-3.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                <Funnel size={13} weight="bold" />
                 Filters
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Select value={providerFilter} onValueChange={setProviderFilter}>
                   <SelectTrigger className={selectTriggerClass}>
                     <SelectValue placeholder="All Providers" />
@@ -440,25 +444,25 @@ export default function BudgetsPage() {
                   </SelectContent>
                 </Select>
 
-                <input
+                <Input
                   value={modelFilter}
                   onChange={(e) => setModelFilter(e.target.value)}
                   placeholder="Model"
                   className={filterInputClass}
                 />
-                <input
+                <Input
                   value={featureFilter}
                   onChange={(e) => setFeatureFilter(e.target.value)}
                   placeholder="Feature"
                   className={filterInputClass}
                 />
-                <input
+                <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className={filterInputClass}
                 />
-                <input
+                <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}

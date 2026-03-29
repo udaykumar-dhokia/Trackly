@@ -39,6 +39,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ApiKeysPage() {
   const { user } = useUser();
@@ -173,7 +175,7 @@ export default function ApiKeysPage() {
   ) => {
     if (keys.length === 0) {
       return (
-        <div className="p-8 border-2 border-dashed border-white/5 bg-white/5 text-center text-zinc-600 text-xs font-mono italic rounded-xl">
+        <div className="p-8 border-2 border-dashed border-white/5 bg-white/5 text-center rounded-xl text-zinc-600 text-xs font-mono italic">
           No {type === "master" ? "master" : "access"} keys found for this
           project scope.
         </div>
@@ -326,13 +328,13 @@ export default function ApiKeysPage() {
                   >
                     Key Name
                   </label>
-                  <input
+                  <Input
                     id="keyName"
                     type="text"
                     placeholder="e.g. Production Worker"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors rounded-none"
+                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors rounded-xl"
                     required
                   />
                 </div>
@@ -347,19 +349,26 @@ export default function ApiKeysPage() {
                       Optional
                     </span>
                   </label>
-                  <select
-                    id="projectScope"
+                  <Select
                     value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="w-full bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors appearance-none cursor-pointer rounded-none"
+                    onValueChange={(value) => setSelectedProjectId(value)}
                   >
-                    <option value="none">Organization Wide (Default)</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full rounded-xl bg-[#0f0f12] border-2 border-white/10 px-4 py-3 text-zinc-100 focus:border-white/10 focus:ring-1 focus:ring-white/10">
+                      <SelectValue placeholder="Organization Wide (Default)" />
+                    </SelectTrigger>
+
+                    <SelectContent className="bg-[#0f0f12] border-white/10 text-zinc-100 rounded-xl">
+                      <SelectItem value="none">
+                        Organization Wide (Default)
+                      </SelectItem>
+
+                      {projects.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <div className="text-[10px] text-zinc-600 pt-1 flex gap-2 leading-relaxed">
                     <WarningCircle size={14} className="shrink-0 mt-0.5" />
                     <p>
@@ -370,21 +379,21 @@ export default function ApiKeysPage() {
                 </div>
 
                 <div className="flex gap-3 mt-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsDialogOpen(false)}
-                    className="flex-1 px-4 py-3 font-bold text-zinc-400 hover:text-white transition-colors"
+                    className="flex-1 px-4 py-3 font-bold text-zinc-400 bg-transparent hover:text-white transition-colors"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
                     disabled={isCreating || !newKeyName.trim()}
-                    className="flex-1 group cursor-pointer flex items-center justify-center gap-2 border-2 border-transparent bg-amber-500 px-5 py-3 font-black text-black hover:bg-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[4px_4px_0_0_#b45309] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0_0_#b45309]"
+                    className="flex-1 group cursor-pointer flex items-center justify-center gap-2 border-2 border-transparent bg-white/20 px-5 py-3 font-black text-white hover:bg-white/30 focus:ring-2 focus:ring-amber-500 focus:outline-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {isCreating ? "Generating..." : "Generate"}
                     {!isCreating && <Key weight="bold" size={16} />}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </DialogContent>
@@ -393,7 +402,7 @@ export default function ApiKeysPage() {
       </section>
 
       {newKeyDisplay && (
-        <section className="border-4 border-emerald-500 bg-emerald-500/10 p-8 shadow-[8px_8px_0_0_#10b981] space-y-4">
+        <section className="border-2 border-emerald-500 bg-emerald-500/10 p-8 rounded-xl space-y-4">
           <div className="flex items-center gap-3">
             <CheckCircle size={32} weight="fill" className="text-emerald-400" />
             <h2 className="text-2xl font-bold text-white">API Key Generated</h2>
@@ -403,16 +412,16 @@ export default function ApiKeysPage() {
             able to see it again.
           </p>
           <div className="flex items-center gap-4">
-            <code className="flex-1 bg-black border-2 border-emerald-500/50 p-4 font-mono text-emerald-300 text-lg break-all">
+            <code className="flex-1 bg-black border-2 border-emerald-500/50 px-4 py-1 font-mono text-emerald-300 text-lg break-all rounded-xl">
               {newKeyDisplay.raw_key}
             </code>
-            <button
+            <Button
               onClick={copyToClipboard}
-              className="flex items-center gap-2 bg-emerald-500 text-black font-bold border-2 border-black p-4 shadow-[4px_4px_0_0_#000] hover:translate-y-px hover:translate-x-px hover:shadow-[3px_3px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
+              className="flex items-center gap-2 bg-emerald-500 text-black font-bold border-2 border-black p-4"
             >
               {copied ? "Copied!" : "Copy"}
               <Copy weight="bold" />
-            </button>
+            </Button>
           </div>
           <button
             onClick={() => dispatch(clearNewKeyDisplay())}
@@ -453,7 +462,7 @@ export default function ApiKeysPage() {
         )}
 
         {status === "succeeded" && keys.length === 0 && (
-          <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center text-center bg-[#141418]/50">
+          <div className="border border-dashed border-white/20 p-12 flex flex-col items-center justify-center rounded-xl text-center bg-[#141418]/50">
             <p className="text-zinc-300 mb-2">No API keys found.</p>
             <p className="text-zinc-500 text-sm max-w-sm mb-6">
               Create an API key to start authenticating your backend traffic.
