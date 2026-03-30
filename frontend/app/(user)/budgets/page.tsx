@@ -407,7 +407,7 @@ export default function BudgetsPage() {
               Apply filters then export analytics or raw events as CSV or PDF.
             </p>
 
-            <div className="rounded-xl border-2 border-white/10 bg-[#1a1a24] p-4 shadow-sm">
+            <div className="rounded-xl p-4 shadow-sm">
               <div className="mb-3.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
                 <Funnel size={13} weight="bold" />
                 Filters

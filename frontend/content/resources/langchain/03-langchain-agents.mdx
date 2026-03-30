@@ -1,0 +1,124 @@
+---
+title: "LangChain Agents Explained"
+slug: "langchain-agents-explained"
+description: "Understand how LangChain agents decide between tools, manage intermediate steps, and where they fit in real apps."
+chapter: "langchain"
+chapterTitle: "LangChain"
+order: 3
+tags: ["langchain", "agents", "tools", "orchestration"]
+difficulty: "intermediate"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# LangChain Agents Explained
+
+LangChain agents are useful when your application does not know the exact sequence of steps in advance. Instead of hard-coding the flow, you let the model choose whether to answer directly or use one of the available tools.
+
+That flexibility is the main advantage and the main risk.
+
+## What an agent actually does
+
+A LangChain agent usually:
+
+1. reads the user input
+2. decides whether a tool is needed
+3. calls the selected tool
+4. inspects the result
+5. repeats until it can answer
+
+That means an agent is really a loop plus tool selection logic.
+
+## Why agents feel powerful
+
+Agents can adapt to requests like:
+
+- "Look up this API limit and summarize it"
+- "Search the docs, then give me a code example"
+- "Check the database and compare it with this report"
+
+You do not need to pre-script every branch if the agent has the right tools and constraints.
+
+## Why agents are easy to misuse
+
+Flexibility comes with tradeoffs:
+
+- more model calls
+- more latency
+- more cost
+- harder debugging
+
+That is why agents should be used when the problem actually benefits from runtime decision-making.
+
+## A small example
+
+```python
+from langchain.tools import tool
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+
+@tool
+def get_exchange_rate(pair: str) -> str:
+    """Return a cached FX rate for a currency pair like USD/INR."""
+    return "USD/INR = 83.10"
+
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "Use tools when the user asks for fresh or external information."),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ]
+)
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+agent = create_tool_calling_agent(llm=llm, tools=[get_exchange_rate], prompt=prompt)
+executor = AgentExecutor(agent=agent, tools=[get_exchange_rate], verbose=True)
+
+response = executor.invoke({"input": "What is the current USD to INR rate?"})
+print(response["output"])
+```
+
+This example works because the task clearly suggests external information.
+
+## Designing good agent tools
+
+Strong agent design starts with strong tools. Each tool should:
+
+- do one thing well
+- return structured output
+- have a clear name and docstring
+
+If tool boundaries are messy, the agent loop will be messy too.
+
+## When to choose an agent
+
+Choose an agent when:
+
+- the path depends on the user request
+- several tools may be relevant
+- you cannot easily predefine the exact workflow
+
+Avoid an agent when:
+
+- the flow is fixed
+- correctness is more important than flexibility
+- extra model calls are hard to justify
+
+## Observability is not optional
+
+The moment you deploy agents, you should track:
+
+- tool selection frequency
+- failed tool calls
+- total token usage
+- latency per request
+- loop depth
+
+Without that, it is very hard to tell whether the agent is useful or merely expensive.
+
+## Final takeaway
+
+LangChain agents are valuable when you need flexible tool selection. They are not automatically better than chains. Use them when runtime decisions are the real requirement, keep tool interfaces sharp, and instrument them early so production behavior stays visible.

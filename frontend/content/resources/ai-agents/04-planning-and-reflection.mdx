@@ -1,0 +1,151 @@
+---
+title: "Planning and Reflection in AI Agents"
+slug: "planning-and-reflection-in-ai-agents"
+description: "Learn why deliberate planning and self-review often improve agent quality on multi-step tasks."
+chapter: "ai-agents"
+chapterTitle: "AI Agents"
+order: 4
+tags: ["agents", "planning", "reflection", "reasoning"]
+difficulty: "intermediate"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Planning and Reflection in AI Agents
+
+The fastest agent is not always the best agent. For difficult tasks, agents often improve when they pause, outline the work, and occasionally review what they already produced.
+
+That is where planning and reflection come in.
+
+## What planning means
+
+Planning means the model generates a rough path before it begins execution.
+
+That can be as simple as:
+
+- identify the subtasks
+- order them
+- decide which tools are needed
+
+Example:
+
+> Build a summary of this company's AI costs and recommend one optimization.
+
+A planner might produce:
+
+1. gather model usage
+2. compare by feature
+3. identify the largest driver of spend
+4. write the recommendation
+
+This is often better than letting the model improvise the whole job step by step with no structure.
+
+## What reflection means
+
+Reflection means the model looks back at a draft, tool result, or earlier conclusion and asks:
+
+- is this answer complete?
+- did I miss an important fact?
+- is the recommendation actually supported by evidence?
+
+Reflection does not need to be mystical. It is just a second pass with a different instruction.
+
+## Why these patterns help
+
+Planning helps with **direction**.
+
+Reflection helps with **quality control**.
+
+Together they reduce common failure modes like:
+
+- skipping important substeps
+- answering too early
+- failing to verify tool outputs
+- making shallow recommendations
+
+## A common pattern: plan then execute
+
+```python
+plan = model.invoke(
+    "Break this task into 3-5 concrete steps with the tools required."
+)
+
+for step in plan.steps:
+    result = execute(step)
+    state.append(result)
+```
+
+This works well when:
+
+- the task has obvious subtasks
+- tool usage should follow a rough order
+- you want better transparency into agent behavior
+
+## A common pattern: draft then critique
+
+```python
+draft = model.invoke("Answer the user's question using the retrieved context.")
+
+critique = model.invoke(
+    f"Review this draft for missing facts, unsupported claims, or weak logic:\n\n{draft}"
+)
+```
+
+You can then decide whether to:
+
+- revise the answer
+- retrieve more evidence
+- stop and return the draft
+
+## When planning is worth it
+
+Planning adds extra model calls, so it is not always justified.
+
+Use it when:
+
+- tasks are multi-step
+- the wrong order causes failure
+- the work touches several tools or systems
+
+Skip it when:
+
+- the task is trivial
+- one tool call is usually enough
+- the plan would be longer than the task itself
+
+## When reflection is worth it
+
+Reflection is useful when:
+
+- correctness matters
+- answers are long or analytical
+- tool outputs are ambiguous
+- the model tends to hallucinate recommendations
+
+It is less useful for short, routine jobs where the extra latency is not worth the improvement.
+
+## A practical caution
+
+Planning and reflection are not free wins. They can also introduce:
+
+- extra cost
+- extra latency
+- overthinking on simple tasks
+- verbose plans that are never actually used
+
+The goal is not to add more cognitive-sounding steps. The goal is to improve outcomes where outcomes actually benefit.
+
+## A production example
+
+Suppose you are building a finance ops assistant:
+
+1. planner creates a 4-step investigation plan
+2. agent retrieves billing data and project budgets
+3. reflector checks whether the recommendation is backed by evidence
+4. final answer is generated with a short action list
+
+That system is more grounded than a one-shot prompt pretending it already knows where spend came from.
+
+## Final takeaway
+
+Planning helps agents stay organized. Reflection helps them stay honest. Used carefully, both patterns can make agents more reliable on hard tasks. Used carelessly, they just make the system slower and more expensive. The real skill is knowing when extra structure is actually worth it.

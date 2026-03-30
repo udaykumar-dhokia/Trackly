@@ -1,0 +1,139 @@
+---
+title: "Agentic RAG vs Naive RAG"
+slug: "agentic-rag-vs-naive-rag"
+description: "Compare single-pass retrieval pipelines with agentic systems that can search, retry, and verify."
+chapter: "rag"
+chapterTitle: "RAG"
+order: 3
+tags: ["agentic rag", "rag", "agents", "retrieval"]
+difficulty: "intermediate"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Agentic RAG vs Naive RAG
+
+Naive RAG and agentic RAG solve the same high-level problem: get the model grounded in relevant context. The difference is how much control flow happens between the question and the final answer.
+
+## Naive RAG
+
+Naive RAG is a single-pass flow:
+
+1. take the question
+2. retrieve relevant chunks
+3. send those chunks to the model
+4. return the answer
+
+It is simple, fast, and often exactly what you want.
+
+## Agentic RAG
+
+Agentic RAG adds decision-making in the middle. The system can:
+
+- reformulate the query
+- retrieve again
+- choose different tools
+- ask follow-up questions
+- verify whether it has enough context
+
+It behaves less like a one-shot retriever and more like a problem-solving loop.
+
+## A side-by-side comparison
+
+### Naive RAG strengths
+
+- lower latency
+- lower cost
+- easier to debug
+- easier to evaluate
+
+### Agentic RAG strengths
+
+- better for multi-step questions
+- better when one retrieval pass is not enough
+- better when the system needs tool choice or verification
+
+## When naive RAG is enough
+
+Use naive RAG when:
+
+- users ask straightforward lookup questions
+- your documents are well structured
+- one retrieval pass usually finds the answer
+- you want predictable latency
+
+Examples:
+
+- docs assistants
+- policy search
+- internal wiki Q&A
+
+## When agentic RAG helps
+
+Use agentic RAG when:
+
+- queries are ambiguous
+- the answer depends on several sources
+- retrieval often needs retries
+- the system should decide between tools, not only vector search
+
+Examples:
+
+- research copilots
+- incident investigation assistants
+- assistants that combine search with SQL or APIs
+
+## A conceptual example
+
+Naive RAG:
+
+```python
+context = retriever.invoke(question)
+answer = llm.invoke(render_prompt(question, context))
+```
+
+Agentic RAG:
+
+```python
+state = {"question": question, "attempts": 0}
+
+while state["attempts"] < 3:
+    plan = model.decide_next_step(state)
+
+    if plan["type"] == "retrieve":
+        state["context"] = retriever.invoke(plan["query"])
+    elif plan["type"] == "tool":
+        state["tool_result"] = run_tool(plan["tool"], plan["args"])
+    elif plan["type"] == "finish":
+        return plan["answer"]
+
+    state["attempts"] += 1
+```
+
+The second version is more flexible, but it is also more expensive and harder to control.
+
+## The real tradeoff
+
+The real tradeoff is not "simple versus smart." It is:
+
+- predictable versus adaptive
+- cheap versus powerful
+- easy to evaluate versus easy to over-engineer
+
+Many teams jump to agentic RAG too early when the real issue is poor chunking or weak prompts in a naive pipeline.
+
+## A practical recommendation
+
+Start with naive RAG.
+
+Only move toward agentic RAG if you can point to a concrete failure like:
+
+- one-pass retrieval misses the answer
+- the system needs several information sources
+- the user question is consistently under-specified
+
+That keeps the complexity justified.
+
+## Final takeaway
+
+Agentic RAG is not the default upgrade path. It is a specialized pattern for cases where static retrieval is not enough. Build the simple version first, measure what fails, and let those failures earn the extra orchestration.

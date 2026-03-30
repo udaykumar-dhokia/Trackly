@@ -1,6 +1,7 @@
 import React from 'react'
 
 const NAV_LINKS = [
+    { label: 'Resources', href: '/resources' },
     { label: 'Docs', href: '/docs' },
     { label: 'GitHub', href: 'https://github.com/udaykumar-dhokia' },
     { label: 'Changelog', href: '/changelogs' },

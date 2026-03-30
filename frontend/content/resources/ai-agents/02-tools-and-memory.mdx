@@ -1,0 +1,160 @@
+---
+title: "Agent Tools and Memory Explained"
+slug: "agent-tools-and-memory-explained"
+description: "Learn how tools let agents act and how memory helps them stay coherent across steps."
+chapter: "ai-agents"
+chapterTitle: "AI Agents"
+order: 2
+tags: ["agents", "tools", "memory", "langchain"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Agent Tools and Memory Explained
+
+If agent loops are the engine, then tools and memory are the parts that make the engine useful.
+
+Without tools, an agent can only talk. Without memory, it forgets what just happened. Once you add both, the model starts behaving like a system instead of a single prompt.
+
+## What counts as a tool?
+
+A tool is any callable action the model is allowed to invoke.
+
+Common examples include:
+
+- web search
+- vector retrieval
+- SQL queries
+- calculator functions
+- Python execution
+- internal REST APIs
+- ticketing or CRM actions
+
+From the model's perspective, a tool is just a capability with a name, description, and input schema.
+
+```python
+def lookup_order(order_id: str) -> dict:
+    """
+    Return order status, items, and shipment details.
+    """
+    ...
+```
+
+The better the description and input shape, the easier it is for the model to choose the right tool.
+
+## What makes a tool design good?
+
+Tool quality has a huge impact on agent reliability. Good tools are:
+
+- narrow in purpose
+- easy to describe
+- safe to call multiple times
+- structured in their output
+
+Bad tools are vague. For example, `run_business_logic()` tells the model almost nothing. A tool named `get_invoice_balance(invoice_id)` is much easier for the model to reason about.
+
+## What memory actually means
+
+Memory is overloaded terminology, so it helps to split it into types.
+
+### Short-term memory
+
+This is the working context for the current task. It usually includes:
+
+- the recent conversation
+- prior tool outputs
+- intermediate reasoning notes
+
+Short-term memory is what lets the agent say, "I already searched for the customer record, so the next step is to check billing history."
+
+### Long-term memory
+
+This is information stored outside the current prompt window and retrieved later when needed.
+
+Examples:
+
+- a user's preferred tone
+- known company facts
+- previous project decisions
+- recurring constraints for a workflow
+
+Long-term memory is usually implemented as retrieval, not as magical infinite recall.
+
+## Tools and memory work together
+
+These two concepts are tightly connected.
+
+- Tools generate new information.
+- Memory stores the useful parts of that information.
+- The next model step uses that memory to choose the next tool call.
+
+That interaction is what makes an agent feel coherent over multiple steps.
+
+## A simple example
+
+Suppose a support agent receives:
+
+> Refund my last purchase. The order arrived damaged.
+
+One reasonable flow is:
+
+1. Use a tool to identify the user's last order.
+2. Use a second tool to check refund policy.
+3. Store the results in short-term memory.
+4. Decide whether to auto-approve or escalate.
+
+The tools gather facts. Memory keeps those facts available while the model finishes the workflow.
+
+## A lightweight Python sketch
+
+```python
+state = {
+    "user_message": "Refund my last purchase. The order arrived damaged.",
+    "observations": [],
+}
+
+order = lookup_last_order(user_id="u_123")
+state["observations"].append(order)
+
+policy = get_refund_policy(product_type=order["product_type"])
+state["observations"].append(policy)
+
+decision = model.decide(state)
+```
+
+This is still a simplified agent, but it captures the core pattern.
+
+## Common mistakes
+
+Teams usually run into the same issues:
+
+### Giving the agent too many tools
+
+The more tools you expose, the harder tool selection becomes. Start small.
+
+### Returning unstructured output
+
+If tools return giant blobs of text, the model has to parse them repeatedly. Prefer compact JSON-like outputs.
+
+### Treating memory like a dump
+
+Not everything deserves to be stored. Memory should help future decisions, not bury the model in noise.
+
+### Confusing retrieval with memory
+
+Many systems say they have memory when they really have a retriever. That is okay, but it helps to name the pattern correctly.
+
+## A practical design rule
+
+Before adding a tool or a memory store, ask:
+
+1. What exact decision does this help the model make?
+2. What failure mode does it reduce?
+3. Could the same goal be achieved with a simpler workflow?
+
+If the answer is unclear, the tool or memory layer may be premature.
+
+## Final takeaway
+
+Tools let agents act. Memory lets agents stay coherent. Together they turn an LLM from a one-shot responder into a multi-step system that can gather facts, use them, and continue working toward a goal.

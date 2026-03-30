@@ -1,0 +1,150 @@
+---
+title: "Multi-Agent Systems with LangGraph"
+slug: "multi-agent-systems-with-langgraph"
+description: "Understand coordinator, specialist, and reviewer patterns for multi-agent systems built with LangGraph."
+chapter: "ai-agents"
+chapterTitle: "AI Agents"
+order: 5
+tags: ["langgraph", "multi-agent", "agents", "orchestration"]
+difficulty: "intermediate"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Multi-Agent Systems with LangGraph
+
+Multi-agent systems split work across several specialized agents instead of asking one model to do everything. This can improve clarity and modularity, but it also adds coordination overhead.
+
+LangGraph is a useful fit for this style because it gives you explicit state transitions, nodes, and edges rather than hiding orchestration inside one opaque agent loop.
+
+## Why teams try multi-agent systems
+
+One large agent often becomes responsible for:
+
+- planning
+- retrieval
+- coding
+- reviewing
+- summarizing
+
+That works for small workflows, but it can get messy quickly. Multi-agent systems try to reduce that mess by giving distinct responsibilities to different nodes.
+
+## Common roles
+
+### Coordinator
+
+Receives the user goal, decides which specialist should act next, and tracks overall progress.
+
+### Specialist
+
+Performs one kind of task well, such as:
+
+- retrieval
+- SQL analysis
+- code generation
+- policy review
+
+### Reviewer
+
+Checks whether the work is complete, safe, or accurate enough to return.
+
+## A simple pattern
+
+Here is a common flow:
+
+1. coordinator reads the request
+2. retrieval agent gathers evidence
+3. analysis agent interprets the evidence
+4. reviewer agent checks the draft
+5. coordinator returns the final response
+
+This is useful when each stage benefits from different instructions or tool access.
+
+## Why LangGraph helps
+
+LangGraph gives you a graph-based mental model:
+
+- nodes do work
+- edges decide what comes next
+- shared state carries context forward
+
+That is a better fit than a loose while-loop when the system has branching paths or several cooperating actors.
+
+## A tiny example
+
+```python
+from typing import TypedDict
+from langgraph.graph import StateGraph, END
+
+
+class AgentState(TypedDict):
+    question: str
+    context: str
+    draft: str
+    review: str
+
+
+def retrieve(state: AgentState):
+    return {"context": "Retrieved supporting information"}
+
+
+def analyze(state: AgentState):
+    return {"draft": f"Answer based on: {state['context']}"}
+
+
+def review(state: AgentState):
+    return {"review": "Looks good. Return final answer."}
+
+
+graph = StateGraph(AgentState)
+graph.add_node("retrieve", retrieve)
+graph.add_node("analyze", analyze)
+graph.add_node("review", review)
+
+graph.set_entry_point("retrieve")
+graph.add_edge("retrieve", "analyze")
+graph.add_edge("analyze", "review")
+graph.add_edge("review", END)
+```
+
+This is deliberately small, but it shows the basic idea: each node owns one part of the job.
+
+## When multi-agent design helps
+
+It helps when:
+
+- specialists need different tools
+- workflows branch based on results
+- review should be isolated from generation
+- system behavior should be easy to inspect
+
+It is especially useful in internal platforms where each agent corresponds to a clear business function.
+
+## When it is overkill
+
+Multi-agent systems are often overused.
+
+Avoid them when:
+
+- one good workflow is enough
+- the specialists are not actually specialized
+- the extra routing cost outweighs the quality gain
+- debugging already feels hard with one loop
+
+If you cannot explain why each agent exists, you probably do not need multiple agents yet.
+
+## Operational concerns
+
+As soon as several agents are involved, you should track:
+
+- state transitions
+- model calls by node
+- cost by node
+- failure rate per node
+- latency of the full graph
+
+Otherwise the architecture becomes hard to reason about in production.
+
+## Final takeaway
+
+Multi-agent systems are a coordination pattern, not a badge of sophistication. LangGraph makes them easier to express because it turns orchestration into an explicit graph. Start with one agent, split responsibilities only when the split is actually justified, and keep the shared state simple enough to debug.

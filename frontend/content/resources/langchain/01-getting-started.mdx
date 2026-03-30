@@ -1,0 +1,140 @@
+---
+title: "Building Your First LangChain Agent"
+slug: "building-your-first-langchain-agent"
+description: "Build a practical first LangChain agent with one model, one tool, and one clear task."
+chapter: "langchain"
+chapterTitle: "LangChain"
+order: 1
+tags: ["langchain", "agents", "python", "tutorial"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+featured: true
+---
+
+# Building Your First LangChain Agent
+
+If you are new to LangChain, the easiest mistake is trying to build a giant agent graph immediately. A better first step is a tiny agent with one model, one tool, and one narrow job.
+
+That keeps the learning curve manageable and makes failures easier to debug.
+
+## What LangChain gives you
+
+LangChain is useful because it provides reusable building blocks for:
+
+- models
+- prompts
+- tools
+- retrievers
+- chains
+- agents
+
+The value is not that it magically makes your app better. The value is that it gives you composable primitives instead of forcing everything into one massive prompt string.
+
+## Start with a narrow task
+
+Your first agent should have:
+
+- one model
+- one tool
+- one user-visible objective
+
+For example:
+
+> Use a calculator tool to answer pricing questions.
+
+That is a much better starting point than "build a research agent with memory, routing, and a knowledge base."
+
+## A minimal example
+
+```python
+from langchain.tools import tool
+from langchain_openai import ChatOpenAI
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+
+
+@tool
+def multiply(a: int, b: int) -> int:
+    """Multiply two integers."""
+    return a * b
+
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are a helpful assistant that may use tools when useful."),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ]
+)
+
+agent = create_tool_calling_agent(llm=llm, tools=[multiply], prompt=prompt)
+executor = AgentExecutor(agent=agent, tools=[multiply], verbose=True)
+
+result = executor.invoke({"input": "What is 17 times 23?"})
+print(result["output"])
+```
+
+This already teaches the most important lesson: the model can decide when to call a tool rather than guessing from internal knowledge.
+
+## Why tool descriptions matter
+
+Tool names and docstrings are part of the model interface.
+
+If your tool description is vague, tool selection gets worse.
+
+Good:
+
+```python
+@tool
+def lookup_invoice(invoice_id: str) -> dict:
+    """Return invoice amount, due date, and payment status for one invoice."""
+```
+
+Weak:
+
+```python
+@tool
+def get_data(arg: str) -> str:
+    """Get some data."""
+```
+
+The better your tool interface, the less prompting gymnastics you need later.
+
+## Prompting tips for a first agent
+
+Your first system prompt should do only a few things:
+
+- define the assistant's role
+- explain when tools should be used
+- instruct the model not to invent tool results
+
+Avoid giant instructions until the core loop works.
+
+## Debugging your first agent
+
+If the agent feels unreliable, check these first:
+
+1. Is the tool description clear?
+2. Does the prompt explain when tools should be used?
+3. Is the task narrow enough?
+4. Are you logging the intermediate steps?
+
+The problem is often structure, not model quality.
+
+## Add observability early
+
+As soon as you begin using agents, track:
+
+- how many model calls happen
+- which tools are selected
+- total latency
+- total token usage
+
+This matters because agent behavior can look correct in demos while quietly becoming expensive in production.
+
+## Final takeaway
+
+Your first LangChain agent should feel almost boring. That is a good sign. Boring systems are easier to inspect, test, and improve. Once one small tool-calling loop works reliably, then you can add retrieval, memory, or more complex orchestration.

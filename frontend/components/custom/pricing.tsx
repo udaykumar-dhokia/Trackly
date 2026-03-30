@@ -2,6 +2,7 @@
 
 import { Check } from "@phosphor-icons/react";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 const plans = [
   {
@@ -19,6 +20,7 @@ const plans = [
     accent: "#a78bfa",
     cta: "Start Free",
     comingSoon: false,
+    href: "/dashboard",
   },
   {
     name: "Pro",
@@ -131,7 +133,7 @@ export default function Pricing() {
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0">
-                    <span className="bg-primary text-black text-[9px] font-bold uppercase tracking-[.08em] px-3 py-1.5 block">
+                    <span className="bg-primary text-white text-[9px] font-bold uppercase tracking-[.08em] px-3 py-1.5 block">
                       Popular
                     </span>
                   </div>
@@ -185,13 +187,15 @@ export default function Pricing() {
                 </ul>
 
                 {/* CTA */}
-                <Button
-                  disabled={plan.comingSoon}
-                  className={`cursor-pointer bg-white/20 px-5 py-3 font-semibold text-white hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 hover:text-black focus:outline-0 w-full transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
+                <Link href={plan.href || "/"}>
+                  <Button
+                    disabled={plan.comingSoon}
+                    className={`cursor-pointer bg-white/20 px-5 py-3 font-semibold text-white hover:bg-indigo-300 focus:ring-2 focus:ring-indigo-300 hover:text-black focus:outline-0 w-full transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
                   `}
-                >
-                  {plan.cta}
-                </Button>
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
               </div>
             ))}
           </div>

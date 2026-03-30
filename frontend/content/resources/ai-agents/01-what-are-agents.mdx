@@ -1,0 +1,154 @@
+---
+title: "What are AI Agents?"
+slug: "what-are-agents"
+description: "Understand the agent loop, tools, memory, and why agents behave differently from a plain chatbot."
+chapter: "ai-agents"
+chapterTitle: "AI Agents"
+order: 1
+tags: ["agents", "llm", "langchain", "python"]
+difficulty: "beginner"
+publishedAt: "2025-06-01"
+updatedAt: "2026-03-30"
+featured: true
+---
+
+# What are AI Agents?
+
+An AI agent is a system built around a language model that can do more than return one static answer. It can read the goal, decide what step comes next, use a tool, inspect the result, and continue until it finishes the task.
+
+That is the big difference between a normal chat prompt and an agent:
+
+- A normal LLM call usually responds once.
+- An agent can **loop**.
+- An agent can **act**.
+- An agent can use **external state** like tools, memory, and APIs.
+
+## The simplest mental model
+
+A practical agent usually has four moving parts:
+
+1. A **goal** from the user.
+2. A **model** that decides what to do next.
+3. A set of **tools** it can call.
+4. A **loop** that keeps going until the work is done.
+
+Even a lightweight assistant that can search documentation, call a calculator, and summarize the result is already an agent.
+
+## The core loop
+
+Most agent systems follow a pattern close to this:
+
+1. Observe the user request.
+2. Decide the next best action.
+3. Call a tool or produce an answer.
+4. Read the new output.
+5. Repeat until a stopping condition is reached.
+
+In pseudo-code, it looks like this:
+
+```python
+goal = "Find the cheapest GPU instance and summarize the tradeoffs"
+
+while not done:
+    next_step = model.decide(goal, state, available_tools)
+
+    if next_step.type == "tool_call":
+        result = run_tool(next_step.tool_name, next_step.arguments)
+        state.append(result)
+    else:
+        answer = next_step.final_answer
+        done = True
+```
+
+The loop is what gives an agent the feeling of "working through" a problem instead of simply responding.
+
+## What makes an agent useful?
+
+Agents become useful when the task is:
+
+- multi-step
+- open-ended
+- dependent on fresh information
+- too tedious to hard-code as one deterministic workflow
+
+Examples:
+
+- triaging support tickets
+- browsing docs and preparing an implementation plan
+- checking data in multiple internal systems
+- assembling a RAG answer and verifying missing context
+
+## What agents are not
+
+It helps to stay grounded here. Not every LLM app needs an agent.
+
+If your task is:
+
+- highly predictable
+- easy to express as a fixed flow
+- sensitive to failures
+- expensive when extra model calls happen
+
+then a normal prompt or a structured pipeline may be better than an agent loop.
+
+For example, extracting fields from invoices with a fixed schema often works better as a deterministic workflow than as an open-ended agent.
+
+## Tools, memory, and planning
+
+Three ideas show up in almost every agent design:
+
+### Tools
+
+Tools let the model act on the world. A tool might search the web, query a database, run Python, call your billing API, or retrieve documents from a vector store.
+
+### Memory
+
+Memory lets the system retain context beyond the current model output. This can be as small as recent chat history or as large as a long-term store of structured facts.
+
+### Planning
+
+Planning helps the model decompose a large task into smaller steps instead of guessing blindly at each turn.
+
+## A small example
+
+Imagine a product analytics assistant. The user asks:
+
+> Which feature increased LLM cost the most this week?
+
+An agent might:
+
+1. call a stats tool
+2. compare feature-level cost changes
+3. identify the largest jump
+4. generate a summary with a recommendation
+
+That is not magic. It is just a language model operating inside a loop with the right tools attached.
+
+## Where agents fail
+
+Agents feel powerful, but they fail in predictable ways:
+
+- choosing the wrong tool
+- calling tools too many times
+- getting stuck in loops
+- making weak plans from incomplete context
+- producing confident but unverified summaries
+
+That is why observability matters. When you put an agent into production, you want visibility into which tools it called, how many model requests it made, how long it took, and how much it cost.
+
+## A practical rule of thumb
+
+Start with the smallest thing that could possibly be an agent:
+
+- one model
+- one or two tools
+- one narrow job
+- clear stop conditions
+
+If that works, then add memory, planning, or multi-agent coordination. Teams usually run into trouble when they start with a giant agent graph before validating the smallest useful loop.
+
+## Final takeaway
+
+An AI agent is not a different kind of model. It is a **system design pattern** around a model. The model provides reasoning and language. The surrounding system provides tools, memory, control flow, and constraints.
+
+That framing is important because it makes agents easier to design, debug, and improve.

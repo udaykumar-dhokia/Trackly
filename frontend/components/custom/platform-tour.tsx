@@ -121,7 +121,9 @@ export function PlatformTour({ autoStart = false }: { autoStart?: boolean }) {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [activeSteps, setActiveSteps] = useState<TourStep[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null);
+  const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(
+    null,
+  );
 
   const updateHighlight = useCallback(() => {
     if (!isTourOpen) return;
@@ -217,7 +219,7 @@ export function PlatformTour({ autoStart = false }: { autoStart?: boolean }) {
   const step = activeSteps[currentStep];
 
   if (!isIntroOpen && !isTourOpen) {
-      return null;
+    return null;
   }
 
   return (

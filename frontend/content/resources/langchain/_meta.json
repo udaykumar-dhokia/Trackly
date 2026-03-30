@@ -1,0 +1,11 @@
+{
+  "title": "LangChain",
+  "description": "Practical LangChain guides for getting from idea to working agent.",
+  "icon": "sparkles",
+  "order": 3,
+  "articles": [
+    "01-getting-started",
+    "02-chains-and-runnables",
+    "03-langchain-agents"
+  ]
+}

@@ -52,10 +52,17 @@ export default function EventsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [providerFilter, memberFilter, modelFilter, featureFilter, startDate, endDate, activeProjectId]);
+  }, [
+    providerFilter,
+    memberFilter,
+    modelFilter,
+    featureFilter,
+    startDate,
+    endDate,
+    activeProjectId,
+  ]);
 
   useEffect(() => {
     if (activeProjectId) {
@@ -126,8 +133,6 @@ export default function EventsPage() {
     );
   };
 
-
-
   if (
     projectsStatus === "loading" ||
     (projectsStatus === "idle" && !activeProjectId)
@@ -145,11 +150,10 @@ export default function EventsPage() {
         <WarningCircle size={64} weight="duotone" className="text-white" />
         <h1 className="text-3xl font-bold text-white">No Active Project</h1>
         <p className="max-w-lg font-mono text-zinc-400">
-          Please select or create a project to view underlying telemetry and API events.
+          Please select or create a project to view underlying telemetry and API
+          events.
         </p>
-        <Button
-          className="bg-white/20"
-        >
+        <Button className="bg-white/20">
           <Link
             href="/organizations"
             className="inline-flex items-center gap-2 px-6 py-3 font-bold text-white"
@@ -167,9 +171,12 @@ export default function EventsPage() {
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white">Events Log</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight text-white">
+              Events Log
+            </h1>
             <p className="max-w-2xl font-mono text-sm leading-relaxed text-zinc-400">
-              The raw telemetry stream for your project. Apply filters and inspect who generated spend.
+              The raw telemetry stream for your project. Apply filters and
+              inspect who generated spend.
             </p>
           </div>
           <button
@@ -254,13 +261,18 @@ export default function EventsPage() {
       <section className="relative border-2 border-white/10 bg-[#141418] rounded-xl">
         <div className="flex items-center justify-between border-b-2 border-white/10 bg-[#1a1a24] rounded-t-xl p-4">
           <div className="font-mono text-xs text-zinc-400">
-            <span className="font-bold text-fuchsia-400">{total.toLocaleString()}</span> Events Tracked
+            <span className="font-bold text-fuchsia-400">
+              {total.toLocaleString()}
+            </span>{" "}
+            Events Tracked
           </div>
           <div className="flex items-center gap-4">
             <span className="font-mono text-xs text-zinc-400">Page {page}</span>
             <div className="flex gap-2">
               <button
-                onClick={() => currentPage > 1 && setCurrentPage((value) => value - 1)}
+                onClick={() =>
+                  currentPage > 1 && setCurrentPage((value) => value - 1)
+                }
                 disabled={currentPage <= 1 || status === "loading"}
                 className="border-2 border-zinc-600 bg-[#0f0f12] p-2 text-zinc-300 transition-colors hover:border-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-30"
               >
@@ -287,9 +299,12 @@ export default function EventsPage() {
           </div>
         ) : events.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-24 text-center">
-            <p className="mb-2 text-zinc-300">No events matched the current filters.</p>
+            <p className="mb-2 text-zinc-300">
+              No events matched the current filters.
+            </p>
             <p className="mb-6 max-w-sm text-sm text-zinc-500">
-              Adjust the filters or send more telemetry through your Trackly keys to populate this view.
+              Adjust the filters or send more telemetry through your Trackly
+              keys to populate this view.
             </p>
           </div>
         ) : (
@@ -297,28 +312,50 @@ export default function EventsPage() {
             <table className="w-full whitespace-nowrap text-left font-mono text-xs">
               <thead className="sticky top-0 z-10 border-b-2 border-fuchsia-500/20 bg-[#141418] uppercase tracking-wider text-zinc-400">
                 <tr>
-                  <th className="border-r border-white/5 px-4 py-3">Time (UTC)</th>
-                  <th className="border-r border-white/5 px-4 py-3">Provider/Model</th>
-                  <th className="border-r border-white/5 px-4 py-3 text-right">Tokens (P/C/T)</th>
-                  <th className="border-r border-white/5 px-4 py-3 text-right">Cost (USD)</th>
-                  <th className="border-r border-white/5 px-4 py-3 text-right">Latency</th>
-                  <th className="border-r border-white/5 px-4 py-3">Tags / Feature</th>
+                  <th className="border-r border-white/5 px-4 py-3">
+                    Time (UTC)
+                  </th>
+                  <th className="border-r border-white/5 px-4 py-3">
+                    Provider/Model
+                  </th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">
+                    Tokens (P/C/T)
+                  </th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">
+                    Cost (USD)
+                  </th>
+                  <th className="border-r border-white/5 px-4 py-3 text-right">
+                    Latency
+                  </th>
+                  <th className="border-r border-white/5 px-4 py-3">
+                    Tags / Feature
+                  </th>
                   <th className="px-4 py-3">User ID</th>
                 </tr>
               </thead>
               <tbody className="divide-y-2 divide-white/5">
                 {events.map((evt) => (
-                  <tr key={evt.id} className="group transition-colors hover:bg-white/5">
+                  <tr
+                    key={evt.id}
+                    className="group transition-colors hover:bg-white/5"
+                  >
                     <td className="border-r border-white/5 px-4 py-3 text-zinc-300">
-                      {new Date(evt.occurred_at).toISOString().replace("T", " ").slice(0, 19)}
+                      {new Date(evt.occurred_at)
+                        .toISOString()
+                        .replace("T", " ")
+                        .slice(0, 19)}
                     </td>
                     <td className="border-r border-white/5 px-4 py-3">
                       <span className="mr-2 text-zinc-500">{evt.provider}</span>
-                      <span className="font-semibold text-fuchsia-300">{evt.model}</span>
+                      <span className="font-semibold text-fuchsia-300">
+                        {evt.model}
+                      </span>
                     </td>
                     <td className="border-r border-white/5 px-4 py-3 text-right">
                       {evt.prompt_tokens || 0} / {evt.completion_tokens || 0} /{" "}
-                      <span className="text-zinc-300">{evt.total_tokens || 0}</span>
+                      <span className="text-zinc-300">
+                        {evt.total_tokens || 0}
+                      </span>
                     </td>
                     <td className="border-r border-white/5 px-4 py-3 text-right text-emerald-400">
                       ${(evt.estimated_cost_usd || 0).toFixed(6)}
@@ -333,7 +370,9 @@ export default function EventsPage() {
                         </span>
                       )}
                       {evt.tags && evt.tags.length > 0 && (
-                        <span className="text-zinc-500">[{evt.tags.join(", ")}]</span>
+                        <span className="text-zinc-500">
+                          [{evt.tags.join(", ")}]
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -342,12 +381,20 @@ export default function EventsPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="group/user flex cursor-help items-center gap-2">
-                                <Avatar size="sm" className="size-6 shrink-0 border border-white/10">
+                                <Avatar
+                                  size="sm"
+                                  className="size-6 shrink-0 border border-white/10"
+                                >
                                   {evt.user_photo && (
-                                    <AvatarImage src={evt.user_photo} alt={evt.user_name || evt.user_id} />
+                                    <AvatarImage
+                                      src={evt.user_photo}
+                                      alt={evt.user_name || evt.user_id}
+                                    />
                                   )}
                                   <AvatarFallback className="bg-fuchsia-500/10 text-[10px] font-bold text-fuchsia-400">
-                                    {(evt.user_name || evt.user_id).substring(0, 2).toUpperCase()}
+                                    {(evt.user_name || evt.user_id)
+                                      .substring(0, 2)
+                                      .toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="max-w-[110px] truncate text-zinc-500 transition-colors group-hover/user:text-zinc-300">
@@ -363,7 +410,9 @@ export default function EventsPage() {
                                 <span className="font-bold text-fuchsia-400">
                                   {evt.user_name || "Unknown User"}
                                 </span>
-                                <span className="text-[10px] text-zinc-400">{evt.user_id}</span>
+                                <span className="text-[10px] text-zinc-400">
+                                  {evt.user_id}
+                                </span>
                               </div>
                             </TooltipContent>
                           </Tooltip>

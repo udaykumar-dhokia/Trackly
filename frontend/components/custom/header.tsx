@@ -2,21 +2,29 @@
 import { ArrowUpRightIcon, List, X } from "@phosphor-icons/react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 const menuItems = [
   {
-    label: "Changelog",
-    href: "/changelogs",
-  },
-  {
     label: "Documentation",
     href: "/docs",
+  },
+  {
+    label: "Resources",
+    href: "/resources",
+    highlighted: true,
+  },
+  {
+    label: "Changelog",
+    href: "/changelogs",
   },
 ];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
@@ -27,18 +35,28 @@ const Header = () => {
             href="/"
           >
             <span className="sr-only">Home</span>
-            <img src="/logo/logo-48.png" className="w-8 h-8 sm:w-10 sm:h-10" />
+            <Image
+              src="/logo/logo-48.png"
+              alt="Trackly logo"
+              width={40}
+              height={40}
+              className="w-8 h-8 sm:w-10 sm:h-10"
+            />
             <h1 className="font-bold text-xl sm:text-2xl tracking-tight">
               Trackly
             </h1>
           </Link>
 
           <nav aria-label="Global" className="hidden md:block">
-            <ul className="flex items-center gap-8 text-sm">
+            <ul className="flex items-center gap-4 text-sm">
               {menuItems.map((item, index) => (
                 <li key={index}>
                   <Link
-                    className="text-zinc-400 font-medium transition hover:text-white"
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-medium transition hover:text-white
+                      pathname?.startsWith(item.href)
+                        ? "text-white"
+                        : "text-zinc-400"
+                    }`}
                     href={item.href}
                   >
                     {item.label}
@@ -88,16 +106,29 @@ const Header = () => {
                 key={index}
                 href={item.href}
                 onClick={() => setIsMenuOpen(false)}
-                className="text-2xl font-bold text-white tracking-tight hover:text-primary transition-colors"
+                className={`mx-auto inline-flex items-center gap-3 rounded-full px-4 py-2 text-2xl font-bold tracking-tight transition-colors backdrop-blur-md ${
+                  item.highlighted
+                    ? "border border-indigo-400/30 bg-indigo-500/10 shadow-[0_0_24px_rgba(99,102,241,0.16)]"
+                    : ""
+                } ${
+                  pathname?.startsWith(item.href)
+                    ? "text-white"
+                    : "text-zinc-400 hover:text-white"
+                }`}
               >
                 {item.label}
+                {item.highlighted ? (
+                  <span className="rounded-full border border-indigo-300/30 bg-indigo-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-100">
+                    New
+                  </span>
+                ) : null}
               </Link>
             ))}
             <div className="h-px bg-white/10 my-4" />
             <a
               href="/auth/login"
               onClick={() => setIsMenuOpen(false)}
-              className="text-xl font-bold text-zinc-400 hover:text-white transition-colors"
+              className="text-xl font-bold text-zinc-400 hover:text-white transition-colors backdrop-blur-md"
             >
               Login
             </a>

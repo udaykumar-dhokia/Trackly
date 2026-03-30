@@ -263,10 +263,6 @@ export default function ProjectMembersPage() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-[#1a1a24] border border-white/10 text-[10px] font-mono uppercase tracking-widest text-zinc-400">
-                    <ShieldCheck size={14} className="text-emerald-400" />
-                    {member.role}
-                  </div>
                   {authUser?.email !== member.email && isProjectAdmin && (
                     <button
                       onClick={() => {

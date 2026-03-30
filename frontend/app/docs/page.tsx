@@ -41,9 +41,7 @@ const NAV: NavGroup[] = [
   },
   {
     group: "Native SDKs",
-    items: [
-      "Introduction to native SDKs",
-    ],
+    items: ["Introduction to native SDKs"],
   },
   {
     group: "Individual SDK Support",
@@ -79,7 +77,7 @@ const CONSTRUCTOR_PARAMS: ParamSpec[] = [
     defaultValue: "None",
     description:
       "Use this when you want Trackly's native wrappers. The built-in values are `providers.LANGCHAIN`, `providers.OLLAMA`, and `providers.GEMINI`. For normal LangChain callbacks you can leave it unset.",
-    example: 'Trackly(provider=providers.OLLAMA)',
+    example: "Trackly(provider=providers.OLLAMA)",
   },
   {
     name: "api_key",
@@ -133,8 +131,7 @@ const CONSTRUCTOR_PARAMS: ParamSpec[] = [
     defaultValue: "GEMINI_API_KEY",
     description:
       "Credential used by `trackly.models` and `trackly.batches` when you use the native Gemini wrappers.",
-    example:
-      'Trackly(provider=providers.GEMINI, gemini_api_key="AIza...")',
+    example: 'Trackly(provider=providers.GEMINI, gemini_api_key="AIza...")',
   },
   {
     name: "anthropic_api_key",
@@ -167,14 +164,13 @@ const ENV_VARS: ParamSpec[] = [
     name: "TRACKLY_DEBUG",
     type: "string",
     description:
-      'Set this to `1` to enable verbose worker logs without changing application code.',
+      "Set this to `1` to enable verbose worker logs without changing application code.",
     example: "TRACKLY_DEBUG=1",
   },
   {
     name: "GEMINI_API_KEY",
     type: "string",
-    description:
-      "Default Gemini credential for the native Gemini wrappers.",
+    description: "Default Gemini credential for the native Gemini wrappers.",
     example: "GEMINI_API_KEY=AIza_your_gemini_key",
   },
   {
@@ -227,8 +223,7 @@ const INGEST_FIELDS: ParamSpec[] = [
   {
     name: "latency_ms",
     type: "int | null",
-    description:
-      "Latency in milliseconds for the model call or batch action.",
+    description: "Latency in milliseconds for the model call or batch action.",
     example: '"latency_ms": 842',
   },
   {
@@ -269,8 +264,7 @@ const INGEST_FIELDS: ParamSpec[] = [
   {
     name: "session_id",
     type: "string | null",
-    description:
-      "Conversation or session identifier for grouping events.",
+    description: "Conversation or session identifier for grouping events.",
     example: '"session_id": "chat-session-44"',
   },
   {
@@ -283,8 +277,7 @@ const INGEST_FIELDS: ParamSpec[] = [
   {
     name: "tags",
     type: "list[str]",
-    description:
-      "Small filterable labels for manual or custom events.",
+    description: "Small filterable labels for manual or custom events.",
     example: '"tags": ["trial-user", "beta"]',
   },
   {
@@ -297,8 +290,7 @@ const INGEST_FIELDS: ParamSpec[] = [
   {
     name: "sdk_version",
     type: "string | null",
-    description:
-      "Version string for your SDK or ingestion client.",
+    description: "Version string for your SDK or ingestion client.",
     example: '"sdk_version": "0.1.3"',
   },
   {
@@ -376,8 +368,7 @@ const STATS_QUERY_PARAMS: ParamSpec[] = [
     name: "project_id",
     type: "uuid",
     required: true,
-    description:
-      "Path parameter for the project you want to query.",
+    description: "Path parameter for the project you want to query.",
     example: "/api/v1/projects/6f3b3f0b-.../stats/summary",
   },
   {
@@ -429,8 +420,7 @@ const ORG_AND_PROJECT_FIELDS: ParamSpec[] = [
   {
     name: "ProjectCreate.environment",
     type: "string | null",
-    description:
-      "Optional environment stored on the project itself.",
+    description: "Optional environment stored on the project itself.",
     example: '"environment": "prod"',
   },
   {
@@ -637,10 +627,11 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
         </div>
         <button
           onClick={copy}
-          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${copied
+          className={`font-mono text-[10px] px-2 py-0.5 rounded-none border-2 transition-all ${
+            copied
               ? "text-[#34d399] border-[#34d399] bg-[#34d399]/5"
               : "text-zinc-400 border-zinc-700 bg-[#141822] hover:text-white hover:border-white"
-            }`}
+          }`}
         >
           {copied ? "COPIED" : "COPY"}
         </button>
@@ -756,8 +747,9 @@ function ParameterGrid({ items }: { items: ParamSpec[] }) {
           <div className="flex items-start justify-between gap-4 mb-3">
             <Ic>{item.name}</Ic>
             <span
-              className={`text-[10px] uppercase tracking-[0.22em] ${item.required ? "text-[#f59e0b]" : "text-zinc-500"
-                }`}
+              className={`text-[10px] uppercase tracking-[0.22em] ${
+                item.required ? "text-[#f59e0b]" : "text-zinc-500"
+              }`}
             >
               {item.required ? "Required" : "Optional"}
             </span>
@@ -823,10 +815,11 @@ const DocsNav = ({
                     onItemSelected?.();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${isActive
+                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${
+                    isActive
                       ? "border-[#f59e0b] bg-white/[0.06] text-white translate-x-1"
                       : "border-transparent text-zinc-500 hover:text-zinc-200 hover:border-white/20"
-                    }`}
+                  }`}
                 >
                   {item}
                 </button>
@@ -857,11 +850,13 @@ export default function DocsPage() {
             <p className="text-[.96rem] text-zinc-300 leading-[1.8] mb-6">
               Trackly is a Python usage-tracking layer for LLM apps. It hooks
               into LangChain callbacks or native Anthropic, Ollama, and Gemini
-              SDK calls, then records provider, model, tokens, latency, and
-              your own labels in the background.
+              SDK calls, then records provider, model, tokens, latency, and your
+              own labels in the background.
             </p>
 
-            <SectionTitle accentColor="#14b8a6">What Trackly records</SectionTitle>
+            <SectionTitle accentColor="#14b8a6">
+              What Trackly records
+            </SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
@@ -895,7 +890,9 @@ export default function DocsPage() {
               ))}
             </div>
 
-            <SectionTitle accentColor="#fb7185">Provider constants</SectionTitle>
+            <SectionTitle accentColor="#fb7185">
+              Provider constants
+            </SectionTitle>
             <p className="text-[.88rem] text-zinc-400 leading-[1.8]">
               The SDK exports a tiny helper object if you prefer constants over
               raw strings.
@@ -1030,7 +1027,9 @@ trackly = Trackly(
     gemini_api_key="AIza...",
 )`}</CodeBlock>
 
-            <SectionTitle accentColor="#14b8a6">Constructor parameters</SectionTitle>
+            <SectionTitle accentColor="#14b8a6">
+              Constructor parameters
+            </SectionTitle>
             <ParameterGrid items={CONSTRUCTOR_PARAMS} />
           </>
         );
@@ -1079,16 +1078,19 @@ trackly = Trackly(
 
 callback_handler = trackly.callback()`}</CodeBlock>
 
-            <SectionTitle accentColor="#fb7185">How the callback works</SectionTitle>
+            <SectionTitle accentColor="#fb7185">
+              How the callback works
+            </SectionTitle>
             <div className="space-y-4 text-[.86rem] text-zinc-400 leading-[1.8]">
               <p>
-                On <Ic>on_llm_start</Ic>, Trackly stores the start time and tries
-                to capture the model name from LangChain invocation params.
+                On <Ic>on_llm_start</Ic>, Trackly stores the start time and
+                tries to capture the model name from LangChain invocation
+                params.
               </p>
               <p>
                 On <Ic>on_llm_end</Ic>, Trackly computes latency, token counts,
-                finish reason, infers the provider, builds an event, and enqueues
-                it for the background worker.
+                finish reason, infers the provider, builds an event, and
+                enqueues it for the background worker.
               </p>
               <p>
                 On <Ic>on_llm_error</Ic>, Trackly only cleans up callback state.
@@ -1157,8 +1159,9 @@ callback_handler = trackly.callback()`}</CodeBlock>
               underlying client and transparently logs events for you.
             </p>
             <Callout type="info">
-              To use these, initialize Trackly with <Ic>provider=&quot;provider_name&quot;</Ic> and
-              provide the corresponding API key.
+              To use these, initialize Trackly with{" "}
+              <Ic>provider=&quot;provider_name&quot;</Ic> and provide the
+              corresponding API key.
             </Callout>
             <SectionTitle>Supported Individual SDKs</SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1193,8 +1196,8 @@ callback_handler = trackly.callback()`}</CodeBlock>
             <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
               When <Ic>provider=&quot;anthropic&quot;</Ic>, Trackly exposes
               <Ic>trackly.messages</Ic> and wraps the official
-              <Ic>anthropic.resources.Messages</Ic> API. It records input tokens,
-              output tokens, latency, stop reason, and message IDs.
+              <Ic>anthropic.resources.Messages</Ic> API. It records input
+              tokens, output tokens, latency, stop reason, and message IDs.
             </p>
             <CodeBlock lang="python">{`from trackly import Trackly, providers
             
@@ -1238,7 +1241,8 @@ asyncio.run(main())`}</CodeBlock>
                   type: "official anthropic signals",
                   description:
                     "Synchronous message creation. Trackly times the call and logs usage from the final response object.",
-                  example: 'trackly.messages.create(model="...", messages=[...])',
+                  example:
+                    'trackly.messages.create(model="...", messages=[...])',
                 },
                 {
                   name: "create_async(**kwargs)",
@@ -1267,7 +1271,8 @@ asyncio.run(main())`}</CodeBlock>
               Ollama native
             </h1>
             <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
-              When <Ic>provider=&quot;ollama&quot;</Ic>, Trackly wraps the official
+              When <Ic>provider=&quot;ollama&quot;</Ic>, Trackly wraps the
+              official
               <Ic>ollama</Ic> Python package and logs usage from chat, generate,
               and embed calls.
             </p>
@@ -1298,7 +1303,9 @@ embedding_response = trackly.embed(
     input="Track this paragraph for retrieval.",
 )`}</CodeBlock>
 
-            <SectionTitle accentColor="#14b8a6">Tracked Ollama methods</SectionTitle>
+            <SectionTitle accentColor="#14b8a6">
+              Tracked Ollama methods
+            </SectionTitle>
             <ParameterGrid
               items={[
                 {
@@ -1313,14 +1320,13 @@ embedding_response = trackly.embed(
                   type: "official ollama.generate signature",
                   description:
                     "Wraps text generation through Ollama and logs usage.",
-                  example:
-                    'trackly.generate(model="llama3.2", prompt="Hello")',
+                  example: 'trackly.generate(model="llama3.2", prompt="Hello")',
                 },
                 {
                   name: "embed(*args, **kwargs)",
                   type: "official ollama.embed signature",
                   description:
-                    "Wraps embeddings and logs an event with `finish_reason=\"embedding\"`.",
+                    'Wraps embeddings and logs an event with `finish_reason="embedding"`.',
                   example:
                     'trackly.embed(model="nomic-embed-text", input="hello")',
                 },
@@ -1329,7 +1335,7 @@ embedding_response = trackly.embed(
                   type: "bool",
                   description:
                     "When you stream chat or generate, Trackly waits for the final `done` chunk before logging usage.",
-                  example: 'trackly.chat(..., stream=True)',
+                  example: "trackly.chat(..., stream=True)",
                 },
               ]}
             />
@@ -1386,7 +1392,9 @@ async def main():
 
 asyncio.run(main())`}</CodeBlock>
 
-            <SectionTitle accentColor="#fb7185">Non-tracking utility methods</SectionTitle>
+            <SectionTitle accentColor="#fb7185">
+              Non-tracking utility methods
+            </SectionTitle>
             <CodeBlock lang="python">{`from trackly import Trackly, providers
 
 trackly = Trackly(provider=providers.OLLAMA)
@@ -1422,7 +1430,8 @@ trackly.delete("llama3.2-backup")`}</CodeBlock>
                   type: "official ollama.create signature",
                   description:
                     "Creates a model through Ollama. Trackly forwards all arguments unchanged.",
-                  example: 'trackly.create(model="qa-helper", from_="llama3.2")',
+                  example:
+                    'trackly.create(model="qa-helper", from_="llama3.2")',
                 },
                 {
                   name: "copy(source, destination)",
@@ -1464,8 +1473,8 @@ trackly.delete("llama3.2-backup")`}</CodeBlock>
             </h1>
             <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
               When <Ic>provider=&quot;gemini&quot;</Ic>, Trackly exposes
-              <Ic>trackly.models</Ic> and wraps <Ic>google.genai.Client</Ic>.
-              It records prompt tokens, candidate tokens, total tokens, latency,
+              <Ic>trackly.models</Ic> and wraps <Ic>google.genai.Client</Ic>. It
+              records prompt tokens, candidate tokens, total tokens, latency,
               finish reason, feature, environment, and timestamp.
             </p>
             <CodeBlock lang="python">{`from trackly import Trackly, providers
@@ -1594,7 +1603,9 @@ jobs = trackly.batches.list(page_size=20)
 trackly.batches.cancel(name=job.name)
 trackly.batches.delete(name=job.name)`}</CodeBlock>
 
-            <SectionTitle accentColor="#fb7185">Batch method parameters</SectionTitle>
+            <SectionTitle accentColor="#fb7185">
+              Batch method parameters
+            </SectionTitle>
             <ParameterGrid
               items={[
                 {
@@ -1730,7 +1741,9 @@ trackly.shutdown(timeout=5.0)`}</CodeBlock>
   "rejected": 0
 }`}</CodeBlock>
 
-            <SectionTitle accentColor="#14b8a6">Event payload fields</SectionTitle>
+            <SectionTitle accentColor="#14b8a6">
+              Event payload fields
+            </SectionTitle>
             <ParameterGrid items={INGEST_FIELDS} />
           </>
         );
@@ -1744,7 +1757,9 @@ trackly.shutdown(timeout=5.0)`}</CodeBlock>
             <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
               Events API
             </h1>
-            <RouteBadge>GET /api/v1/projects/{`{project_id}`}/events</RouteBadge>
+            <RouteBadge>
+              GET /api/v1/projects/{`{project_id}`}/events
+            </RouteBadge>
             <p className="text-[.95rem] text-zinc-300 leading-[1.8] mt-6 mb-6">
               This endpoint returns raw events with pagination and filters.
             </p>
@@ -1799,10 +1814,18 @@ trackly.shutdown(timeout=5.0)`}</CodeBlock>
               route for platform counters.
             </p>
             <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
-              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/summary</RouteBadge>
-              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/by-model</RouteBadge>
-              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/by-feature</RouteBadge>
-              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/stats/daily</RouteBadge>
+              <RouteBadge>
+                GET /api/v1/projects/{`{project_id}`}/stats/summary
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/projects/{`{project_id}`}/stats/by-model
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/projects/{`{project_id}`}/stats/by-feature
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/projects/{`{project_id}`}/stats/daily
+              </RouteBadge>
               <RouteBadge>GET /api/v1/stats/global</RouteBadge>
             </div>
 
@@ -1853,15 +1876,31 @@ trackly.shutdown(timeout=5.0)`}</CodeBlock>
             <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
               <RouteBadge>POST /api/v1/organizations</RouteBadge>
               <RouteBadge>GET /api/v1/organizations/{`{org_id}`}</RouteBadge>
-              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/projects</RouteBadge>
-              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/projects</RouteBadge>
+              <RouteBadge>
+                POST /api/v1/organizations/{`{org_id}`}/projects
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/organizations/{`{org_id}`}/projects
+              </RouteBadge>
               <RouteBadge>GET /api/v1/projects/{`{project_id}`}</RouteBadge>
-              <RouteBadge>GET /api/v1/projects/{`{project_id}`}/members</RouteBadge>
-              <RouteBadge>POST /api/v1/projects/{`{project_id}`}/members</RouteBadge>
-              <RouteBadge>DELETE /api/v1/projects/{`{project_id}`}/members/{`{user_id}`}</RouteBadge>
-              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/users</RouteBadge>
-              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/users</RouteBadge>
-              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/usage</RouteBadge>
+              <RouteBadge>
+                GET /api/v1/projects/{`{project_id}`}/members
+              </RouteBadge>
+              <RouteBadge>
+                POST /api/v1/projects/{`{project_id}`}/members
+              </RouteBadge>
+              <RouteBadge>
+                DELETE /api/v1/projects/{`{project_id}`}/members/{`{user_id}`}
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/organizations/{`{org_id}`}/users
+              </RouteBadge>
+              <RouteBadge>
+                POST /api/v1/organizations/{`{org_id}`}/users
+              </RouteBadge>
+              <RouteBadge>
+                GET /api/v1/organizations/{`{org_id}`}/usage
+              </RouteBadge>
             </div>
 
             <CodeBlock lang="bash">{`curl -X POST http://localhost:8000/api/v1/organizations \\
@@ -1878,7 +1917,9 @@ curl -X POST http://localhost:8000/api/v1/organizations/6f3b3f0b-1234-5678-9abc-
     "environment": "prod"
   }'`}</CodeBlock>
 
-            <SectionTitle accentColor="#fb7185">Request body fields</SectionTitle>
+            <SectionTitle accentColor="#fb7185">
+              Request body fields
+            </SectionTitle>
             <ParameterGrid items={ORG_AND_PROJECT_FIELDS} />
           </>
         );
@@ -1893,9 +1934,13 @@ curl -X POST http://localhost:8000/api/v1/organizations/6f3b3f0b-1234-5678-9abc-
               API keys
             </h1>
             <div className="space-y-3 mb-6 text-[.84rem] text-zinc-300">
-              <RouteBadge>POST /api/v1/organizations/{`{org_id}`}/api-keys</RouteBadge>
+              <RouteBadge>
+                POST /api/v1/organizations/{`{org_id}`}/api-keys
+              </RouteBadge>
               <RouteBadge>POST /api/v1/api-keys/{`{key_id}`}/access</RouteBadge>
-              <RouteBadge>GET /api/v1/organizations/{`{org_id}`}/api-keys</RouteBadge>
+              <RouteBadge>
+                GET /api/v1/organizations/{`{org_id}`}/api-keys
+              </RouteBadge>
               <RouteBadge>DELETE /api/v1/api-keys/{`{key_id}`}</RouteBadge>
             </div>
 
@@ -1923,7 +1968,9 @@ curl -X POST http://localhost:8000/api/v1/organizations/6f3b3f0b-1234-5678-9abc-
     "auth0_id": "auth0|abc123"
   }'`}</CodeBlock>
 
-            <SectionTitle accentColor="#14b8a6">Parameters and behavior</SectionTitle>
+            <SectionTitle accentColor="#14b8a6">
+              Parameters and behavior
+            </SectionTitle>
             <ParameterGrid items={API_KEY_FIELDS} />
 
             <Callout type="warn">

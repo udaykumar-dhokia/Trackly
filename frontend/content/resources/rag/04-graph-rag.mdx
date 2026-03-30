@@ -1,0 +1,120 @@
+---
+title: "What is Graph RAG?"
+slug: "what-is-graph-rag"
+description: "Learn what Graph RAG is, when it helps, and why relationships sometimes matter more than raw similarity."
+chapter: "rag"
+chapterTitle: "RAG"
+order: 4
+tags: ["graph rag", "rag", "knowledge graph", "retrieval"]
+difficulty: "advanced"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# What is Graph RAG?
+
+Traditional RAG retrieves text chunks based on similarity. Graph RAG introduces a different idea: some questions are easier to answer when you model relationships between entities, documents, and concepts explicitly.
+
+Instead of relying only on "which chunk looks semantically similar?", Graph RAG can use structure like:
+
+- company -> product -> feature
+- incident -> service -> owner
+- paper -> author -> institution
+
+That structure can improve answers when relationships matter as much as content.
+
+## Why vector similarity is not always enough
+
+Vector search is powerful, but it can struggle when the question depends on:
+
+- connections between entities
+- multi-hop relationships
+- structured dependencies across documents
+
+For example:
+
+> Which product area owned by the payments team had the largest cost spike after the new model rollout?
+
+That is not just a similarity problem. It is partly a relationship problem.
+
+## What Graph RAG adds
+
+Graph RAG systems often include:
+
+- entity extraction
+- relationship extraction
+- a graph store
+- graph-aware retrieval
+
+You still may use embeddings, but the graph gives you another retrieval lens.
+
+## A simplified pipeline
+
+1. parse source documents
+2. extract entities and relationships
+3. build a graph
+4. retrieve nodes and connected evidence for a user query
+5. generate an answer grounded in that graph-derived context
+
+This is more work than normal RAG, which is why it should be justified by the use case.
+
+## Where Graph RAG shines
+
+Graph RAG is useful when:
+
+- documents describe connected systems
+- users ask multi-hop questions
+- entity relationships are central to the answer
+- the domain already has graph-like structure
+
+Examples:
+
+- enterprise architecture
+- financial ownership mapping
+- biomedical knowledge discovery
+- compliance and policy relationships
+
+## Where it may not help
+
+Graph RAG is usually unnecessary for:
+
+- straightforward FAQ bots
+- simple policy lookup
+- narrow documentation search
+
+If your users mostly ask direct questions whose answers already live in one or two chunks, standard RAG is often enough.
+
+## A conceptual example
+
+Imagine a graph with nodes for:
+
+- model
+- project
+- feature
+- owner
+- budget
+
+If a user asks:
+
+> Which feature caused the highest spend increase and who owns it?
+
+A graph-aware retriever can traverse:
+
+`feature -> spend metrics -> owning team`
+
+That may surface the right context faster than a pure vector search over generic text chunks.
+
+## Operational reality
+
+Graph RAG is harder to build because you now need:
+
+- extraction quality
+- graph schema design
+- graph storage
+- graph-aware retrieval logic
+
+It is not only a prompting problem anymore. It becomes a data modeling problem too.
+
+## Final takeaway
+
+Graph RAG is valuable when your answers depend on relationships, not just relevant text. If your domain is highly connected, it can outperform plain chunk retrieval. If not, it may be unnecessary complexity. Use it when the structure of the knowledge itself is part of the task.

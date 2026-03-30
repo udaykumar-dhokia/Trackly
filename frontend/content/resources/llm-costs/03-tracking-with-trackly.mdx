@@ -1,0 +1,143 @@
+---
+title: "How to Track LLM API Costs in Python"
+slug: "how-to-track-llm-api-costs-in-python"
+description: "Track token usage, latency, and estimated spend in Python with Trackly and a LangChain callback."
+chapter: "llm-costs"
+chapterTitle: "LLM Costs"
+order: 3
+tags: ["track llm api costs", "python", "trackly", "observability"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+featured: true
+---
+
+# How to Track LLM API Costs in Python
+
+The moment an LLM app moves beyond a local demo, one question starts showing up everywhere:
+
+> Where is the money going?
+
+If you use several models, agent loops, or RAG flows, cost becomes surprisingly hard to reason about. One feature might make five model calls. Another might retrieve large chunks and inflate prompt size. Without instrumentation, you are mostly guessing.
+
+Trackly exists to remove that guesswork.
+
+## What you usually want to measure
+
+For each model call, teams usually care about:
+
+- model name
+- prompt tokens
+- completion tokens
+- total tokens
+- estimated cost
+- latency
+- feature or environment metadata
+
+That is the minimum needed to answer questions like:
+
+- which feature is getting expensive?
+- which model is driving spend?
+- did a new release increase token usage?
+
+## A simple Trackly setup
+
+If you are already using LangChain, the fastest way to start is to attach the Trackly callback to your existing model.
+
+```python
+from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(
+    api_key="tk_live_...",
+    feature="support-chat",
+    environment="production",
+)
+
+llm = ChatOpenAI(
+    model="gpt-4o",
+    callbacks=[trackly.callback()],
+)
+
+response = llm.invoke("Summarize the customer's issue in one sentence.")
+print(response.content)
+```
+
+That is the whole core integration. After that, the SDK records usage in the background without forcing you to rewrite your app logic.
+
+## Why this is useful
+
+Once events are tracked, you can start answering product questions instead of only infrastructure questions.
+
+For example:
+
+- Which feature produced the highest LLM spend this week?
+- Did switching models lower cost or just move it elsewhere?
+- Which environment is generating waste?
+
+Those are the kinds of questions that help teams actually manage AI usage instead of just reacting to bills.
+
+## Add metadata early
+
+The most valuable thing you can do after the initial setup is attach metadata consistently.
+
+```python
+from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(api_key="tk_live_...")
+
+llm = ChatOpenAI(
+    model="gpt-4o-mini",
+    callbacks=[
+        trackly.callback(
+            feature="docs-qa",
+            environment="staging",
+        )
+    ],
+)
+```
+
+That makes cost visible by feature and environment rather than only as one blended total.
+
+## What this catches in real apps
+
+Instrumentation becomes especially helpful when:
+
+- an agent loop suddenly adds extra model calls
+- a RAG prompt starts including too much context
+- one model family becomes the dominant cost driver
+- retries quietly increase usage after a deployment
+
+Without per-call tracking, those changes are hard to spot early.
+
+## A practical pattern for teams
+
+One useful rollout path looks like this:
+
+1. instrument the main model calls
+2. tag them by feature
+3. review usage by model and environment
+4. optimize the most expensive flows first
+
+That keeps cost work focused on real behavior instead of guesswork.
+
+## Native wrappers are available too
+
+If you are not using LangChain, Trackly also supports native provider wrappers for providers like Gemini, Anthropic, and Ollama. That means you can still capture usage without forcing a framework migration.
+
+## A simple production mindset
+
+Tracking is not only about finance. It is also about engineering feedback.
+
+Once cost data is visible, it becomes easier to ask:
+
+- should this be a chain instead of an agent?
+- should we retrieve fewer documents?
+- should we route easy tasks to a smaller model?
+
+Those are product and architecture decisions, not only observability decisions.
+
+## Final takeaway
+
+If your Python app is using LLMs in production, cost tracking should be part of the application itself, not a spreadsheet after the fact. Trackly gives you a lightweight way to attach observability directly to the calls you are already making so you can see token usage, latency, and estimated spend while the app is actually running.

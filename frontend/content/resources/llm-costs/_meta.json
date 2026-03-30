@@ -1,0 +1,11 @@
+{
+  "title": "LLM Costs",
+  "description": "Understand provider pricing, token costs, and how to monitor spend.",
+  "icon": "coins",
+  "order": 4,
+  "articles": [
+    "01-understanding-token-costs",
+    "02-provider-comparison",
+    "03-tracking-with-trackly"
+  ]
+}

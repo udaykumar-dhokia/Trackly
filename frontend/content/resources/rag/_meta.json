@@ -1,0 +1,12 @@
+{
+  "title": "RAG",
+  "description": "From basic retrieval to more adaptive RAG workflows.",
+  "icon": "database",
+  "order": 2,
+  "articles": [
+    "01-naive-rag",
+    "02-advanced-rag",
+    "03-agentic-rag",
+    "04-graph-rag"
+  ]
+}

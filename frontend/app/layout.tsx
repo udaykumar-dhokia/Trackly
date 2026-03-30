@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  JetBrains_Mono,
+  Bricolage_Grotesque,
+} from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import StoreProvider from "@/lib/store/StoreProvider";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "@/components/ui/sonner";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -28,12 +35,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: {
     default: "Trackly | Track LLM Costs & Usage",
-    template: "%s | Trackly",
+    template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models — all from one dashboard.",
+    "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models from one dashboard.",
   keywords: [
     "LLM",
     "AI costs",
@@ -46,23 +55,26 @@ export const metadata: Metadata = {
     "token usage",
     "AI monitoring",
   ],
-  authors: [{ name: "Trackly" }],
-  creator: "Trackly",
-  metadataBase: new URL("https://trytrackly.vercel.app"),
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://trytrackly.vercel.app",
-    siteName: "Trackly",
+    url: SITE_URL,
+    siteName: SITE_NAME,
     title: "Trackly | Track LLM Costs & Usage",
     description:
       "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models.",
     images: [
       {
-        url: "/demo.png",
+        url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Trackly — LLM Cost & Usage Dashboard",
+        alt: "Trackly LLM Cost and Usage Dashboard",
       },
     ],
   },
@@ -71,7 +83,7 @@ export const metadata: Metadata = {
     title: "Trackly | Track LLM Costs & Usage",
     description:
       "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models.",
-    images: ["/demo.png"],
+    images: [DEFAULT_OG_IMAGE],
   },
   icons: {
     icon: [
@@ -92,9 +104,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  category: "technology",
 };
-
-import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -109,7 +120,8 @@ export default function RootLayout({
         "antialiased",
         geistSans.variable,
         geistMono.variable,
-        notoSans.variable,
+        jetbrainsMono.variable,
+        notoSans.variable
       )}
     >
       <body className="min-h-full flex flex-col">

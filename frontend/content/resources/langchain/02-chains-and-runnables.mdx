@@ -1,0 +1,120 @@
+---
+title: "Chains and Runnables in LangChain"
+slug: "chains-and-runnables-in-langchain"
+description: "Understand how LangChain composes prompts, models, and parsers with the Runnable interface."
+chapter: "langchain"
+chapterTitle: "LangChain"
+order: 2
+tags: ["langchain", "chains", "runnables", "python"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Chains and Runnables in LangChain
+
+One of the cleanest ideas in modern LangChain is the Runnable interface. Instead of treating every step as a custom object with special behavior, LangChain lets you compose steps in a consistent way.
+
+That makes the code easier to read and easier to extend.
+
+## What a Runnable is
+
+A Runnable is anything that can take input and produce output in a standard interface.
+
+Examples:
+
+- a prompt template
+- a model
+- an output parser
+- a retriever
+- a custom transformation function
+
+Because they share the same interface, you can pipe them together.
+
+## A simple chain
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+
+prompt = ChatPromptTemplate.from_template(
+    "Explain the concept of {topic} in three short bullet points."
+)
+
+model = ChatOpenAI(model="gpt-4o-mini")
+parser = StrOutputParser()
+
+chain = prompt | model | parser
+
+result = chain.invoke({"topic": "retrieval augmented generation"})
+print(result)
+```
+
+That `|` operator is the key idea. It turns several reusable pieces into one readable flow.
+
+## Why this is useful
+
+Runnables make it easier to:
+
+- keep steps small
+- test pieces independently
+- swap models without rewriting everything
+- insert extra transformations between stages
+
+You can think of them as a cleaner alternative to writing huge procedural glue code around every model call.
+
+## Composing more than one step
+
+You are not limited to prompt -> model -> parser. You can add custom logic too.
+
+```python
+from langchain_core.runnables import RunnableLambda
+
+def add_instruction(payload: dict) -> dict:
+    payload["topic"] = payload["topic"].strip().lower()
+    return payload
+
+normalize = RunnableLambda(add_instruction)
+chain = normalize | prompt | model | parser
+```
+
+This is powerful because it keeps data shaping close to the rest of the flow.
+
+## Where chains shine
+
+Chains are great when the task is mostly fixed.
+
+Examples:
+
+- summarization
+- classification
+- extraction
+- prompt + retrieval + answer generation
+
+If the flow is known in advance, chains are often simpler than agents.
+
+## Chains vs agents
+
+This distinction matters:
+
+- **chains** are deterministic flows
+- **agents** decide what happens next dynamically
+
+If you already know the order of operations, a chain is often the better tool.
+
+That is not a limitation. It is usually a strength.
+
+## Practical advice
+
+When building with LangChain:
+
+1. start with a chain
+2. add observability
+3. only move to agents if the flow truly needs decisions at runtime
+
+Many apps become more reliable when teams resist the temptation to make everything agentic.
+
+## Final takeaway
+
+Runnables are one of the best parts of LangChain because they encourage small, composable building blocks. If you learn this pattern well, your LangChain code gets cleaner, easier to test, and much easier to evolve.

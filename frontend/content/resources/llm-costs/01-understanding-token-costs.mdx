@@ -1,0 +1,132 @@
+---
+title: "Understanding Token Costs"
+slug: "understanding-token-costs"
+description: "Learn how prompt tokens, output tokens, and request shape turn into real LLM cost."
+chapter: "llm-costs"
+chapterTitle: "LLM Costs"
+order: 1
+tags: ["llm costs", "tokens", "pricing", "usage"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+featured: true
+---
+
+# Understanding Token Costs
+
+LLM pricing usually looks simple at first: input tokens cost one amount, output tokens cost another. In practice, though, real cost depends on much more than a single request.
+
+To manage spend well, you need to understand what actually drives token usage.
+
+## What is a token?
+
+A token is a small chunk of text that a model processes. Tokens are not the same as words:
+
+- short words may be one token
+- long words may become several tokens
+- punctuation and formatting also count
+
+That is why cost estimation by "number of words" is often misleading.
+
+## The two big buckets
+
+Most chat models separate usage into:
+
+- **prompt tokens**: everything you send in
+- **completion tokens**: everything the model sends back
+
+Some providers also expose:
+
+- cached tokens
+- reasoning tokens
+- tool call overhead
+
+The exact labels vary, but the core idea is the same: both input and output matter.
+
+## Why prompt size grows faster than expected
+
+Many teams underestimate prompt size because they think only about the user's latest message. In reality, the prompt may include:
+
+- system instructions
+- chat history
+- retrieved documents
+- tool schemas
+- examples
+- structured metadata
+
+All of that can become expensive over time.
+
+## A simple cost formula
+
+At a high level:
+
+```text
+total_cost =
+  (prompt_tokens / 1_000_000) * input_rate +
+  (completion_tokens / 1_000_000) * output_rate
+```
+
+The exact unit might be per 1K or per 1M tokens depending on the provider, but the shape is the same.
+
+## What usually drives spend
+
+In production apps, cost often comes from patterns like:
+
+- long prompts with too much retrieved context
+- agents making repeated calls in a loop
+- verbose model outputs
+- large hidden system prompts
+- unnecessary retries
+
+That is why cost optimization is usually a system design problem, not only a pricing problem.
+
+## A practical example
+
+Imagine a support assistant with:
+
+- a system prompt
+- the last 8 chat messages
+- 5 retrieved documents
+- one final answer
+
+Even if the user asks a short question, the actual token bill comes from the whole request package, not the question alone.
+
+## Cost is not just price per token
+
+Two providers may have different list pricing, but your real application cost also depends on:
+
+- latency
+- how often you retry
+- how many calls your workflow creates
+- whether the model needs extra context to stay accurate
+
+A cheaper model can still cost more in practice if it needs more calls or more prompt scaffolding.
+
+## Reducing token cost safely
+
+Useful ways to reduce spend include:
+
+- trimming chat history
+- retrieving fewer but better chunks
+- shortening system prompts
+- limiting maximum output length
+- routing easy tasks to cheaper models
+
+The key word is **safely**. Blind cost cutting can easily reduce answer quality.
+
+## What to measure
+
+If you want real cost visibility, measure at least:
+
+- prompt tokens
+- completion tokens
+- total tokens
+- cost by model
+- cost by feature
+- cost over time
+
+Without this, teams usually discover problems only after the monthly bill arrives.
+
+## Final takeaway
+
+Token cost is not only a billing concept. It is an architectural signal. The shape of your prompts, loops, retrieval strategy, and model choices all show up in token usage. If you can see token flow clearly, cost optimization becomes much easier and much less reactive.

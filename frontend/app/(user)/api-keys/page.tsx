@@ -40,7 +40,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ApiKeysPage() {
   const { user } = useUser();
@@ -314,9 +320,9 @@ export default function ApiKeysPage() {
                 Create API Key
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 max-w-md p-8 rounded-none">
+            <DialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 max-w-md p-8 rounded-xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-white mb-4">
+                <DialogTitle className="text-2xl font-black tracking-tight text-white mb-4">
                   Generate API Key
                 </DialogTitle>
               </DialogHeader>
@@ -493,15 +499,19 @@ export default function ApiKeysPage() {
         )}
       </div>
 
-      <AlertDialog open={isRevokeDialogOpen} onOpenChange={setIsRevokeDialogOpen}>
+      <AlertDialog
+        open={isRevokeDialogOpen}
+        onOpenChange={setIsRevokeDialogOpen}
+      >
         <AlertDialogContent className="bg-[#141418] border-2 border-white/10 text-zinc-100 rounded-none shadow-[12px_12px_0_0_#000]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold uppercase tracking-tight text-white">
               Confirm Key Revocation
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400 font-mono text-xs">
-              This action is irreversible. Once revoked, any application using this
-              API key will immediately lose access to the Trackly ingest API.
+              This action is irreversible. Once revoked, any application using
+              this API key will immediately lose access to the Trackly ingest
+              API.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">

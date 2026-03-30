@@ -1,0 +1,158 @@
+---
+title: "How to Build a RAG Pipeline"
+slug: "how-to-build-a-rag-pipeline"
+description: "Build a practical retrieval augmented generation pipeline in Python from chunking to answer generation."
+chapter: "rag"
+chapterTitle: "RAG"
+order: 1
+tags: ["rag", "retrieval", "python", "llm"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+featured: true
+---
+
+# How to Build a RAG Pipeline
+
+Retrieval augmented generation, or RAG, is a simple idea with a huge practical payoff: instead of asking a model to answer from training data alone, you retrieve relevant context first and send that context along with the prompt.
+
+That makes answers:
+
+- more grounded
+- easier to update
+- less dependent on model memory
+
+## The basic RAG architecture
+
+A typical RAG pipeline has four stages:
+
+1. load documents
+2. split them into chunks
+3. embed and store the chunks
+4. retrieve the most relevant chunks at query time
+
+After retrieval, you place the selected context into the model prompt and ask for the answer.
+
+## Why chunking matters
+
+Chunking is one of the biggest quality levers in RAG.
+
+If chunks are too large:
+
+- retrieval becomes noisy
+- prompts become expensive
+- answers may contain irrelevant context
+
+If chunks are too small:
+
+- important context gets split apart
+- the retriever may miss the bigger idea
+
+Good chunking usually balances semantic coherence with token efficiency.
+
+## A minimal Python example
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import FAISS
+
+docs = [
+    "Trackly helps teams track token usage, cost, and latency across LLM calls.",
+    "RAG systems retrieve relevant context before asking the model to answer.",
+]
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=40)
+chunks = splitter.create_documents(docs)
+
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(chunks, embeddings)
+
+retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+context_docs = retriever.invoke("How does Trackly help with LLM costs?")
+
+context = "\n\n".join(doc.page_content for doc in context_docs)
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+answer = llm.invoke(
+    f"Answer the question using only this context:\n\n{context}\n\nQuestion: How does Trackly help with LLM costs?"
+)
+
+print(answer.content)
+```
+
+This example is intentionally small, but it captures the entire pattern.
+
+## What gets stored in the vector database
+
+Each chunk usually stores:
+
+- the chunk text
+- its embedding vector
+- metadata such as source file, section, product area, or timestamp
+
+Metadata matters because it lets you filter retrieval later. For example, you might only want:
+
+- docs from a specific product
+- articles updated after a date
+- content for one customer workspace
+
+## Prompt structure matters too
+
+Retrieval alone does not guarantee a good answer. Your generation prompt still needs to be clear.
+
+A common template is:
+
+```text
+You are a helpful assistant.
+Use only the supplied context.
+If the answer is not in the context, say you do not know.
+
+Context:
+{retrieved_context}
+
+Question:
+{user_question}
+```
+
+This small instruction often reduces hallucinations more than people expect.
+
+## Common failure modes
+
+If your first RAG pipeline feels weak, the issue is usually one of these:
+
+- low-quality chunking
+- poor embeddings for the task
+- weak retrieval settings
+- prompts that do not constrain the answer
+- missing evaluation
+
+RAG is not just "add a vector database and done." The retrieval step is a product surface that needs tuning.
+
+## A practical evaluation loop
+
+Start with 20 to 30 real questions and check:
+
+- did retrieval return the right chunks?
+- was the answer grounded in those chunks?
+- was the answer concise and useful?
+- what kind of questions consistently failed?
+
+This is how you learn whether the issue is retrieval, prompting, or source data.
+
+## When a basic pipeline is enough
+
+You do not need advanced RAG for every use case.
+
+Basic RAG is often enough for:
+
+- product docs assistants
+- internal policy search
+- support knowledge bases
+- FAQ copilots
+
+Get the basics working first. Only add reranking, query rewriting, or agentic behavior after you know what is actually broken.
+
+## Final takeaway
+
+RAG is powerful because it turns a model from a memory guesser into a system that can answer from fresh, relevant information. Build the smallest pipeline that works, measure retrieval quality early, and treat chunking plus prompt design as first-class parts of the system.

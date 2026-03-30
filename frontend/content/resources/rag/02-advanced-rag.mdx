@@ -1,0 +1,122 @@
+---
+title: "Advanced RAG Patterns"
+slug: "advanced-rag-patterns"
+description: "Improve retrieval quality with hybrid search, reranking, better chunking, and query transformation."
+chapter: "rag"
+chapterTitle: "RAG"
+order: 2
+tags: ["rag", "retrieval", "hybrid-search", "reranking"]
+difficulty: "intermediate"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# Advanced RAG Patterns
+
+Once a basic RAG pipeline works, the next question is usually not "how do I make it more complicated?" It is "how do I make retrieval more accurate without blowing up latency and cost?"
+
+That is where advanced RAG patterns start to matter.
+
+## Better chunking
+
+One of the first upgrades is chunking strategy.
+
+Instead of fixed-size chunks only, teams often move toward:
+
+- section-aware chunking
+- markdown-aware chunking
+- code-aware chunking
+- overlap tuned to the document type
+
+For example, API docs and legal policies usually need different chunk boundaries.
+
+## Hybrid retrieval
+
+Vector search is useful, but it is not always enough. If a question contains exact terms like product names, error codes, or SKU ids, keyword search can outperform semantic retrieval.
+
+Hybrid retrieval combines:
+
+- semantic search
+- keyword or BM25 search
+
+This improves recall on queries where exact words matter.
+
+## Reranking
+
+Initial retrieval often fetches a broad set of candidates. A reranker then scores those candidates more precisely and promotes the most relevant ones.
+
+This is especially useful when:
+
+- chunks are similar to one another
+- semantic search retrieves too much generic text
+- the final answer needs highly precise grounding
+
+A common flow is:
+
+1. retrieve top 20 candidates cheaply
+2. rerank down to top 5
+3. send only those to the generator
+
+## Query transformation
+
+Users rarely write ideal retrieval queries.
+
+Advanced systems often rewrite the query before retrieval using techniques like:
+
+- query expansion
+- decomposition into subquestions
+- hypothetical answer generation
+- contextual query rewriting from chat history
+
+This helps especially in multi-turn assistants where the current user message is incomplete on its own.
+
+## Metadata filtering
+
+Good retrieval is not only about similarity. It is also about narrowing the search space.
+
+Examples:
+
+- only retrieve docs for the selected product
+- only retrieve English content
+- only retrieve chunks updated in the past 90 days
+
+That makes the retriever more accurate and reduces prompt waste.
+
+## An example advanced flow
+
+```text
+User query
+  -> rewrite query using recent chat history
+  -> run hybrid retrieval
+  -> rerank top candidates
+  -> filter by metadata
+  -> send compact context to the model
+  -> generate grounded answer
+```
+
+Each stage has a job. The trick is not to add all of them automatically, but to add only the ones that solve real failure cases.
+
+## How to choose upgrades
+
+Different problems point to different upgrades:
+
+- missing exact error codes: try hybrid retrieval
+- too many vaguely related chunks: try reranking
+- poor answers in long chats: try query rewriting
+- answers from the wrong product area: improve metadata filtering
+
+The mistake many teams make is adopting advanced RAG features before they can describe the baseline failure clearly.
+
+## Cost and latency tradeoffs
+
+Each improvement adds overhead:
+
+- reranking adds latency
+- rewriting adds model calls
+- more retrieval stages add complexity
+
+That is why evaluation matters. If your users do not notice the difference, the extra architecture may not be worth it.
+
+## Final takeaway
+
+Advanced RAG is really about improving retrieval quality in targeted ways. Start from a failing baseline, identify the exact failure mode, then add the narrowest improvement that addresses it. That keeps the system understandable and much easier to operate.

@@ -1,0 +1,13 @@
+{
+  "title": "AI Agents",
+  "description": "From zero to building production-grade AI agents.",
+  "icon": "agent",
+  "order": 1,
+  "articles": [
+    "01-what-are-agents",
+    "02-tools-and-memory",
+    "03-agent-loops",
+    "04-planning-and-reflection",
+    "05-multi-agent-systems"
+  ]
+}

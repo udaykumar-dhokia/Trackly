@@ -1,0 +1,175 @@
+---
+title: "How Agent Loops Work"
+slug: "how-agent-loops-work"
+description: "Understand observe-think-act loops, stopping conditions, and the tradeoffs behind iterative agents."
+chapter: "ai-agents"
+chapterTitle: "AI Agents"
+order: 3
+tags: ["agents", "loops", "reasoning", "orchestration"]
+difficulty: "beginner"
+publishedAt: "2026-03-30"
+updatedAt: "2026-03-30"
+---
+
+# How Agent Loops Work
+
+Agent loops are the control mechanism behind most modern agent systems. They decide whether the model should answer now, call a tool, or continue reasoning with more context.
+
+The loop is simple in concept:
+
+1. read the current state
+2. choose an action
+3. execute the action
+4. update state
+5. repeat or stop
+
+The complexity comes from deciding when to stop and how to keep the loop from wasting time or money.
+
+## Why loops exist at all
+
+A single prompt is often not enough for real work. Consider a request like:
+
+> Compare three cloud providers, estimate cost, and recommend one for a startup workload.
+
+That task may require:
+
+- gathering current facts
+- doing arithmetic
+- comparing tradeoffs
+- refining the answer after new information appears
+
+A loop allows the model to work in stages instead of pretending it already has everything it needs.
+
+## The observe-think-act pattern
+
+Most loops can be described with three verbs:
+
+### Observe
+
+Read the current user goal, prior tool outputs, and current memory.
+
+### Think
+
+Choose what should happen next. This may be internal reasoning, planning, or selecting a tool.
+
+### Act
+
+Execute the step. That can mean returning a final answer or calling a tool.
+
+Here is a minimal version:
+
+```python
+for step in range(max_steps):
+    action = model.plan(goal=goal, state=state)
+
+    if action["type"] == "finish":
+        return action["answer"]
+
+    if action["type"] == "tool":
+        tool_result = tools[action["name"]](**action["args"])
+        state.append(tool_result)
+
+raise RuntimeError("Agent exceeded max steps")
+```
+
+The `max_steps` guard matters more than many teams expect.
+
+## Stopping conditions
+
+An agent loop needs a clear exit strategy. Typical stopping conditions include:
+
+- a final answer is produced
+- a confidence threshold is reached
+- a required fact has been retrieved
+- a step limit is reached
+- a cost or latency budget is exceeded
+
+Without stopping conditions, loops can become expensive very quickly.
+
+## Why loops fail
+
+Loop failures are rarely random. They usually happen because:
+
+- the model keeps calling the wrong tool
+- the state becomes noisy or bloated
+- the loop has no strong success criteria
+- the model cannot tell whether it has enough information
+- the system allows too many cheap-looking but cumulatively expensive retries
+
+In practice, a weak loop feels like "the agent keeps doing things, but nothing useful is happening."
+
+## Loop design choices
+
+There is no single correct loop structure. Here are three common patterns:
+
+### Simple reactive loop
+
+The model decides the next step from the latest state only.
+
+Good for:
+
+- small assistants
+- support tooling
+- basic retrieval and tool use
+
+### Plan-and-execute loop
+
+The model creates a plan first, then executes tasks against it.
+
+Good for:
+
+- longer tasks
+- workflows with clear subtasks
+- tasks that benefit from order and decomposition
+
+### Reflective loop
+
+The model critiques its prior output before continuing.
+
+Good for:
+
+- reasoning-heavy work
+- code generation
+- analysis tasks where self-checking improves quality
+
+## Cost matters
+
+Every loop step can add:
+
+- one more model call
+- one more tool call
+- one more source of latency
+- one more chance to fail
+
+That is why agent engineering is not only about quality. It is also about controlling the number of loop iterations.
+
+If an agent takes six model calls to do a job that a two-step workflow could do, that is usually a product decision problem, not only a prompt problem.
+
+## A production-minded example
+
+Imagine an internal docs assistant:
+
+1. Retrieve relevant pages from the knowledge base.
+2. Ask the model whether the answer is already sufficient.
+3. If not, reformulate the query and retrieve again.
+4. Stop after two retrieval attempts.
+5. Produce the final answer and cite sources.
+
+That loop is limited, observable, and cost-aware. Those three traits matter more than sounding "advanced."
+
+## What to log
+
+If you are building agent loops for real users, log at least:
+
+- total steps
+- tool calls by name
+- model used per step
+- latency per step
+- total token usage
+- final outcome
+
+Without that data, debugging agents becomes guesswork.
+
+## Final takeaway
+
+Agent loops are not complicated because the control structure is complicated. They are complicated because each extra iteration adds uncertainty, latency, and cost. Good loop design is mostly about restraint: give the model enough freedom to solve the task, but not so much freedom that it wanders.
