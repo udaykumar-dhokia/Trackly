@@ -11,3 +11,4 @@ slowapi
 requests
 resend
 reportlab
+redis

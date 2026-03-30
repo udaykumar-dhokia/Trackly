@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status, Request
@@ -9,10 +10,12 @@ from app.db.session import get_db
 from app.models.orm import LlmEvent
 from app.models.schemas import EventPayload, IngestRequest, IngestResponse
 from app.services.auth import authenticate
+from app.services.project_budgets import maybe_send_project_budget_alert
 from app.services.pricing import compute_cost
 from app.services.rate_limit import limiter
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -85,6 +88,16 @@ async def ingest_events(
 
         except Exception:
             rejected += 1
+
+    if accepted and api_key.project_id is not None:
+        await db.flush()
+        try:
+            await maybe_send_project_budget_alert(db, api_key.project_id)
+        except Exception:
+            logger.exception(
+                "Project budget alert check failed for project %s",
+                api_key.project_id,
+            )
 
     return IngestResponse(accepted=accepted, rejected=rejected)
 

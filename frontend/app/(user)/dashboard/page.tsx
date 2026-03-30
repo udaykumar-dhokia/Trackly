@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { fetchDashboardStats } from "@/lib/store/features/statsSlice";
 import {
@@ -47,6 +48,7 @@ import { Button } from "@/components/ui/button";
 const CHART_COLORS = ["#6366f1", "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308"];
 
 export default function DashboardPage() {
+  const { user } = useUser();
   const dispatch = useAppDispatch();
   const {
     items: projects,
@@ -73,19 +75,19 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    if (activeOrgId && projectsStatus === "idle") {
-      dispatch(fetchProjects(activeOrgId));
+    if (activeOrgId && user?.sub && projectsStatus === "idle") {
+      dispatch(fetchProjects({ orgId: activeOrgId, auth0Id: user.sub }));
     }
-  }, [activeOrgId, projectsStatus, dispatch]);
+  }, [activeOrgId, projectsStatus, dispatch, user?.sub]);
 
   useEffect(() => {
-    if (activeProjectId) {
-      dispatch(fetchProjectMembers(activeProjectId));
+    if (activeProjectId && user?.sub) {
+      dispatch(fetchProjectMembers({ projectId: activeProjectId, auth0Id: user.sub }));
     }
-  }, [activeProjectId, dispatch]);
+  }, [activeProjectId, dispatch, user?.sub]);
 
   useEffect(() => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
 
     const model = modelFilter.trim() || undefined;
     const feature = featureFilter.trim() || undefined;
@@ -105,6 +107,7 @@ export default function DashboardPage() {
       dispatch(
         fetchDashboardStats({
           projectId: activeProjectId,
+          auth0Id: user?.sub || "",
           provider: providerFilter,
           userId: memberFilter,
           model,
@@ -124,13 +127,15 @@ export default function DashboardPage() {
     endDate,
     dispatch,
     lastFetchedParams,
+    user?.sub,
   ]);
 
   const refreshStats = () => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
     dispatch(
       fetchDashboardStats({
         projectId: activeProjectId,
+        auth0Id: user?.sub || "",
         provider: providerFilter,
         userId: memberFilter,
         model: modelFilter.trim() || undefined,

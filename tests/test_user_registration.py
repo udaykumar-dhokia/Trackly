@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -71,7 +70,9 @@ class TestUserRegistration:
         }
 
         from unittest.mock import AsyncMock, patch
-        with patch("app.routers.users.ensure_welcome_email_sent", new=AsyncMock(return_value=True)) as welcome_mock:
+        with patch("app.routers.users.ensure_welcome_email_sent", new=AsyncMock(return_value=True)) as welcome_mock, patch(
+            "app.routers.users.delete_cache_key", new=AsyncMock()
+        ) as delete_cache_mock:
             resp = client.post("/v1/users/register", json=payload)
         _clear()
         
@@ -82,6 +83,7 @@ class TestUserRegistration:
         assert "id" in data
         assert "org_id" in data
         assert welcome_mock.await_count == 1
+        delete_cache_mock.assert_awaited_once()
 
     def test_register_existing_user(self):
         user = MagicMock(spec=User)
@@ -89,6 +91,7 @@ class TestUserRegistration:
         user.auth0_id = "auth0|duplicate"
         user.email = "dup@example.com"
         user.name = "Dup User"
+        user.profile_photo = None
         user.org_id = uuid.uuid4()
         user.created_at = datetime.now(timezone.utc)
 
@@ -114,3 +117,30 @@ class TestUserRegistration:
         assert data["id"] == str(user.id)
         assert data["org_id"] == str(user.org_id)
         assert welcome_mock.await_count == 1
+
+    def test_get_user_me_invalidates_landing_cache_when_profile_photo_changes(self):
+        user = MagicMock(spec=User)
+        user.id = uuid.uuid4()
+        user.auth0_id = "auth0|profile"
+        user.email = "profile@example.com"
+        user.name = "Profile User"
+        user.profile_photo = "https://old.example.com/avatar.png"
+        user.created_at = datetime.now(timezone.utc)
+
+        db = _mock_db(query_return=user)
+        _override_db(db)
+
+        with patch("app.routers.users.delete_cache_key", new=AsyncMock()) as delete_cache_mock:
+            resp = client.get(
+                "/v1/users/me",
+                params={
+                    "auth0_id": "auth0|profile",
+                    "profile_photo": "https://new.example.com/avatar.png",
+                },
+            )
+
+        _clear()
+
+        assert resp.status_code == 200
+        assert db.commit.await_count == 1
+        delete_cache_mock.assert_awaited_once()

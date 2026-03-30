@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from app.db.session import get_db
 from app.models.orm import Organization, User, OrganizationMember
 from app.models.schemas import UserRegisterRequest, UserResponse, UserOrganizationsResponse, OrganizationWithRoleResponse
+from app.services.cache import LANDING_USERS_CACHE_KEY, delete_cache_key
 from app.services.email import ensure_welcome_email_sent
 
 router = APIRouter()
@@ -67,13 +68,14 @@ async def register_user(
     db.add(new_user)
     await db.flush()
 
-    member = OrganizationMember(org_id=org.id, user_id=new_user.id, role="admin")
+    member = OrganizationMember(org_id=org.id, user_id=new_user.id, role="owner")
     db.add(member)
 
     await db.commit()
     await db.refresh(new_user)
     await ensure_welcome_email_sent(db, new_user)
     await db.commit()
+    await delete_cache_key(LANDING_USERS_CACHE_KEY)
 
     user_resp = UserResponse.model_validate(new_user)
     user_resp.org_id = org.id
@@ -101,6 +103,7 @@ async def get_user_me(
         user.profile_photo = profile_photo
         await db.commit()
         await db.refresh(user)
+        await delete_cache_key(LANDING_USERS_CACHE_KEY)
         
     return UserResponse.model_validate(user)
 

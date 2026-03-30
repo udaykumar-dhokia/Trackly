@@ -4,10 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 import uuid
 
+from app.config import settings
 from app.db.session import get_db
 from app.services.rate_limit import limiter
 from app.models.orm import User, Feedback
 from app.models.schemas import FeedbackCreate, FeedbackResponse
+from app.services.cache import LANDING_FEEDBACK_CACHE_KEY, get_cache_json, set_cache_json
 
 router = APIRouter()
 
@@ -59,6 +61,13 @@ async def get_verified_feedback(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> list[FeedbackResponse]:
+    cached_feedbacks = await get_cache_json(LANDING_FEEDBACK_CACHE_KEY)
+    if isinstance(cached_feedbacks, list):
+        try:
+            return [FeedbackResponse.model_validate(item) for item in cached_feedbacks]
+        except (TypeError, ValueError):
+            pass
+
     result = await db.execute(
         select(Feedback)
         .options(joinedload(Feedback.user))
@@ -67,7 +76,7 @@ async def get_verified_feedback(
     )
     feedbacks = result.scalars().all()
 
-    return [
+    response = [
         FeedbackResponse(
             id=fb.id,
             user_id=fb.user_id,
@@ -79,3 +88,9 @@ async def get_verified_feedback(
         )
         for fb in feedbacks
     ]
+    await set_cache_json(
+        LANDING_FEEDBACK_CACHE_KEY,
+        [item.model_dump(mode="json") for item in response],
+        settings.landing_feedback_cache_ttl_seconds,
+    )
+    return response

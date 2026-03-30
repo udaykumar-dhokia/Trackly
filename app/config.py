@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     resend_audience_id: str | None = os.getenv("RESEND_AUDIENCE_ID")
     app_base_url: str = os.getenv("APP_BASE_URL", "https://tracklyai.in")
     support_email: str = os.getenv("SUPPORT_EMAIL", "support@tracklyai.in")
+    redis_host: str | None = os.getenv("REDIS_HOST")
+    redis_port: int | None = int(os.getenv("REDIS_PORT", "0")) or None
+    redis_username: str | None = os.getenv("REDIS_USERNAME")
+    redis_password: str | None = os.getenv("REDIS_PASSWORD")
+    landing_feedback_cache_ttl_seconds: int = int(
+        os.getenv("LANDING_FEEDBACK_CACHE_TTL_SECONDS", "300")
+    )
+    landing_users_cache_ttl_seconds: int = int(
+        os.getenv("LANDING_USERS_CACHE_TTL_SECONDS", "300")
+    )
 
     max_batch_size: int = 100
 

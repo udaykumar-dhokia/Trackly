@@ -64,6 +64,7 @@ export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
   async ({ 
     projectId, 
+    auth0Id,
     page = 1, 
     pageSize = 50, 
     provider,
@@ -74,6 +75,7 @@ export const fetchEvents = createAsyncThunk(
     end,
   }: { 
     projectId: string; 
+    auth0Id: string;
     page?: number; 
     pageSize?: number; 
     provider?: string;
@@ -106,6 +108,7 @@ export const fetchEvents = createAsyncThunk(
     if (end) {
       queryParams.append("end", end)
     }
+    queryParams.append("auth0_id", auth0Id)
 
     const response = await fetch(`${apiUrl}/api/v1/projects/${projectId}/events?${queryParams.toString()}`);
     if (!response.ok) {

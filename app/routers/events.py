@@ -17,6 +17,7 @@ from app.services.event_filters import (
     project_filters_need_api_key_join,
 )
 from app.services.export import render_csv, render_professional_pdf
+from app.services.project_access import require_project_access_by_auth0_id
 
 router = APIRouter()
 
@@ -61,6 +62,7 @@ class PaginatedEvents(BaseModel):
 )
 async def list_events(
     project_id: uuid.UUID,
+    auth0_id: str,
     feature: str | None = Query(default=None),
     user_id: str | None = Query(default=None),
     model: str | None = Query(default=None),
@@ -72,6 +74,7 @@ async def list_events(
     page_size: int = Query(default=50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedEvents:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = ProjectEventFilters(
         feature=feature,
         user_id=user_id,
@@ -112,6 +115,7 @@ async def list_events(
 )
 async def export_events(
     project_id: uuid.UUID,
+    auth0_id: str,
     format: str = Query(default="csv", pattern="^(csv|pdf)$"),
     feature: str | None = Query(default=None),
     user_id: str | None = Query(default=None),
@@ -122,6 +126,7 @@ async def export_events(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = ProjectEventFilters(
         feature=feature,
         user_id=user_id,

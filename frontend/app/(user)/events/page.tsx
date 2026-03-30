@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { fetchEvents } from "@/lib/store/features/eventsSlice";
 import { fetchProjectMembers } from "@/lib/store/features/projectsSlice";
@@ -31,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function EventsPage() {
+  const { user } = useUser();
   const dispatch = useAppDispatch();
   const {
     activeProjectId,
@@ -65,13 +67,13 @@ export default function EventsPage() {
   ]);
 
   useEffect(() => {
-    if (activeProjectId) {
-      dispatch(fetchProjectMembers(activeProjectId));
+    if (activeProjectId && user?.sub) {
+      dispatch(fetchProjectMembers({ projectId: activeProjectId, auth0Id: user.sub }));
     }
-  }, [activeProjectId, dispatch]);
+  }, [activeProjectId, dispatch, user?.sub]);
 
   useEffect(() => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
 
     const model = modelFilter.trim() || undefined;
     const feature = featureFilter.trim() || undefined;
@@ -92,6 +94,7 @@ export default function EventsPage() {
       dispatch(
         fetchEvents({
           projectId: activeProjectId,
+          auth0Id: user?.sub || "",
           page: currentPage,
           pageSize: 50,
           provider: providerFilter,
@@ -114,13 +117,15 @@ export default function EventsPage() {
     endDate,
     dispatch,
     lastFetchedParams,
+    user?.sub,
   ]);
 
   const refreshEvents = () => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
     dispatch(
       fetchEvents({
         projectId: activeProjectId,
+        auth0Id: user?.sub || "",
         page: currentPage,
         pageSize: 50,
         provider: providerFilter,

@@ -84,10 +84,10 @@ export const fetchUserOrgs = createAsyncThunk(
 
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
-  async (orgId: string) => {
+  async ({ orgId, auth0Id }: { orgId: string; auth0Id: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(
-      `${apiUrl}/api/v1/organizations/${orgId}/projects`,
+      `${apiUrl}/api/v1/organizations/${orgId}/projects?auth0_id=${encodeURIComponent(auth0Id)}`,
     );
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
@@ -100,18 +100,21 @@ export const createProject = createAsyncThunk(
   "projects/createProject",
   async ({
     orgId,
+    auth0Id,
     name,
     environment,
     description,
   }: {
     orgId: string;
+    auth0Id?: string;
     name: string;
     environment?: string | null;
     description?: string | null;
   }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const query = auth0Id ? `?auth0_id=${encodeURIComponent(auth0Id)}` : "";
     const response = await fetch(
-      `${apiUrl}/api/v1/organizations/${orgId}/projects`,
+      `${apiUrl}/api/v1/organizations/${orgId}/projects${query}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,9 +162,11 @@ export const updateProject = createAsyncThunk(
 
 export const fetchProjectMembers = createAsyncThunk(
   "projects/fetchProjectMembers",
-  async (projectId: string) => {
+  async ({ projectId, auth0Id }: { projectId: string; auth0Id: string }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/api/v1/projects/${projectId}/members`);
+    const response = await fetch(
+      `${apiUrl}/api/v1/projects/${projectId}/members?auth0_id=${encodeURIComponent(auth0Id)}`,
+    );
     if (!response.ok) {
       throw new Error("Failed to fetch members");
     }
@@ -286,7 +291,7 @@ export const projectsSlice = createSlice({
       .addCase(fetchProjects.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.items = action.payload;
-        state.lastFetchedOrgId = action.meta.arg;
+        state.lastFetchedOrgId = action.meta.arg.orgId;
         if (!state.activeProjectId && action.payload.length > 0) {
           state.activeProjectId = action.payload[0].id;
         }

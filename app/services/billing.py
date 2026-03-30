@@ -30,6 +30,13 @@ class OrganizationUsageSnapshot:
     total_cost_usd: Decimal
 
 
+@dataclass(slots=True)
+class ProjectUsageSnapshot:
+    event_count: int
+    total_tokens: int
+    total_cost_usd: Decimal
+
+
 async def get_organization_usage(db: AsyncSession, org_id: uuid.UUID) -> int:
     """
     Counts all LlmEvents for all projects belonging to the given organization
@@ -61,6 +68,33 @@ async def get_organization_usage_snapshot(
     result = await db.execute(usage_stmt)
     event_count, total_tokens, total_cost = result.one()
     return OrganizationUsageSnapshot(
+        event_count=event_count or 0,
+        total_tokens=total_tokens or 0,
+        total_cost_usd=Decimal(str(total_cost or 0)),
+    )
+
+
+async def get_project_usage_snapshot(
+    db: AsyncSession,
+    project_id: uuid.UUID,
+) -> ProjectUsageSnapshot:
+    month_start = get_current_month_start()
+
+    usage_stmt = (
+        select(func.count(LlmEvent.id))
+        .add_columns(
+            func.coalesce(func.sum(LlmEvent.total_tokens), 0),
+            func.coalesce(func.sum(LlmEvent.estimated_cost_usd), 0),
+        )
+        .where(
+            LlmEvent.project_id == project_id,
+            LlmEvent.occurred_at >= month_start,
+        )
+    )
+
+    result = await db.execute(usage_stmt)
+    event_count, total_tokens, total_cost = result.one()
+    return ProjectUsageSnapshot(
         event_count=event_count or 0,
         total_tokens=total_tokens or 0,
         total_cost_usd=Decimal(str(total_cost or 0)),

@@ -237,6 +237,46 @@ class OrganizationBudgetStatusResponse(BaseModel):
     updated_at: datetime | None = None
 
 
+class ProjectBudgetUpdate(BaseModel):
+    monthly_token_limit: int | None = Field(default=None, ge=1)
+    monthly_cost_limit_usd: float | None = Field(default=None, ge=0)
+
+
+class ProjectBudgetResponse(BaseModel):
+    project_id: uuid.UUID
+    monthly_token_limit: int | None
+    monthly_cost_limit_usd: float | None
+    configured: bool
+    updated_at: datetime | None
+    created_at: datetime | None
+
+
+class ProjectBudgetStatusResponse(BaseModel):
+    monthly_token_limit: int | None
+    monthly_cost_limit_usd: float | None
+    current_month_tokens: int
+    current_month_cost_usd: float
+    token_usage_percentage: float | None
+    cost_usage_percentage: float | None
+    token_remaining: int | None
+    cost_remaining_usd: float | None
+    status: str
+    updated_at: datetime | None = None
+
+
+class ProjectUsageResponse(BaseModel):
+    project_id: uuid.UUID
+    org_id: uuid.UUID
+    plan: str
+    current_month_usage: int
+    current_month_events: int
+    current_month_tokens: int
+    current_month_cost_usd: float
+    plan_limit: int
+    reset_date: datetime
+    budget: ProjectBudgetStatusResponse | None = None
+
+
 class FeedbackCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=1000)
 
@@ -255,7 +295,6 @@ class FeedbackResponse(BaseModel):
 
 class FeaturedUser(BaseModel):
     name: str | None = None
-    email: str
     profile_photo: str | None = None
 
 class GlobalStats(BaseModel):

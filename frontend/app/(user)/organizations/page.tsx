@@ -68,11 +68,11 @@ export default function OrganizationsPage() {
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeOrgId) {
+    if (activeOrgId && user?.sub) {
       dispatch(fetchOrgMembers(activeOrgId));
-      dispatch(fetchProjects(activeOrgId));
+      dispatch(fetchProjects({ orgId: activeOrgId, auth0Id: user.sub }));
     }
-  }, [activeOrgId, dispatch]);
+  }, [activeOrgId, dispatch, user?.sub]);
 
   useEffect(() => {
     const checkEmail = async () => {
@@ -113,6 +113,7 @@ export default function OrganizationsPage() {
       await dispatch(
         createProject({
           orgId: activeOrgId,
+          auth0Id: user?.sub,
           name: newProjectName.trim(),
           environment: newProjectEnvironment.trim() || null,
           description: newProjectDescription.trim() || null,

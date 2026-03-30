@@ -10,7 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
-from app.models.orm import User, WelcomeEmailDelivery
+from app.models.orm import Project, User, WelcomeEmailDelivery
+from app.models.schemas import ProjectBudgetStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +204,33 @@ WELCOME_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+PROJECT_BUDGET_ALERT_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trackly Project Budget Alert</title>
+</head>
+<body style="margin:0;padding:24px;background:#09090b;color:#e4e4e7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:620px;margin:0 auto;background:#111114;border:1px solid rgba(255,255,255,0.08);border-radius:18px;overflow:hidden;">
+    <div style="padding:28px 32px 16px;">
+      <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#71717a;">Budget Alert</div>
+      <h1 style="margin:10px 0 8px;font-size:28px;line-height:1.15;color:#fafafa;">{project_name} has crossed 90% of its monthly budget.</h1>
+      <p style="margin:0;color:#a1a1aa;font-size:14px;line-height:1.7;">Trackly detected that project usage is now in the caution zone for this billing cycle.</p>
+    </div>
+    <div style="padding:0 32px 24px;">
+      <div style="background:#0a0a0c;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:18px 20px;">
+        <p style="margin:0 0 10px;color:#71717a;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Current Usage</p>
+        <p style="margin:0 0 8px;font-size:15px;color:#f4f4f5;">Estimated spend: <strong>{cost_summary}</strong></p>
+        <p style="margin:0;font-size:15px;color:#f4f4f5;">Token usage: <strong>{token_summary}</strong></p>
+      </div>
+      <a href="{dashboard_url}" style="display:inline-block;margin-top:20px;background:#f4f4f5;color:#09090b;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;">Open project budgets</a>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
 
 
 def _first_name(user: User) -> str:
@@ -233,6 +261,30 @@ def build_welcome_email_html(user: User) -> str:
         .replace("{{docs_host}}", escape(docs_url.replace("https://", "").replace("http://", "")))
         .replace("{{contact_url}}", escape(contact_url))
         .replace("{{unsubscribe_url}}", escape(unsubscribe_url))
+    )
+
+
+def build_project_budget_alert_email_html(
+    project: Project,
+    budget_status: ProjectBudgetStatusResponse,
+) -> str:
+    dashboard_url = f"{settings.app_base_url.rstrip('/')}/budgets"
+    cost_summary = (
+        f"${budget_status.current_month_cost_usd:.4f} / ${budget_status.monthly_cost_limit_usd:.2f}"
+        if budget_status.monthly_cost_limit_usd is not None
+        else f"${budget_status.current_month_cost_usd:.4f}"
+    )
+    token_summary = (
+        f"{budget_status.current_month_tokens:,} / {budget_status.monthly_token_limit:,}"
+        if budget_status.monthly_token_limit is not None
+        else f"{budget_status.current_month_tokens:,}"
+    )
+
+    return PROJECT_BUDGET_ALERT_TEMPLATE.format(
+        project_name=escape(project.name),
+        cost_summary=escape(cost_summary),
+        token_summary=escape(token_summary),
+        dashboard_url=escape(dashboard_url),
     )
 
 
@@ -301,6 +353,36 @@ async def ensure_welcome_email_sent(db: AsyncSession, user: User) -> bool:
         "Welcome email sent to %s via Resend. message_id=%s",
         user.email,
         delivery.provider_message_id,
+    )
+    return True
+
+
+async def send_project_budget_alert_email(
+    *,
+    project: Project,
+    owners: list[User],
+    budget_status: ProjectBudgetStatusResponse,
+) -> bool:
+    if not settings.resend_api_key or not owners:
+        return False
+
+    payload = {
+        "from": settings.resend_from_email,
+        "to": [owner.email for owner in owners],
+        "subject": f"Trackly alert: {project.name} crossed 90% of its monthly budget",
+        "html": build_project_budget_alert_email_html(project, budget_status),
+    }
+
+    try:
+        result = await asyncio.to_thread(_post_resend_email, payload)
+    except Exception as exc:
+        logger.exception("Project budget alert email failed for %s: %s", project.name, exc)
+        return False
+
+    logger.info(
+        "Project budget alert sent for %s. message_id=%s",
+        project.name,
+        _extract_message_id(result),
     )
     return True
 

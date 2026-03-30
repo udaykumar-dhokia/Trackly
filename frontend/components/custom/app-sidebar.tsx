@@ -130,10 +130,10 @@ export function AppSidebar({
   }, [user?.sub, dispatch]);
 
   useEffect(() => {
-    if (activeOrgId) {
-      dispatch(fetchProjects(activeOrgId));
+    if (activeOrgId && user?.sub) {
+      dispatch(fetchProjects({ orgId: activeOrgId, auth0Id: user.sub }));
     }
-  }, [activeOrgId, dispatch]);
+  }, [activeOrgId, dispatch, user?.sub]);
 
   const handleProjectSwitch = (newProjectId: string) => {
     dispatch(setActiveProject(newProjectId));

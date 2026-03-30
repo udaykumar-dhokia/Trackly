@@ -56,6 +56,7 @@ export const fetchDashboardStats = createAsyncThunk(
   "stats/fetchDashboardStats",
   async ({
     projectId,
+    auth0Id,
     provider,
     model,
     feature,
@@ -64,6 +65,7 @@ export const fetchDashboardStats = createAsyncThunk(
     end,
   }: {
     projectId: string;
+    auth0Id: string;
     provider?: string;
     model?: string;
     feature?: string;
@@ -92,6 +94,7 @@ export const fetchDashboardStats = createAsyncThunk(
     if (end) {
       queryParams.append("end", end);
     }
+    queryParams.append("auth0_id", auth0Id);
     const queryString = queryParams.toString()
       ? `?${queryParams.toString()}`
       : "";

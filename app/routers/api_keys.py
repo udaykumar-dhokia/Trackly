@@ -4,7 +4,7 @@ import contextlib
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, update, or_
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -16,6 +16,11 @@ from app.models.schemas import (
     ApiKeyResponse,
 )
 from app.services.auth import generate_api_key
+from app.services.project_access import (
+    get_accessible_project_ids,
+    get_user_by_auth0_id,
+    is_org_admin_or_owner,
+)
 
 router = APIRouter()
 
@@ -152,10 +157,7 @@ async def access_api_key(
         )
 
     # Look up the requesting user by auth0_id
-    result = await db.execute(
-        select(User).where(User.auth0_id == body.auth0_id)
-    )
-    user = result.scalar_one_or_none()
+    user = await get_user_by_auth0_id(db, body.auth0_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -163,17 +165,12 @@ async def access_api_key(
         )
 
     if parent_key.project_id:
-        result = await db.execute(
-            select(ProjectMember).where(
-                ProjectMember.project_id == parent_key.project_id,
-                ProjectMember.user_id == user.id,
-            )
-        )
-        if not result.scalar_one_or_none():
+        is_org_admin = await is_org_admin_or_owner(db, parent_key.org_id, user.id)
+        if not is_org_admin:
             result = await db.execute(
-                select(OrganizationMember).where(
-                    OrganizationMember.org_id == parent_key.org_id,
-                    OrganizationMember.user_id == user.id,
+                select(ProjectMember).where(
+                    ProjectMember.project_id == parent_key.project_id,
+                    ProjectMember.user_id == user.id,
                 )
             )
             if not result.scalar_one_or_none():
@@ -181,6 +178,13 @@ async def access_api_key(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You must be a member of this project to get an access key.",
                 )
+    else:
+        is_org_admin = await is_org_admin_or_owner(db, parent_key.org_id, user.id)
+        if not is_org_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owners or admins can access org-level keys.",
+            )
 
     result = await db.execute(
         select(ApiKey).where(
@@ -232,7 +236,7 @@ async def access_api_key(
 )
 async def list_api_keys(
     org_id: uuid.UUID,
-    auth0_id: str | None = None,
+    auth0_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> list[ApiKeyResponse]:
     """
@@ -240,29 +244,38 @@ async def list_api_keys(
     Org Owners/Admins see everything.
     Other members see Master keys + their own derived keys.
     """
-    user = None
-    if auth0_id:
-        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
-        user = result.scalar_one_or_none()
+    user = await get_user_by_auth0_id(db, auth0_id)
+    if user is None:
+        raise HTTPException(status_code=403, detail="Requester not found.")
 
-    is_org_admin = False
-    if org_id and user:
-        result = await db.execute(
-            select(OrganizationMember.role).where(
-                OrganizationMember.org_id == org_id,
-                OrganizationMember.user_id == user.id
-            )
+    result = await db.execute(
+        select(OrganizationMember.role).where(
+            OrganizationMember.org_id == org_id,
+            OrganizationMember.user_id == user.id
         )
-        role = result.scalar_one_or_none()
-        is_org_admin = role in ("owner", "admin")
+    )
+    role = result.scalar_one_or_none()
+    if role is None:
+        raise HTTPException(status_code=403, detail="You do not belong to this organization.")
+    is_org_admin = role in ("owner", "admin")
 
     stmt = select(ApiKey).where(ApiKey.org_id == org_id)
     
     if not is_org_admin:
+        accessible_project_ids = await get_accessible_project_ids(db, org_id, user.id)
+        if not accessible_project_ids:
+            return []
+
         stmt = stmt.where(
             or_(
-                ApiKey.parent_key_id == None,
-                ApiKey.created_by_user_id == (user.id if user else None)
+                and_(
+                    ApiKey.parent_key_id == None,
+                    ApiKey.project_id.in_(accessible_project_ids),
+                ),
+                and_(
+                    ApiKey.created_by_user_id == user.id,
+                    ApiKey.project_id.in_(accessible_project_ids),
+                ),
             )
         )
 

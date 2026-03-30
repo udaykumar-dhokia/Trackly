@@ -22,8 +22,12 @@ from app.models.schemas import (
     OrganizationBudgetResponse,
     OrganizationBudgetStatusResponse,
     OrganizationBudgetUpdate,
+    ProjectBudgetResponse,
+    ProjectBudgetStatusResponse,
+    ProjectBudgetUpdate,
     OrganizationMemberAdd,
     OrganizationUsageResponse,
+    ProjectUsageResponse,
     ProjectCreate,
     ProjectMemberAdd,
     ProjectMemberResponse,
@@ -35,6 +39,18 @@ from app.services.billing import (
     PLAN_LIMITS,
     get_current_month_start,
     get_organization_usage_snapshot,
+    get_project_usage_snapshot,
+)
+from app.services.project_budgets import (
+    build_project_budget_status,
+    get_project_budget,
+    serialize_project_budget,
+)
+from app.services.project_access import (
+    get_user_by_auth0_id,
+    has_project_access,
+    list_accessible_projects,
+    require_project_access_by_auth0_id,
 )
 
 router = APIRouter()
@@ -107,6 +123,7 @@ async def get_organization(
 async def create_project(
     org_id: uuid.UUID,
     body: ProjectCreate,
+    auth0_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> ProjectResponse:
     await _get_org_or_404(db, org_id)
@@ -119,6 +136,27 @@ async def create_project(
     )
     db.add(project)
     await db.flush()
+
+    if auth0_id:
+        result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+        creator = result.scalar_one_or_none()
+        if creator is not None:
+            result = await db.execute(
+                select(OrganizationMember).where(
+                    OrganizationMember.org_id == org_id,
+                    OrganizationMember.user_id == creator.id,
+                )
+            )
+            org_membership = result.scalar_one_or_none()
+            if org_membership is not None:
+                project_member = ProjectMember(
+                    project_id=project.id,
+                    user_id=creator.id,
+                    role="admin",
+                )
+                db.add(project_member)
+                await db.flush()
+
     await db.refresh(project)
     return project
 
@@ -130,14 +168,14 @@ async def create_project(
 )
 async def list_projects(
     org_id: uuid.UUID,
+    auth0_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> list[ProjectResponse]:
     await _get_org_or_404(db, org_id)
-
-    result = await db.execute(
-        select(Project).where(Project.org_id == org_id)
-    )
-    return result.scalars().all()
+    user = await get_user_by_auth0_id(db, auth0_id)
+    if user is None:
+        raise HTTPException(status_code=403, detail="Requester not found.")
+    return await list_accessible_projects(db, org_id, user.id)
 
 
 @router.get(
@@ -147,6 +185,7 @@ async def list_projects(
 )
 async def get_project(
     project_id: uuid.UUID,
+    auth0_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> ProjectResponse:
     result = await db.execute(
@@ -202,12 +241,10 @@ async def update_project(
 )
 async def list_project_members(
     project_id: uuid.UUID,
+    auth0_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> list[ProjectMemberResponse]:
-    result = await db.execute(select(Project).where(Project.id == project_id))
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
+    _, project = await require_project_access_by_auth0_id(db, project_id, auth0_id)
 
     from sqlalchemy.orm import joinedload
     result = await db.execute(
@@ -450,6 +487,91 @@ async def add_org_user(
 
 
 @router.get(
+    "/projects/{project_id}/budget",
+    response_model=ProjectBudgetResponse,
+    summary="Get project budget settings",
+)
+async def get_project_budget_settings(
+    project_id: uuid.UUID,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> ProjectBudgetResponse:
+    _, project = await require_project_access_by_auth0_id(db, project_id, auth0_id)
+    budget = await get_project_budget(db, project_id)
+    return serialize_project_budget(project.id, budget)
+
+
+@router.put(
+    "/projects/{project_id}/budget",
+    response_model=ProjectBudgetResponse,
+    summary="Create or update project budget settings",
+)
+async def update_project_budget(
+    project_id: uuid.UUID,
+    body: ProjectBudgetUpdate,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> ProjectBudgetResponse:
+    project = await _get_project_or_404(db, project_id)
+    actor = await _require_project_budget_manager(db, project, auth0_id)
+    budget = await get_project_budget(db, project_id)
+
+    if budget is None:
+        from app.models.orm import ProjectBudget
+
+        budget = ProjectBudget(
+            project_id=project_id,
+            created_by_user_id=actor.id,
+        )
+        db.add(budget)
+
+    budget.monthly_token_limit = body.monthly_token_limit
+    budget.monthly_cost_limit_usd = body.monthly_cost_limit_usd
+
+    await db.flush()
+    await db.refresh(budget)
+    return serialize_project_budget(project.id, budget)
+
+
+@router.get(
+    "/projects/{project_id}/usage",
+    response_model=ProjectUsageResponse,
+    summary="Get monthly usage stats for a project",
+)
+async def get_project_usage(
+    project_id: uuid.UUID,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> ProjectUsageResponse:
+    _, project = await require_project_access_by_auth0_id(db, project_id, auth0_id)
+    org = await _get_org_or_404(db, project.org_id)
+    usage = await get_project_usage_snapshot(db, project_id)
+    budget = await get_project_budget(db, project_id)
+
+    current_start = get_current_month_start()
+    if current_start.month == 12:
+        next_reset = current_start.replace(year=current_start.year + 1, month=1)
+    else:
+        next_reset = current_start.replace(month=current_start.month + 1)
+
+    limit = PLAN_LIMITS.get(org.plan.lower(), PLAN_LIMITS["free"])
+    budget_status = build_project_budget_status(usage, budget)
+
+    return ProjectUsageResponse(
+        project_id=project_id,
+        org_id=project.org_id,
+        plan=org.plan,
+        current_month_usage=usage.event_count,
+        current_month_events=usage.event_count,
+        current_month_tokens=usage.total_tokens,
+        current_month_cost_usd=float(usage.total_cost_usd),
+        plan_limit=limit,
+        reset_date=next_reset,
+        budget=budget_status,
+    )
+
+
+@router.get(
     "/organizations/{org_id}/budget",
     response_model=OrganizationBudgetResponse,
     summary="Get organization budget settings",
@@ -536,6 +658,14 @@ async def _get_org_or_404(db: AsyncSession, org_id: uuid.UUID) -> Organization:
     return org
 
 
+async def _get_project_or_404(db: AsyncSession, project_id: uuid.UUID) -> Project:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    return project
+
+
 async def _require_org_admin(
     db: AsyncSession,
     org_id: uuid.UUID,
@@ -561,6 +691,52 @@ async def _require_org_admin(
             detail=detail,
         )
     return user
+
+
+async def _require_project_budget_manager(
+    db: AsyncSession,
+    project: Project,
+    auth0_id: str,
+) -> User:
+    result = await db.execute(select(User).where(User.auth0_id == auth0_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=403, detail="Requester not found.")
+
+    result = await db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == project.org_id,
+            OrganizationMember.user_id == user.id,
+        )
+    )
+    org_membership = result.scalar_one_or_none()
+    if org_membership is not None and org_membership.role == "owner":
+        return user
+
+    if org_membership is not None and org_membership.role == "admin":
+        owner_count_result = await db.execute(
+            select(OrganizationMember.id).where(
+                OrganizationMember.org_id == project.org_id,
+                OrganizationMember.role == "owner",
+            )
+        )
+        if owner_count_result.first() is None:
+            return user
+
+    result = await db.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == user.id,
+        )
+    )
+    project_membership = result.scalar_one_or_none()
+    if project_membership is not None and project_membership.role == "admin":
+        return user
+
+    raise HTTPException(
+        status_code=403,
+        detail="Only project admins or organization owners can manage project budgets.",
+    )
 
 
 async def _get_budget_for_org(

@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.db.session import get_db
-from app.models.orm import ApiKey, LlmEvent
+from app.models.orm import ApiKey, LlmEvent, User
 from app.models.schemas import (
     DailyUsage,
     FeaturedUser,
@@ -17,12 +18,14 @@ from app.models.schemas import (
     UsageByModel,
     UsageSummary,
 )
+from app.services.cache import LANDING_USERS_CACHE_KEY, get_cache_json, set_cache_json
 from app.services.event_filters import (
     ProjectEventFilters,
     build_project_event_filters,
     project_filters_need_api_key_join,
 )
 from app.services.export import render_csv, render_professional_pdf
+from app.services.project_access import require_project_access_by_auth0_id
 from app.services.rate_limit import limiter
 
 router = APIRouter()
@@ -41,6 +44,7 @@ def _default_window() -> tuple[datetime, datetime]:
 )
 async def get_summary(
     project_id: uuid.UUID,
+    auth0_id: str,
     provider: str | None = Query(default=None),
     model: str | None = Query(default=None),
     feature: str | None = Query(default=None),
@@ -50,6 +54,7 @@ async def get_summary(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> UsageSummary:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = _build_stats_filters(
         provider=provider,
         model=model,
@@ -72,6 +77,7 @@ async def get_summary(
 )
 async def get_by_model(
     project_id: uuid.UUID,
+    auth0_id: str,
     provider: str | None = Query(default=None),
     model: str | None = Query(default=None),
     feature: str | None = Query(default=None),
@@ -81,6 +87,7 @@ async def get_by_model(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[UsageByModel]:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = _build_stats_filters(
         provider=provider,
         model=model,
@@ -103,6 +110,7 @@ async def get_by_model(
 )
 async def get_by_feature(
     project_id: uuid.UUID,
+    auth0_id: str,
     provider: str | None = Query(default=None),
     model: str | None = Query(default=None),
     feature: str | None = Query(default=None),
@@ -112,6 +120,7 @@ async def get_by_feature(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[UsageByFeature]:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = _build_stats_filters(
         provider=provider,
         model=model,
@@ -134,6 +143,7 @@ async def get_by_feature(
 )
 async def get_daily(
     project_id: uuid.UUID,
+    auth0_id: str,
     provider: str | None = Query(default=None),
     model: str | None = Query(default=None),
     feature: str | None = Query(default=None),
@@ -143,6 +153,7 @@ async def get_daily(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> list[DailyUsage]:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = _build_stats_filters(
         provider=provider,
         model=model,
@@ -164,6 +175,7 @@ async def get_daily(
 )
 async def export_stats(
     project_id: uuid.UUID,
+    auth0_id: str,
     format: str = Query(default="csv", pattern="^(csv|pdf)$"),
     provider: str | None = Query(default=None),
     model: str | None = Query(default=None),
@@ -174,6 +186,7 @@ async def export_stats(
     end: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
     params = _build_stats_filters(
         provider=provider,
         model=model,
@@ -266,8 +279,6 @@ async def get_global_stats(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> GlobalStats:
-    from app.models.orm import User
-    
     # Events and Tokens
     stmt = select(
         func.count(LlmEvent.id).label("total_events"),
@@ -275,22 +286,44 @@ async def get_global_stats(
     )
     result = await db.execute(stmt)
     row = result.one()
-    
-    # Total Users
-    user_count_stmt = select(func.count(User.id))
-    total_users = await db.scalar(user_count_stmt)
-    
-    # Featured Users (get up to 10 users)
-    users_stmt = (
-        select(User.name, User.email, User.profile_photo)
-        .order_by(func.random() if total_users > 10 else User.created_at.desc())
-        .limit(10)
-    )
-    users_result = await db.execute(users_stmt)
-    featured_users = [
-        FeaturedUser(name=r.name, email=r.email, profile_photo=r.profile_photo)
-        for r in users_result.all()
-    ]
+
+    cached_users_payload = await get_cache_json(LANDING_USERS_CACHE_KEY)
+    total_users: int | None = None
+    featured_users: list[FeaturedUser] = []
+
+    if isinstance(cached_users_payload, dict):
+        try:
+            total_users = int(cached_users_payload["total_users"])
+            featured_users = [
+                FeaturedUser.model_validate(user)
+                for user in cached_users_payload.get("featured_users", [])
+            ]
+        except (KeyError, TypeError, ValueError):
+            total_users = None
+            featured_users = []
+
+    if total_users is None:
+        user_count_stmt = select(func.count(User.id))
+        total_users = await db.scalar(user_count_stmt)
+
+        users_stmt = (
+            select(User.name, User.email, User.profile_photo)
+            .order_by(func.random() if total_users > 10 else User.created_at.desc())
+            .limit(10)
+        )
+        users_result = await db.execute(users_stmt)
+        featured_users = [
+            FeaturedUser(name=r.name, email=r.email, profile_photo=r.profile_photo)
+            for r in users_result.all()
+        ]
+        await set_cache_json(
+            LANDING_USERS_CACHE_KEY,
+            {
+                "total_users": total_users or 0,
+                "featured_users": [user.model_dump(mode="json") for user in featured_users],
+            },
+            settings.landing_users_cache_ttl_seconds,
+        )
 
     return GlobalStats(
         total_events=row.total_events,

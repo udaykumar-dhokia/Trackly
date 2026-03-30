@@ -118,10 +118,10 @@ export default function ProjectMembersPage() {
   }, [email, project?.org_id]);
 
   useEffect(() => {
-    if (projectId) {
-      dispatch(fetchProjectMembers(projectId));
+    if (projectId && authUser?.sub) {
+      dispatch(fetchProjectMembers({ projectId, auth0Id: authUser.sub }));
     }
-  }, [projectId, dispatch]);
+  }, [projectId, dispatch, authUser?.sub]);
 
   useEffect(() => {
     if (project?.org_id) {
@@ -209,7 +209,7 @@ export default function ProjectMembersPage() {
               </span>
             </h2>
             <button
-              onClick={() => dispatch(fetchProjectMembers(projectId))}
+              onClick={() => dispatch(fetchProjectMembers({ projectId, auth0Id: authUser?.sub || "" }))}
               disabled={membersStatus === "loading"}
               className="flex items-center cursor-pointer justify-center p-2 text-zinc-500 hover:text-white transition-colors disabled:opacity-50"
               title="Refresh Members"

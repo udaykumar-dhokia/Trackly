@@ -41,6 +41,7 @@ interface BudgetStatus {
 }
 
 interface UsageData {
+  project_id: string;
   org_id: string;
   plan: string;
   current_month_usage: number;
@@ -60,6 +61,7 @@ const selectTriggerClass =
 
 export default function BudgetsPage() {
   const { user } = useUser();
+  const appUserId = user && "app_user_id" in user ? String(user.app_user_id) : null;
   const dispatch = useAppDispatch();
   const {
     activeProjectId,
@@ -69,7 +71,15 @@ export default function BudgetsPage() {
     members,
   } = useAppSelector((state) => state.projects);
   const activeOrg = organizations.find((o) => o.id === activeOrgId);
-  const isOrgAdmin = activeOrg?.role === "admin" || activeOrg?.role === "owner";
+  const isOrgOwner = activeOrg?.role === "owner";
+  const isOrgAdmin = activeOrg?.role === "admin";
+  const currentProjectMember = members.find(
+    (member) =>
+      (appUserId && member.user_id === appUserId) ||
+      (user?.email && member.email.toLowerCase() === user.email.toLowerCase()),
+  );
+  const canManageProjectBudget =
+    isOrgOwner || isOrgAdmin || currentProjectMember?.role === "admin";
 
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,16 +97,18 @@ export default function BudgetsPage() {
   const [exporting, setExporting] = useState<"analytics-csv" | "analytics-pdf" | "events-csv" | "events-pdf" | null>(null);
 
   useEffect(() => {
-    if (activeProjectId) {
-      dispatch(fetchProjectMembers(activeProjectId));
+    if (activeProjectId && user?.sub) {
+      dispatch(fetchProjectMembers({ projectId: activeProjectId, auth0Id: user.sub }));
     }
-  }, [activeProjectId, dispatch]);
+  }, [activeProjectId, dispatch, user?.sub]);
 
   useEffect(() => {
-    if (!activeOrgId) return;
+    if (!activeProjectId || !user?.sub) return;
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    fetch(`${apiUrl}/api/v1/organizations/${activeOrgId}/usage`)
+    fetch(
+      `${apiUrl}/api/v1/projects/${activeProjectId}/usage?auth0_id=${encodeURIComponent(user.sub)}`,
+    )
       .then((res) => res.json())
       .then((data: UsageData) => {
         setUsage(data);
@@ -116,25 +128,27 @@ export default function BudgetsPage() {
         console.error("Failed to fetch usage:", err);
         setLoading(false);
       });
-  }, [activeOrgId]);
+  }, [activeProjectId, user?.sub]);
 
   const refreshUsage = async () => {
-    if (!activeOrgId) return;
+    if (!activeProjectId || !user?.sub) return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${apiUrl}/api/v1/organizations/${activeOrgId}/usage`);
+    const response = await fetch(
+      `${apiUrl}/api/v1/projects/${activeProjectId}/usage?auth0_id=${encodeURIComponent(user.sub)}`,
+    );
     if (!response.ok) throw new Error("Failed to refresh usage");
     const data = (await response.json()) as UsageData;
     setUsage(data);
   };
 
   const saveBudget = async () => {
-    if (!activeOrgId || !user?.sub) return;
+    if (!activeProjectId || !user?.sub) return;
     setSavingBudget(true);
     setBudgetMessage(null);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await fetch(
-        `${apiUrl}/api/v1/organizations/${activeOrgId}/budget?auth0_id=${encodeURIComponent(user.sub)}`,
+        `${apiUrl}/api/v1/projects/${activeProjectId}/budget?auth0_id=${encodeURIComponent(user.sub)}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -145,8 +159,17 @@ export default function BudgetsPage() {
         },
       );
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to save budget");
+        const errorText = await response.text();
+        let detail = "Failed to save budget";
+        try {
+          const error = JSON.parse(errorText) as { detail?: string };
+          detail = error.detail || detail;
+        } catch {
+          if (errorText.trim()) {
+            detail = errorText;
+          }
+        }
+        throw new Error(detail);
       }
       await refreshUsage();
       setBudgetMessage("Budget saved.");
@@ -171,13 +194,14 @@ export default function BudgetsPage() {
   };
 
   const exportAnalytics = async (format: "csv" | "pdf") => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
     const key = `analytics-${format}` as const;
     setExporting(key);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const queryParams = buildExportParams();
       queryParams.set("format", format);
+      queryParams.set("auth0_id", user.sub);
       const response = await fetch(
         `${apiUrl}/api/v1/projects/${activeProjectId}/stats/export?${queryParams.toString()}`,
       );
@@ -197,13 +221,14 @@ export default function BudgetsPage() {
   };
 
   const exportEvents = async (format: "csv" | "pdf") => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || !user?.sub) return;
     const key = `events-${format}` as const;
     setExporting(key);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const queryParams = buildExportParams();
       queryParams.set("format", format);
+      queryParams.set("auth0_id", user.sub);
       const response = await fetch(
         `${apiUrl}/api/v1/projects/${activeProjectId}/events/export?${queryParams.toString()}`,
       );
@@ -270,7 +295,7 @@ export default function BudgetsPage() {
           Budgets &amp; Exports
         </h1>
         <p className="font-mono text-sm text-zinc-500">
-          Manage monthly spend limits and export analytics or event data.
+          Manage monthly spend limits for the active project and export analytics or event data.
         </p>
       </section>
 
@@ -296,7 +321,7 @@ export default function BudgetsPage() {
                       value={budgetCost}
                       onChange={(e) => setBudgetCost(e.target.value)}
                       placeholder="e.g. 250"
-                      disabled={!isOrgAdmin}
+                      disabled={!canManageProjectBudget}
                       className="h-9 w-full rounded-lg border border-white/10 bg-[#0f0f12] px-3 text-sm font-mono text-white outline-none transition focus:border-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </label>
@@ -308,7 +333,7 @@ export default function BudgetsPage() {
                       value={budgetTokens}
                       onChange={(e) => setBudgetTokens(e.target.value)}
                       placeholder="e.g. 5000000"
-                      disabled={!isOrgAdmin}
+                      disabled={!canManageProjectBudget}
                       className="h-9 w-full rounded-lg border border-white/10 bg-[#0f0f12] px-3 text-sm font-mono text-white outline-none transition focus:border-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </label>
@@ -376,12 +401,16 @@ export default function BudgetsPage() {
                 <div className="flex items-center justify-between gap-3">
                   {budgetMessage ? (
                     <p className="text-xs font-mono text-zinc-400">{budgetMessage}</p>
+                  ) : !canManageProjectBudget ? (
+                    <p className="text-xs font-mono text-zinc-500">
+                      Only project admins and org owners can save budgets. Older orgs without an owner may still allow org admins.
+                    </p>
                   ) : (
                     <p className="text-xs text-zinc-600">Leave empty to disable a threshold.</p>
                   )}
                   <Button
                     onClick={saveBudget}
-                    disabled={!isOrgAdmin || savingBudget}
+                    disabled={!canManageProjectBudget || savingBudget}
                     variant="outline"
                   >
                     {savingBudget ? "Saving…" : "Save Budget"}

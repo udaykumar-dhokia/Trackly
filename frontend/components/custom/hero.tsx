@@ -252,7 +252,7 @@ export default function Hero() {
                       <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", overflow: "hidden", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a", zIndex: 5 - i }}>
                         {u.profile_photo
                           ? <img src={u.profile_photo} alt="Dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          : (u.name || u.email)[0].toUpperCase()}
+                          : (u.name || "U").toUpperCase()}
                       </div>
                     ))
                     : ["photo-1535713875002-d1d0cf377fde", "photo-1494790108377-be9c29b29330", "photo-1599566150163-29194dcaad36", "photo-1527980965255-d3b416303d12", "photo-1438761681033-6461ffad8d80"].map((id, i) => (

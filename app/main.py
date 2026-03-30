@@ -13,8 +13,10 @@ from slowapi.errors import RateLimitExceeded
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.db.session import engine, init_db
+    from app.services.cache import close_redis_client
     await init_db()
     yield
+    await close_redis_client()
     await engine.dispose()
 
 

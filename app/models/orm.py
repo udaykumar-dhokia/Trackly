@@ -62,6 +62,7 @@ class Project(Base):
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="project")
     events: Mapped[list[LlmEvent]] = relationship(back_populates="project")
     members: Mapped[list[ProjectMember]] = relationship(back_populates="project")
+    budget: Mapped[ProjectBudget | None] = relationship(back_populates="project", uselist=False)
 
 
 class ApiKey(Base):
@@ -248,6 +249,57 @@ class OrganizationBudget(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="budget")
     created_by: Mapped[User | None] = relationship()
+
+
+class ProjectBudget(Base):
+    __tablename__ = "project_budgets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    monthly_token_limit: Mapped[int | None] = mapped_column(BigInteger)
+    monthly_cost_limit_usd: Mapped[float | None] = mapped_column(Numeric(12, 4))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
+
+    project: Mapped[Project] = relationship(back_populates="budget")
+    created_by: Mapped[User | None] = relationship()
+    alerts: Mapped[list[ProjectBudgetAlert]] = relationship(back_populates="budget")
+
+
+class ProjectBudgetAlert(Base):
+    __tablename__ = "project_budget_alerts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_budget_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("project_budgets.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    alert_month: Mapped[str] = mapped_column(String(7), nullable=False)
+    alert_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    budget: Mapped[ProjectBudget] = relationship(back_populates="alerts")
+
+    __table_args__ = (
+        Index(
+            "ix_project_budget_alert_unique_month_type",
+            "project_budget_id",
+            "alert_month",
+            "alert_type",
+            unique=True,
+        ),
+    )
 
 
 class Feedback(Base):
