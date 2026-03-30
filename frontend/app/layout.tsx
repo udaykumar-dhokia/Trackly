@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import StoreProvider from "@/lib/store/StoreProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -121,7 +122,7 @@ export default function RootLayout({
         geistSans.variable,
         geistMono.variable,
         jetbrainsMono.variable,
-        notoSans.variable
+        notoSans.variable,
       )}
     >
       <body className="min-h-full flex flex-col">
@@ -130,6 +131,9 @@ export default function RootLayout({
             <TooltipProvider>
               {children}
               <Analytics />
+              <GoogleAnalytics
+                gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}
+              />
               <Toaster position="bottom-right" theme="dark" />
             </TooltipProvider>
           </StoreProvider>
