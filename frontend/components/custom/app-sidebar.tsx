@@ -78,6 +78,11 @@ const navItems = [
     icon: Wallet,
   },
   {
+    title: "Playground",
+    url: "/playground",
+    icon: ChartLineUp,
+  },
+  {
     title: "API Keys",
     url: "/api-keys",
     icon: Key,
@@ -101,6 +106,7 @@ const inactiveClass =
 const navTourIds: Record<string, string> = {
   Dashboard: "dashboard-nav",
   Budgets: "budgets-nav",
+  Playground: "playground-nav",
   "API Keys": "api-keys-nav",
 };
 

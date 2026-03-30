@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -106,6 +107,84 @@ class DailyUsage(BaseModel):
     event_count: int
     total_tokens: int
     total_cost_usd: float
+
+
+class PlaygroundModelPricing(BaseModel):
+    provider: str
+    model: str
+    input_cost_per_1k: float
+    output_cost_per_1k: float
+    effective_from: datetime
+
+
+class PlaygroundRecentModel(BaseModel):
+    provider: str
+    model: str
+    event_count: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    total_cost_usd: float
+    avg_latency_ms: float | None
+    last_seen_at: datetime | None
+    matched_pricing_model: str | None = None
+    input_cost_per_1k: float | None = None
+    output_cost_per_1k: float | None = None
+
+
+class PlaygroundOptionsResponse(BaseModel):
+    default_start: datetime
+    default_end: datetime
+    catalog: list[PlaygroundModelPricing]
+    recent_models: list[PlaygroundRecentModel]
+
+
+class PlaygroundCompareRequest(BaseModel):
+    source_provider: str = Field(..., min_length=1, max_length=100)
+    source_model: str = Field(..., min_length=1, max_length=255)
+    target_provider: str = Field(..., min_length=1, max_length=100)
+    target_model: str = Field(..., min_length=1, max_length=255)
+    mode: Literal["historical", "manual"] = "historical"
+    feature: str | None = Field(default=None, max_length=255)
+    start: datetime | None = None
+    end: datetime | None = None
+    traffic_multiplier: float = Field(default=1.0, gt=0)
+    request_count: int | None = Field(default=None, ge=1)
+    avg_prompt_tokens: int | None = Field(default=None, ge=0)
+    avg_completion_tokens: int | None = Field(default=None, ge=0)
+
+
+class PlaygroundScenarioSnapshot(BaseModel):
+    provider: str
+    model: str
+    matched_pricing_model: str | None = None
+    input_cost_per_1k: float | None = None
+    output_cost_per_1k: float | None = None
+    event_count: int
+    request_count: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    total_cost_usd: float
+    avg_latency_ms: float | None = None
+
+
+class PlaygroundDelta(BaseModel):
+    absolute_cost_change_usd: float
+    percentage_cost_change: float | None = None
+    savings_usd: float
+    savings_percentage: float | None = None
+
+
+class PlaygroundCompareResponse(BaseModel):
+    mode: Literal["historical", "manual"]
+    feature: str | None = None
+    window_start: datetime | None = None
+    window_end: datetime | None = None
+    traffic_multiplier: float
+    source: PlaygroundScenarioSnapshot
+    target: PlaygroundScenarioSnapshot
+    delta: PlaygroundDelta
 
 class UserResponse(BaseModel):
     id: uuid.UUID
