@@ -121,26 +121,6 @@ export default function Hero() {
         }
         .pip-pill-copy:hover { background:#c7d2fe; }
 
-        .code-card {
-          background:var(--surface); border:1px solid var(--border); border-radius:12px;
-          overflow:hidden; text-align:left; width:100%; max-width:560px; margin:0 auto;
-          box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px var(--border);
-        }
-        .code-topbar {
-          display:flex; align-items:center; gap:6px; padding:12px 16px;
-          border-bottom:1px solid var(--border); background:rgba(255,255,255,.02);
-        }
-        .wdot { width:10px; height:10px; border-radius:50%; }
-        .dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
-        .code-filename { margin-left:8px; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
-        .code-body {
-          padding:18px 20px; font-family:'DM Mono',monospace;
-          font-size:clamp(11px,2.5vw,12.5px); line-height:1.75; color:#a1a1aa;
-          white-space:pre; overflow-x:auto; -webkit-overflow-scrolling:touch;
-        }
-        .c-purple{color:#c084fc}.c-green{color:#86efac}.c-amber{color:#fde68a}
-        .c-blue{color:#93c5fd}.c-muted{color:#52525b}
-
         .stats-row {
           display:grid; grid-template-columns:repeat(4,1fr);
           border:1px solid var(--border); border-radius:12px;
@@ -184,9 +164,18 @@ export default function Hero() {
         .reveal.in { opacity:1; transform:translateY(0); }
         .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.35s}
         .d4{transition-delay:.5s}.d5{transition-delay:.65s}.d6{transition-delay:.8s}
+
+        .demo-video-container {
+          background:var(--surface); border:1px solid var(--border); border-radius:12px;
+          overflow:hidden; width:100%; max-width:900px; margin:0 auto;
+          box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px var(--border);
+        }
+        .demo-video {
+          width:100%; height:auto; display:block;
+        }
       `}</style>
 
-      <div className="hero-root relative">
+      <div className="hero-root relative mt-4">
         <div className="orb orb-1" />
         <div className="orb orb-2" />
 
@@ -274,13 +263,9 @@ export default function Hero() {
               </div>
             </div>
 
-            <div className={`reveal d5 ${mounted ? "in" : ""} w-full`}>
-              <div className="code-card">
-                <div className="code-topbar">
-                  <span className="wdot dot-r" /><span className="wdot dot-y" /><span className="wdot dot-g" />
-                  <span className="code-filename">main.py</span>
-                </div>
-                <div className="code-body"><span className="c-purple">from</span> trackly <span className="c-purple">import</span> <span className="c-blue">Trackly</span>{"\n"}<span className="c-purple">from</span> langchain_anthropic <span className="c-purple">import</span> <span className="c-blue">ChatAnthropic</span>{"\n"}{"\n"}<span className="c-muted"># 1. Init with metadata</span>{"\n"}trackly <span className="c-amber">=</span> <span className="c-blue">Trackly</span>({"\n"}{"  "}feature<span className="c-amber">=</span><span className="c-green">"chatbot"</span>,{"\n"}{"  "}environment<span className="c-amber">=</span><span className="c-green">"prod"</span>{"\n"}){"\n"}{"\n"}<span className="c-muted"># 2. Attach callback — that's it</span>{"\n"}llm <span className="c-amber">=</span> <span className="c-blue">ChatAnthropic</span>({"\n"}{"  "}model<span className="c-amber">=</span><span className="c-green">"claude-3-5-sonnet-latest"</span>,{"\n"}{"  "}callbacks<span className="c-amber">=[</span>trackly.callback()<span className="c-amber">]</span>,{"\n"}){"\n"}<span className="c-muted"># Every Claude call is now tracked automatically ✓</span></div>
+            <div className={`reveal d5 ${mounted ? "in" : ""} w-full flex justify-center mt-4`}>
+              <div className="demo-video-container">
+                <video src="/demo.mp4" autoPlay loop muted playsInline className="demo-video" />
               </div>
             </div>
 

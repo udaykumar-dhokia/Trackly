@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/custom/header";
 import Hero from "@/components/custom/hero";
+import QuickStart from "@/components/custom/quick-start";
 import Features from "@/components/custom/features";
 import Pricing from "@/components/custom/pricing";
 import HowItWorks from "@/components/custom/howItWorks";
@@ -129,6 +130,7 @@ const page = () => {
       ))}
       <Header />
       <Hero />
+      <QuickStart />
       <Testimonials />
       <Features />
       <HowItWorks />
