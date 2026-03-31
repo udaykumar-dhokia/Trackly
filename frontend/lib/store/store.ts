@@ -3,6 +3,7 @@ import projectsReducer from './features/projectsSlice'
 import statsReducer from './features/statsSlice'
 import apiKeysReducer from './features/apiKeysSlice'
 import eventsReducer from './features/eventsSlice'
+import tracesReducer from './features/tracesSlice'
 
 export const makeStore = () => {
   return configureStore({
@@ -11,6 +12,7 @@ export const makeStore = () => {
       stats: statsReducer,
       apiKeys: apiKeysReducer,
       events: eventsReducer,
+      traces: tracesReducer,
     },
   })
 }

@@ -1,4 +1,5 @@
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
@@ -89,6 +90,8 @@ class _OllamaHandler:
                 "latency_ms": latency_ms,
                 "feature": self._trackly.feature,
                 "environment": self._trackly.environment,
+                "session_id": self._trackly.session_id,
+                "run_id": str(uuid.uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             

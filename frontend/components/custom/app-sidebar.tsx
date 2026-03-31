@@ -38,6 +38,7 @@ import {
   ChartLineUp,
   Wallet,
   CircleIcon,
+  Graph,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -71,6 +72,11 @@ const navItems = [
     title: "Events Log",
     url: "/events",
     icon: ActivityIcon,
+  },
+  {
+    title: "Visualise",
+    url: "/visualise",
+    icon: Graph,
   },
   {
     title: "Budgets",
@@ -276,6 +282,11 @@ export function AppSidebar({
                         }
                       />
                       <span>{item.title}</span>
+                      {item.title === "Visualise" && (
+                        <span className="ml-auto text-[8px] font-bold tracking-widest uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">
+                          Beta
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

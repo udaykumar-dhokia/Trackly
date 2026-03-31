@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
@@ -25,11 +26,13 @@ class Trackly(BaseCallbackHandler):
         environment: str = "production",
         gemini_api_key: Optional[str] = None,
         anthropic_api_key: Optional[str] = None,
+        session_id: Optional[str] = None, 
     ):
         super().__init__()
         self.provider = provider
         self.feature = feature
         self.environment = environment
+        self.session_id = session_id
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         self.anthropic_api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
         
@@ -44,6 +47,7 @@ class Trackly(BaseCallbackHandler):
         self._start_times: Dict[Any, float] = {}
         self._serialized: Dict[Any, Dict] = {}
         self._model_names: Dict[Any, str] = {}
+        self._parent_run_ids: Dict[Any, Optional[str]] = {}
 
     def _get_ollama_async_client(self):
         """Lazy load and reuse the Ollama AsyncClient."""
@@ -51,6 +55,14 @@ class Trackly(BaseCallbackHandler):
             from ollama import AsyncClient
             self._ollama_async_client = AsyncClient()
         return self._ollama_async_client
+
+    def set_session(self, session_id: Optional[str]) -> None:
+        """Update the session ID for subsequent events.
+
+        Use this to group related LLM calls together within a logical
+        workflow — e.g. one chatbot conversation or one agent task.
+        """
+        self.session_id = session_id
 
     def callback(self):
         """Backward compatibility: return self as the LangChain callback handler."""
@@ -107,6 +119,7 @@ class Trackly(BaseCallbackHandler):
 
         self._start_times[run_id] = time.time()
         self._serialized[run_id] = serialized
+        self._parent_run_ids[run_id] = kwargs.get("parent_run_id")
 
         invocation_params = kwargs.get("invocation_params", {})
         model = (
@@ -129,6 +142,7 @@ class Trackly(BaseCallbackHandler):
         run_id = kwargs.get("run_id")
         start = self._start_times.pop(run_id, None)
         serialized = self._serialized.pop(run_id, {})
+        parent_run_id = self._parent_run_ids.pop(run_id, None)
         latency_ms = int((time.time() - start) * 1000) if start else None
 
         model = self._model_names.pop(run_id, None)
@@ -205,6 +219,9 @@ class Trackly(BaseCallbackHandler):
             "finish_reason":     finish_reason,
             "feature":           self.feature,
             "environment":       self.environment,
+            "session_id":        self.session_id,
+            "run_id":            str(run_id) if run_id else None,
+            "parent_run_id":     str(parent_run_id) if parent_run_id else None,
             "timestamp":         datetime.now(timezone.utc).isoformat(),
         }
 
@@ -216,6 +233,7 @@ class Trackly(BaseCallbackHandler):
         self._start_times.pop(run_id, None)
         self._serialized.pop(run_id, None)
         self._model_names.pop(run_id, None)
+        self._parent_run_ids.pop(run_id, None)
     # --- Helper methods ---
 
     def _get_ollama_handler(self):
@@ -327,6 +345,8 @@ class Trackly(BaseCallbackHandler):
                 "finish_reason": finish_reason,
                 "feature": self.feature,
                 "environment": self.environment,
+                "session_id": self.session_id,
+                "run_id": str(uuid.uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             
@@ -380,6 +400,8 @@ class Trackly(BaseCallbackHandler):
                 "finish_reason": getattr(response, "stop_reason", None),
                 "feature": self.feature,
                 "environment": self.environment,
+                "session_id": self.session_id,
+                "run_id": str(uuid.uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "metadata": {
                     "message_id": getattr(response, "id", None)
