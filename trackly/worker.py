@@ -41,8 +41,16 @@ class _TracklyWorker:
                 self._queue.pop(0)
             self._queue.append(event)
         if self.debug:
-            print(f"[Trackly] enqueued: provider={event['provider']} "
-                  f"model={event['model']} tokens={event.get('total_tokens')}")
+            etype = event.get("event_type", "generation")
+            if etype in ("trace_start", "trace_end"):
+                print(f"[Trackly] enqueued: {etype} name={event.get('name')} "
+                      f"trace_id={event.get('trace_id', '')[:8]}...")
+            elif etype in ("span", "step", "generation"):
+                print(f"[Trackly] enqueued: {etype} name={event.get('name')} "
+                      f"type={event.get('type')} status={event.get('status')}")
+            else:
+                print(f"[Trackly] enqueued: provider={event.get('provider')} "
+                      f"model={event.get('model')} tokens={event.get('total_tokens')}")
 
     def _worker(self):
         while not self._stop_event.is_set():

@@ -79,25 +79,20 @@ const navItems = [
     icon: Graph,
   },
   {
-    title: "Budgets",
-    url: "/budgets",
-    icon: Wallet,
-  },
-  {
     title: "Playground",
     url: "/playground",
     icon: ChartLineUp,
+  },
+  {
+    title: "Budgets",
+    url: "/budgets",
+    icon: Wallet,
   },
   {
     title: "API Keys",
     url: "/api-keys",
     icon: Key,
   },
-  // {
-  //   title: "Settings",
-  //   url: "/settings",
-  //   icon: Gear,
-  // },
   {
     title: "Docs",
     url: "/docs",

@@ -263,8 +263,8 @@ export default function EventsPage() {
         </div>
       </section>
 
-      <section className="relative border-2 border-white/10 bg-[#141418] rounded-xl">
-        <div className="flex items-center justify-between border-b-2 border-white/10 bg-[#1a1a24] rounded-t-xl p-4">
+      <section className="relative border-2 border-white/10 bg-sidebar rounded-xl">
+        <div className="flex items-center justify-between border-b-2 border-white/10 bg-sidebar rounded-t-xl p-4">
           <div className="font-mono text-xs text-zinc-400">
             <span className="font-bold text-fuchsia-400">
               {total.toLocaleString()}

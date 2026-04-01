@@ -97,7 +97,7 @@ type PlaygroundCompareResponse = {
 
 type Mode = "historical" | "manual";
 
-const surfaceClass = "rounded-xl border border-white/10 bg-[#0a0a0a]";
+const surfaceClass = "rounded-xl border border-white/10 bg-sidebar";
 const labelClass = "text-xs font-medium tracking-tight text-zinc-400";
 const selectTriggerClass =
   "flex h-9 w-full items-center justify-between rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm text-zinc-100 shadow-sm ring-offset-background placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1";

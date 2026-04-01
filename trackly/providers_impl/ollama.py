@@ -92,6 +92,7 @@ class _OllamaHandler:
                 "environment": self._trackly.environment,
                 "session_id": self._trackly.session_id,
                 "run_id": str(uuid.uuid4()),
+                "extra": self._trackly._trace_event_context() or None,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             
@@ -101,12 +102,31 @@ class _OllamaHandler:
             prompt_eval_duration = response.get("prompt_eval_duration")
             eval_duration = response.get("eval_duration")
             if prompt_eval_duration is not None or eval_duration is not None:
-                event["metadata"] = {
+                extra = event.get("extra") or {}
+                extra.update({
                     "prompt_eval_duration_ms": int(prompt_eval_duration / 1_000_000) if prompt_eval_duration else None,
                     "eval_duration_ms": int(eval_duration / 1_000_000) if eval_duration else None,
-                }
+                })
+                event["extra"] = extra
 
             self._trackly._worker._enqueue(event)
+
+            from ..tracing import get_active_trace
+            active = get_active_trace()
+            if active:
+                model_name = response.get("model", "unknown")
+                p_tokens = prompt_eval_count if not is_embedding else None
+                c_tokens = eval_count if not is_embedding else None
+                t_tokens = (prompt_eval_count + eval_count) if not is_embedding else None
+                active.record_generation(
+                    provider="ollama",
+                    model=model_name,
+                    prompt_tokens=p_tokens,
+                    completion_tokens=c_tokens,
+                    total_tokens=t_tokens,
+                    latency_ms=latency_ms,
+                    finish_reason="embedding" if is_embedding else None,
+                )
         except Exception as exc:
             if self._trackly._worker.debug:
                 print(f"[Trackly] warning: failed to process Ollama event: {exc}")

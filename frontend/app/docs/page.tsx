@@ -54,6 +54,10 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    group: "Observability",
+    items: ["Tracing"],
+  },
+  {
     group: "Operations",
     items: ["Debug and shutdown", "Self-hosting"],
   },
@@ -489,6 +493,45 @@ const API_KEY_FIELDS: ParamSpec[] = [
     description:
       "Used by the list and revoke endpoints to apply visibility and permission rules.",
     example: "?auth0_id=auth0|abc123",
+  },
+];
+
+const TRACING_PARAMS: ParamSpec[] = [
+  {
+    name: "name",
+    type: "str",
+    required: true,
+    description:
+      "The name of the trace or span. This is shown as the primary label in the dashboard graph.",
+    example: '"research-agent"',
+  },
+  {
+    name: "session_id",
+    type: "str | None",
+    description:
+      "Group traces under a unified session. If not provided, Trackly uses the constructor's default.",
+  },
+  {
+    name: "user_id",
+    type: "str | None",
+    description: "Attribute the trace to a specific user for per-user analytics.",
+  },
+  {
+    name: "metadata",
+    type: "dict | None",
+    description: "Custom key-value pairs attached to the trace or span.",
+  },
+  {
+    name: "tags",
+    type: "list[str] | None",
+    description: "Searchable labels to filter traces in the dashboard.",
+  },
+  {
+    name: "capture_io",
+    type: "bool",
+    defaultValue: "False",
+    description:
+      "When True, Trackly automatically captures function arguments and return values.",
   },
 ];
 
@@ -1649,6 +1692,70 @@ trackly.batches.delete(name=job.name)`}</CodeBlock>
                 },
               ]}
             />
+          </>
+        );
+
+      case "Tracing":
+        return (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f59e0b] mb-4">
+              Observability
+            </p>
+            <h1 className="text-[2.6rem] font-extrabold tracking-tighter leading-none mb-6 uppercase text-white">
+              Tracing
+            </h1>
+            <p className="text-[.95rem] text-zinc-300 leading-[1.8] mb-6">
+              Trackly Tracing allows you to visualize complex AI workflows,
+              chains, and agents. By nesting spans, you can see exactly where
+              time and costs are spent across your entire pipeline, rendered as
+              a dynamic interactive graph.
+            </p>
+
+            <SectionTitle accentColor="#8b5cf6">
+              The @track decorator
+            </SectionTitle>
+            <p className="text-[.88rem] text-zinc-400 leading-[1.8] mb-4">
+              The easiest way to trace a function is with the <Ic>@track</Ic>{" "}
+              decorator. It automatically creates a span and measures latency.
+            </p>
+            <CodeBlock lang="python">{`from trackly import Trackly, track
+            
+trackly = Trackly()
+
+@track(name="research_step", capture_io=True)
+def research(topic: str):
+    # This function call is now recorded in your trace
+    return f"Results for {topic}"
+
+with trackly.trace(name="main_flow"):
+    research("AI Observability")`}</CodeBlock>
+
+            <SectionTitle accentColor="#14b8a6">
+              Manual Tracing & Spans
+            </SectionTitle>
+            <p className="text-[.88rem] text-zinc-400 leading-[1.8] mb-4">
+              Use context managers for fine-grained control over your traces.
+              Spans can be nested to any depth.
+            </p>
+            <CodeBlock lang="python">{`with trackly.trace(name="agent_run", session_id="user_123") as trace:
+    with trackly.span(name="retrieval"):
+        # Log your RAG or search logic here
+        pass
+        
+    with trackly.span(name="generation"):
+        # Track your LLM calls inside this span
+        response = llm.invoke("...")`}</CodeBlock>
+
+            <Callout type="info">
+              Nested spans automatically inherit the active trace context. Any
+              LLM call made within a span is correctly linked to its parent in
+              the dashboard graph.
+            </Callout>
+
+            <SectionTitle accentColor="#f59e0b">
+              Trace parameters
+            </SectionTitle>
+            <ParameterGrid items={TRACING_PARAMS} />
           </>
         );
 

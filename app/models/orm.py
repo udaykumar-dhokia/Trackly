@@ -3,13 +3,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    BigInteger, Boolean, DateTime, ForeignKey,
-    Index, Integer, Numeric, String, Text,
-)
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
 from app.db.session import Base
 
@@ -39,7 +35,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     auth0_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(255), nullable=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     profile_photo: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -61,19 +57,13 @@ class Project(Base):
     organization: Mapped[Organization] = relationship(back_populates="projects")
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="project")
     events: Mapped[list[LlmEvent]] = relationship(back_populates="project")
+    traces: Mapped[list[Trace]] = relationship(back_populates="project")
+    spans: Mapped[list[Span]] = relationship(back_populates="project")
     members: Mapped[list[ProjectMember]] = relationship(back_populates="project")
     budget: Mapped[ProjectBudget | None] = relationship(back_populates="project", uselist=False)
 
 
 class ApiKey(Base):
-    """
-    We never store the raw key — only the bcrypt hash and the visible prefix.
-    The prefix (e.g. "tk_live_ab") lets users identify which key it is
-    in the dashboard without exposing the secret.
-
-    created_by_user_id — the user who owns/created this key.
-    parent_key_id — if set, this is a derived "access" key linked to a master key.
-    """
     __tablename__ = "api_keys"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -108,9 +98,7 @@ class OrganizationMember(Base):
     organization: Mapped[Organization] = relationship(back_populates="members")
     user: Mapped[User] = relationship(back_populates="memberships")
 
-    __table_args__ = (
-        Index("ix_org_members_org_user", "org_id", "user_id", unique=True),
-    )
+    __table_args__ = (Index("ix_org_members_org_user", "org_id", "user_id", unique=True),)
 
 
 class ProjectMember(Base):
@@ -125,60 +113,32 @@ class ProjectMember(Base):
     project: Mapped[Project] = relationship(back_populates="members")
     user: Mapped[User] = relationship(back_populates="project_memberships")
 
-    __table_args__ = (
-        Index("ix_project_members_project_user", "project_id", "user_id", unique=True),
-    )
+    __table_args__ = (Index("ix_project_members_project_user", "project_id", "user_id", unique=True),)
 
 
 class LlmEvent(Base):
-    """
-    Core fact table. One row per LLM call.
-
-    occurred_at  — when the call happened in the user's app (from SDK).
-    ingested_at  — when OUR server received it.
-    Dashboard queries always use occurred_at for accuracy.
-    Cost is computed at ingest time and stored — never recomputed on read.
-    """
     __tablename__ = "llm_events"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     api_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
     parent_api_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
-
-    # Provider info
     provider: Mapped[str] = mapped_column(String(100), nullable=False)
     model: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    # Token counts
     prompt_tokens: Mapped[int | None] = mapped_column(Integer)
     completion_tokens: Mapped[int | None] = mapped_column(Integer)
     total_tokens: Mapped[int | None] = mapped_column(Integer)
-
-    # Cost computed at ingest from model_pricing table
     estimated_cost_usd: Mapped[float | None] = mapped_column(Numeric(12, 8))
-
-    # Performance
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     finish_reason: Mapped[str | None] = mapped_column(String(50))
-
-    # User-supplied metadata
     feature: Mapped[str | None] = mapped_column(String(255))
     user_id: Mapped[str | None] = mapped_column(String(255))
     session_id: Mapped[str | None] = mapped_column(String(255))
-
-    # LangChain tracing
     run_id: Mapped[str | None] = mapped_column(String(255))
     parent_run_id: Mapped[str | None] = mapped_column(String(255))
-
-    # Flexible fields stored as JSONB
     tags: Mapped[list | None] = mapped_column(JSONB)
     extra: Mapped[dict | None] = mapped_column(JSONB)
-
-    # SDK metadata
     sdk_version: Mapped[str | None] = mapped_column(String(50))
-
-    # Timestamps — occurred_at comes from SDK, ingested_at is server-set
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -187,30 +147,92 @@ class LlmEvent(Base):
     parent_api_key: Mapped[ApiKey | None] = relationship(foreign_keys=[parent_api_key_id])
 
     __table_args__ = (
-        # Primary query pattern: project + time range
         Index("ix_llm_events_project_occurred", "project_id", "occurred_at"),
-        # Feature breakdown queries
         Index("ix_llm_events_project_feature", "project_id", "feature"),
-        # Per-user cost attribution
         Index("ix_llm_events_project_user", "project_id", "user_id"),
-        # Parent API key filtering
         Index("ix_llm_events_parent_key", "parent_api_key_id"),
-        # Model/provider breakdowns
         Index("ix_llm_events_project_model", "project_id", "model"),
-        # BRIN index for append-only time column — cheap and fast for range scans
         Index("ix_llm_events_occurred_brin", "occurred_at", postgresql_using="brin"),
     )
 
 
+class Trace(Base):
+    __tablename__ = "traces"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    session_id: Mapped[str | None] = mapped_column(String(255))
+    user_id: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="running")
+    input: Mapped[dict | list | str | int | float | bool | None] = mapped_column(JSONB)
+    output: Mapped[dict | list | str | int | float | bool | None] = mapped_column(JSONB)
+    metadata_json: Mapped[dict | None] = mapped_column("metadata", JSONB)
+    tags: Mapped[list | None] = mapped_column(JSONB)
+    total_cost_usd: Mapped[float] = mapped_column(Numeric(12, 8), nullable=False, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    step_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pipeline_fingerprint: Mapped[str | None] = mapped_column(String(255))
+    health_score: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    feature: Mapped[str | None] = mapped_column(String(255))
+    environment: Mapped[str | None] = mapped_column(String(50))
+    status_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    project: Mapped[Project] = relationship(back_populates="traces")
+    spans: Mapped[list[Span]] = relationship(back_populates="trace", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_traces_project_started", "project_id", "started_at"),
+        Index("ix_traces_trace_id", "project_id", "trace_id", unique=True),
+        Index("ix_traces_session", "project_id", "session_id"),
+    )
+
+
+class Span(Base):
+    __tablename__ = "spans"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    trace_ref_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("traces.id", ondelete="CASCADE"))
+    trace_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    span_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_span_id: Mapped[str | None] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, default="span")
+    input: Mapped[dict | list | str | int | float | bool | None] = mapped_column(JSONB)
+    output: Mapped[dict | list | str | int | float | bool | None] = mapped_column(JSONB)
+    metadata_json: Mapped[dict | None] = mapped_column("metadata", JSONB)
+    provider: Mapped[str | None] = mapped_column(String(100))
+    model: Mapped[str | None] = mapped_column(String(255))
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer)
+    total_tokens: Mapped[int | None] = mapped_column(Integer)
+    estimated_cost_usd: Mapped[float | None] = mapped_column(Numeric(12, 8))
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    finish_reason: Mapped[str | None] = mapped_column(String(50))
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="ok")
+    status_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    project: Mapped[Project] = relationship(back_populates="spans")
+    trace: Mapped[Trace | None] = relationship(back_populates="spans")
+
+    __table_args__ = (
+        Index("ix_spans_trace_id", "trace_id"),
+        Index("ix_spans_parent", "parent_span_id"),
+        Index("ix_spans_project_span", "project_id", "trace_id", "span_id", unique=True),
+    )
+
 
 class ModelPricing(Base):
-    """
-    Cost per 1,000 tokens for each model, with time-bounded validity.
-    When a provider changes prices, insert a new row with effective_from
-    set to the change date and close the old row with effective_to.
-
-    effective_to = NULL means "currently active".
-    """
     __tablename__ = "model_pricing"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -221,31 +243,19 @@ class ModelPricing(Base):
     effective_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     effective_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    __table_args__ = (
-        Index("ix_model_pricing_lookup", "provider", "model", "effective_from"),
-    )
+    __table_args__ = (Index("ix_model_pricing_lookup", "provider", "model", "effective_from"),)
 
 
 class OrganizationBudget(Base):
     __tablename__ = "organization_budgets"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-    )
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, unique=True)
     monthly_token_limit: Mapped[int | None] = mapped_column(BigInteger)
     monthly_cost_limit_usd: Mapped[float | None] = mapped_column(Numeric(12, 4))
-    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL")
-    )
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=utcnow,
-        onupdate=utcnow,
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     organization: Mapped[Organization] = relationship(back_populates="budget")
     created_by: Mapped[User | None] = relationship()
@@ -255,22 +265,12 @@ class ProjectBudget(Base):
     __tablename__ = "project_budgets"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-    )
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, unique=True)
     monthly_token_limit: Mapped[int | None] = mapped_column(BigInteger)
     monthly_cost_limit_usd: Mapped[float | None] = mapped_column(Numeric(12, 4))
-    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL")
-    )
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=utcnow,
-        onupdate=utcnow,
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     project: Mapped[Project] = relationship(back_populates="budget")
     created_by: Mapped[User | None] = relationship()
@@ -281,10 +281,7 @@ class ProjectBudgetAlert(Base):
     __tablename__ = "project_budget_alerts"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_budget_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("project_budgets.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    project_budget_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project_budgets.id", ondelete="CASCADE"), nullable=False)
     alert_month: Mapped[str] = mapped_column(String(7), nullable=False)
     alert_type: Mapped[str] = mapped_column(String(50), nullable=False)
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -318,15 +315,10 @@ class WelcomeEmailDelivery(Base):
     __tablename__ = "welcome_email_deliveries"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
     provider: Mapped[str] = mapped_column(String(50), nullable=False, default="resend")
     provider_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     sent_to_email: Mapped[str] = mapped_column(String(255), nullable=False)
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped[User] = relationship(back_populates="welcome_email_delivery")
-

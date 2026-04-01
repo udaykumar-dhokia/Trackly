@@ -284,8 +284,8 @@ export default function VisualisePage() {
       0.0001,
     );
     return {
-      nodes: activeGraph.nodes.map((n) => ({
-        id: n.id,
+      nodes: activeGraph.nodes.map((n, idx) => ({
+        id: n.id || `node-${idx}`,
         label: n.model,
         provider: n.provider,
         cost: n.estimated_cost_usd,
@@ -308,7 +308,9 @@ export default function VisualisePage() {
   );
 
   const handleNodeClick = useCallback((node: any) => {
-    if (node?._raw) setSelectedNode(node._raw as TraceNode);
+    if (!node) return;
+    const rawData = node._raw || node;
+    setSelectedNode(rawData as TraceNode);
   }, []);
   const handleNodeHover = useCallback(
     (node: any) => setHoveredNode(node?.id || null),
@@ -650,13 +652,12 @@ export default function VisualisePage() {
                     {insights.map((ins, i) => (
                       <div
                         key={i}
-                        className={`rounded-lg border p-3.5 ${
-                          ins.severity === "warning"
-                            ? "border-amber-500/30 bg-amber-500/5 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]"
-                            : ins.severity === "success"
-                              ? "border-emerald-500/20 bg-emerald-500/5"
-                              : "border-white/5 bg-white/[0.02]"
-                        }`}
+                        className={`rounded-lg border p-3.5 ${ins.severity === "warning"
+                          ? "border-amber-500/30 bg-amber-500/5 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]"
+                          : ins.severity === "success"
+                            ? "border-emerald-500/20 bg-emerald-500/5"
+                            : "border-white/5 bg-white/[0.02]"
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">

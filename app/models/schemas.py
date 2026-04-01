@@ -5,35 +5,90 @@ from datetime import datetime
 from typing import Any
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 class EventPayload(BaseModel):
     """
     A single LLM event as sent by the SDK.
     Mirrors trackly.event.TracklyEvent on the Python SDK side.
     """
-    provider: str
-    model: str
+    event_type: Literal["generation", "trace_start", "trace_end", "span", "step"] | None = None
+    provider: str | None = None
+    model: str | None = None
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     total_tokens: int | None = None
+    estimated_cost_usd: float | None = None
     latency_ms: int | None = None
     finish_reason: str | None = None
     run_id: str | None = None
     parent_run_id: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    parent_span_id: str | None = None
+    name: str | None = None
+    type: str | None = None
+    level: int | None = None
+    status: str | None = None
+    status_message: str | None = None
+    input: Any | None = None
+    output: Any | None = None
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
     feature: str | None = None
     user_id: str | None = None
     session_id: str | None = None
     environment: str | None = None
-    tags: list[str] = Field(default_factory=list)
-    extra: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] | None = Field(default_factory=list)
+    extra: dict[str, Any] | None = Field(default_factory=dict)
     sdk_version: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    total_cost_usd: float | None = None
+    step_count: int | None = None
+    pipeline_fingerprint: str | None = None
+    health_score: float | None = None
     timestamp: datetime | None = None
 
     @field_validator("provider", "model")
     @classmethod
-    def strip_and_lower(cls, v: str) -> str:
+    def strip_and_lower(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
         return v.strip()
+
+    @field_validator("name", "trace_id", "span_id", "parent_span_id")
+    @classmethod
+    def strip_optional_strings(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        value = v.strip()
+        return value or None
+
+    @model_validator(mode="after")
+    def validate_shape(self) -> "EventPayload":
+        if self.event_type in {"trace_start", "trace_end"}:
+            if not self.trace_id:
+                raise ValueError("trace_id is required for trace events")
+            if self.event_type == "trace_start" and not self.name:
+                raise ValueError("name is required for trace_start events")
+            return self
+
+        if self.event_type in {"span", "step", "generation"}:
+            if not self.trace_id:
+                raise ValueError("trace_id is required for span events")
+            if not self.span_id and self.event_type != "generation":
+                raise ValueError("span_id is required for span events")
+            if not self.name and self.event_type != "generation":
+                raise ValueError("name is required for span events")
+            if (self.type == "generation" or self.event_type == "generation") and (
+                not self.provider or not self.model
+            ):
+                raise ValueError("provider and model are required for generation spans")
+            return self
+
+        if not self.provider or not self.model:
+            raise ValueError("provider and model are required for generation events")
+        return self
 
 
 class IngestRequest(BaseModel):
@@ -44,6 +99,147 @@ class IngestRequest(BaseModel):
 class IngestResponse(BaseModel):
     accepted: int
     rejected: int = 0
+
+
+class TraceSessionSummary(BaseModel):
+    session_id: str
+    trace_id: str
+    name: str
+    status: str
+    event_count: int
+    total_cost: float
+    total_tokens: int
+    total_latency_ms: int
+    distinct_models: list[str]
+    first_event: datetime
+    last_event: datetime
+    session_group: str | None = None
+    user_id: str | None = None
+
+
+class TraceSessionListResponse(BaseModel):
+    sessions: list[TraceSessionSummary]
+    total: int
+
+
+class TraceGraphNode(BaseModel):
+    id: str
+    label: str
+    provider: str
+    model: str
+    node_type: str
+    name: str
+    total_tokens: int
+    prompt_tokens: int
+    completion_tokens: int
+    estimated_cost_usd: float
+    latency_ms: int
+    feature: str | None
+    finish_reason: str | None
+    occurred_at: datetime
+    event_count: int
+    run_id: str | None
+    parent_run_id: str | None
+    status: str | None = None
+    level: int = 0
+
+
+class TraceGraphEdge(BaseModel):
+    source: str
+    target: str
+
+
+class TraceGraphSummary(BaseModel):
+    total_cost: float
+    total_tokens: int
+    total_latency_ms: int
+    event_count: int
+    distinct_models: list[str]
+    time_range: list[datetime]
+
+
+class TraceGraphResponse(BaseModel):
+    session_id: str
+    trace_id: str
+    name: str
+    status: str
+    nodes: list[TraceGraphNode]
+    edges: list[TraceGraphEdge]
+    summary: TraceGraphSummary
+
+
+class TraceSpanResponse(BaseModel):
+    trace_id: str
+    span_id: str
+    parent_span_id: str | None = None
+    name: str
+    type: str
+    level: int
+    status: str
+    status_message: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    estimated_cost_usd: float | None = None
+    latency_ms: int | None = None
+    finish_reason: str | None = None
+    input: Any | None = None
+    output: Any | None = None
+    metadata: dict[str, Any] | None = None
+    started_at: datetime
+    ended_at: datetime | None = None
+
+
+class TraceListItem(BaseModel):
+    trace_id: str
+    name: str
+    session_id: str | None = None
+    user_id: str | None = None
+    status: str
+    total_cost_usd: float
+    total_tokens: int
+    total_latency_ms: int
+    step_count: int
+    started_at: datetime
+    ended_at: datetime | None = None
+
+
+class TraceListResponse(BaseModel):
+    traces: list[TraceListItem]
+    total: int
+
+
+class TraceDetailResponse(BaseModel):
+    trace_id: str
+    name: str
+    session_id: str | None = None
+    user_id: str | None = None
+    status: str
+    metadata: dict[str, Any] | None = None
+    tags: list[str] = Field(default_factory=list)
+    total_cost_usd: float
+    total_tokens: int
+    total_latency_ms: int
+    step_count: int
+    pipeline_fingerprint: str | None = None
+    health_score: float | None = None
+    started_at: datetime
+    ended_at: datetime | None = None
+    graph: TraceGraphResponse
+
+
+class TraceInsightItem(BaseModel):
+    type: str
+    name: str
+    message: str
+    value: float | int | str | None = None
+
+
+class TraceInsightsResponse(BaseModel):
+    project_id: uuid.UUID
+    insights: list[TraceInsightItem]
 
 
 class ApiKeyCreate(BaseModel):

@@ -175,7 +175,7 @@ export default function Hero() {
         }
       `}</style>
 
-      <div className="hero-root relative mt-4">
+      <div className="hero-root relative">
         <div className="orb orb-1" />
         <div className="orb orb-2" />
 

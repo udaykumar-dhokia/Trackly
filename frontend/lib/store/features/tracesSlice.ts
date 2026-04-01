@@ -5,6 +5,9 @@ import { setActiveProject } from './projectsSlice';
 
 export interface TraceSummaryItem {
   session_id: string;
+  trace_id: string;
+  name: string;
+  status: string;
   event_count: number;
   total_cost: number;
   total_tokens: number;
@@ -12,6 +15,8 @@ export interface TraceSummaryItem {
   distinct_models: string[];
   first_event: string;
   last_event: string;
+  session_group?: string | null;
+  user_id?: string | null;
 }
 
 export interface TraceNode {
@@ -19,6 +24,8 @@ export interface TraceNode {
   label: string;
   provider: string;
   model: string;
+  node_type: string;
+  name: string;
   total_tokens: number;
   prompt_tokens: number;
   completion_tokens: number;
@@ -30,6 +37,8 @@ export interface TraceNode {
   event_count: number;
   run_id: string | null;
   parent_run_id: string | null;
+  status: string | null;
+  level: number;
 }
 
 export interface TraceEdge {
@@ -48,6 +57,9 @@ export interface TraceGraphSummary {
 
 export interface TraceGraph {
   session_id: string;
+  trace_id: string;
+  name: string;
+  status: string;
   nodes: TraceNode[];
   edges: TraceEdge[];
   summary: TraceGraphSummary;
