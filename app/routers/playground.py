@@ -9,6 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.schemas import (
+    PlaygroundCompareAllItem,
+    PlaygroundCompareAllRequest,
+    PlaygroundCompareAllResponse,
     PlaygroundCompareRequest,
     PlaygroundCompareResponse,
     PlaygroundDelta,
@@ -30,6 +33,101 @@ from app.services.playground import (
 from app.services.project_access import require_project_access_by_auth0_id
 
 router = APIRouter()
+
+
+def _build_delta(
+    source_total_cost: Decimal,
+    target_total_cost: Decimal,
+) -> PlaygroundDelta:
+    absolute_cost_change = target_total_cost - source_total_cost
+    percentage_cost_change = None
+    savings_percentage = None
+    if source_total_cost > 0:
+        percentage_cost_change = float(
+            ((absolute_cost_change / source_total_cost) * Decimal(100)).quantize(
+                Decimal("0.01")
+            )
+        )
+        savings_percentage = float(
+            (((source_total_cost - target_total_cost) / source_total_cost) * Decimal(100)).quantize(
+                Decimal("0.01")
+            )
+        )
+
+    return PlaygroundDelta(
+        absolute_cost_change_usd=float(absolute_cost_change),
+        percentage_cost_change=percentage_cost_change,
+        savings_usd=float(max(source_total_cost - target_total_cost, Decimal("0"))),
+        savings_percentage=savings_percentage,
+    )
+
+
+def _build_snapshot(
+    *,
+    provider: str,
+    model: str,
+    pricing,
+    usage_basis,
+    total_cost_usd: Decimal | None = None,
+) -> PlaygroundScenarioSnapshot:
+    return PlaygroundScenarioSnapshot(
+        provider=provider,
+        model=model,
+        matched_pricing_model=pricing.model,
+        input_cost_per_1k=float(pricing.input_cost_per_1k),
+        output_cost_per_1k=float(pricing.output_cost_per_1k),
+        event_count=usage_basis.event_count,
+        request_count=usage_basis.event_count,
+        prompt_tokens=usage_basis.prompt_tokens,
+        completion_tokens=usage_basis.completion_tokens,
+        total_tokens=usage_basis.total_tokens,
+        total_cost_usd=float(total_cost_usd if total_cost_usd is not None else usage_basis.total_cost_usd),
+        avg_latency_ms=usage_basis.avg_latency_ms,
+    )
+
+
+async def _build_usage_basis(
+    *,
+    db: AsyncSession,
+    project_id: uuid.UUID,
+    body: PlaygroundCompareRequest | PlaygroundCompareAllRequest,
+    source_pricing,
+) -> tuple:
+    traffic_multiplier = Decimal(str(body.traffic_multiplier))
+    window = resolve_playground_window(body.start, body.end)
+    if window.start >= window.end:
+        raise HTTPException(status_code=422, detail="start must be earlier than end.")
+
+    if body.mode == "manual":
+        if body.request_count is None:
+            raise HTTPException(status_code=422, detail="request_count is required for manual mode.")
+        if body.avg_prompt_tokens is None:
+            raise HTTPException(status_code=422, detail="avg_prompt_tokens is required for manual mode.")
+        if body.avg_completion_tokens is None:
+            raise HTTPException(
+                status_code=422,
+                detail="avg_completion_tokens is required for manual mode.",
+            )
+
+        source_basis = build_manual_usage_basis(
+            request_count=body.request_count,
+            avg_prompt_tokens=body.avg_prompt_tokens,
+            avg_completion_tokens=body.avg_completion_tokens,
+            source_input_cost_per_1k=Decimal(str(source_pricing.input_cost_per_1k)),
+            source_output_cost_per_1k=Decimal(str(source_pricing.output_cost_per_1k)),
+        )
+    else:
+        source_basis = await get_historical_usage_basis(
+            db,
+            project_id,
+            provider=body.source_provider,
+            model=body.source_model,
+            feature=body.feature,
+            window=window,
+        )
+        source_basis = scale_usage_basis(source_basis, traffic_multiplier)
+
+    return source_basis, window
 
 
 @router.get(
@@ -96,39 +194,12 @@ async def compare_playground_models(
             detail="Target model pricing was not found in the active catalog.",
         )
 
-    traffic_multiplier = Decimal(str(body.traffic_multiplier))
-    window = resolve_playground_window(body.start, body.end)
-    if window.start >= window.end:
-        raise HTTPException(status_code=422, detail="start must be earlier than end.")
-
-    if body.mode == "manual":
-        if body.request_count is None:
-            raise HTTPException(status_code=422, detail="request_count is required for manual mode.")
-        if body.avg_prompt_tokens is None:
-            raise HTTPException(status_code=422, detail="avg_prompt_tokens is required for manual mode.")
-        if body.avg_completion_tokens is None:
-            raise HTTPException(
-                status_code=422,
-                detail="avg_completion_tokens is required for manual mode.",
-            )
-
-        source_basis = build_manual_usage_basis(
-            request_count=body.request_count,
-            avg_prompt_tokens=body.avg_prompt_tokens,
-            avg_completion_tokens=body.avg_completion_tokens,
-            source_input_cost_per_1k=Decimal(str(source_pricing.input_cost_per_1k)),
-            source_output_cost_per_1k=Decimal(str(source_pricing.output_cost_per_1k)),
-        )
-    else:
-        source_basis = await get_historical_usage_basis(
-            db,
-            project_id,
-            provider=body.source_provider,
-            model=body.source_model,
-            feature=body.feature,
-            window=window,
-        )
-        source_basis = scale_usage_basis(source_basis, traffic_multiplier)
+    source_basis, window = await _build_usage_basis(
+        db=db,
+        project_id=project_id,
+        body=body,
+        source_pricing=source_pricing,
+    )
 
     target_total_cost = calculate_cost_from_rates(
         prompt_tokens=source_basis.prompt_tokens,
@@ -137,20 +208,7 @@ async def compare_playground_models(
         output_cost_per_1k=Decimal(str(target_pricing.output_cost_per_1k)),
     )
 
-    absolute_cost_change = target_total_cost - source_basis.total_cost_usd
-    percentage_cost_change = None
-    savings_percentage = None
-    if source_basis.total_cost_usd > 0:
-        percentage_cost_change = float(
-            ((absolute_cost_change / source_basis.total_cost_usd) * Decimal(100)).quantize(
-                Decimal("0.01")
-            )
-        )
-        savings_percentage = float(
-            (((source_basis.total_cost_usd - target_total_cost) / source_basis.total_cost_usd) * Decimal(100)).quantize(
-                Decimal("0.01")
-            )
-        )
+    delta = _build_delta(source_basis.total_cost_usd, target_total_cost)
 
     return PlaygroundCompareResponse(
         mode=body.mode,
@@ -158,38 +216,100 @@ async def compare_playground_models(
         window_start=window.start if body.mode == "historical" else None,
         window_end=window.end if body.mode == "historical" else None,
         traffic_multiplier=body.traffic_multiplier,
-        source=PlaygroundScenarioSnapshot(
+        source=_build_snapshot(
             provider=body.source_provider,
             model=body.source_model,
-            matched_pricing_model=source_pricing.model,
-            input_cost_per_1k=float(source_pricing.input_cost_per_1k),
-            output_cost_per_1k=float(source_pricing.output_cost_per_1k),
-            event_count=source_basis.event_count,
-            request_count=source_basis.event_count,
-            prompt_tokens=source_basis.prompt_tokens,
-            completion_tokens=source_basis.completion_tokens,
-            total_tokens=source_basis.total_tokens,
-            total_cost_usd=float(source_basis.total_cost_usd),
-            avg_latency_ms=source_basis.avg_latency_ms,
+            pricing=source_pricing,
+            usage_basis=source_basis,
         ),
-        target=PlaygroundScenarioSnapshot(
+        target=_build_snapshot(
             provider=body.target_provider,
             model=body.target_model,
-            matched_pricing_model=target_pricing.model,
-            input_cost_per_1k=float(target_pricing.input_cost_per_1k),
-            output_cost_per_1k=float(target_pricing.output_cost_per_1k),
-            event_count=source_basis.event_count,
-            request_count=source_basis.event_count,
+            pricing=target_pricing,
+            usage_basis=source_basis,
+            total_cost_usd=target_total_cost,
+        ),
+        delta=delta,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/playground/compare-all",
+    response_model=PlaygroundCompareAllResponse,
+    summary="Compare the selected model against the full active pricing catalog",
+)
+async def compare_playground_model_against_all(
+    project_id: uuid.UUID,
+    body: PlaygroundCompareAllRequest,
+    auth0_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> PlaygroundCompareAllResponse:
+    await require_project_access_by_auth0_id(db, project_id, auth0_id)
+
+    source_pricing = await find_active_pricing(db, body.source_provider, body.source_model)
+    if source_pricing is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Source model pricing was not found in the active catalog.",
+        )
+
+    source_basis, window = await _build_usage_basis(
+        db=db,
+        project_id=project_id,
+        body=body,
+        source_pricing=source_pricing,
+    )
+
+    catalog_rows = await list_active_model_pricing(db)
+    source_provider_key = body.source_provider.strip().lower()
+    source_model_key = body.source_model.strip().lower()
+
+    comparisons: list[PlaygroundCompareAllItem] = []
+    for row in catalog_rows:
+        target_total_cost = calculate_cost_from_rates(
             prompt_tokens=source_basis.prompt_tokens,
             completion_tokens=source_basis.completion_tokens,
-            total_tokens=source_basis.total_tokens,
-            total_cost_usd=float(target_total_cost),
-            avg_latency_ms=source_basis.avg_latency_ms,
+            input_cost_per_1k=Decimal(str(row.input_cost_per_1k)),
+            output_cost_per_1k=Decimal(str(row.output_cost_per_1k)),
+        )
+        delta = _build_delta(source_basis.total_cost_usd, target_total_cost)
+        comparisons.append(
+            PlaygroundCompareAllItem(
+                rank=0,
+                provider=row.provider,
+                model=row.model,
+                matched_pricing_model=row.model,
+                input_cost_per_1k=float(row.input_cost_per_1k),
+                output_cost_per_1k=float(row.output_cost_per_1k),
+                projected_total_cost_usd=float(target_total_cost),
+                absolute_cost_change_usd=delta.absolute_cost_change_usd,
+                percentage_cost_change=delta.percentage_cost_change,
+                savings_usd=delta.savings_usd,
+                savings_percentage=delta.savings_percentage,
+                is_source_model=(
+                    row.provider.strip().lower() == source_provider_key
+                    and row.model.strip().lower() == source_model_key
+                ),
+            )
+        )
+
+    comparisons.sort(
+        key=lambda item: (item.projected_total_cost_usd, item.provider, item.model)
+    )
+    for index, item in enumerate(comparisons, start=1):
+        item.rank = index
+
+    return PlaygroundCompareAllResponse(
+        mode=body.mode,
+        feature=body.feature,
+        window_start=window.start if body.mode == "historical" else None,
+        window_end=window.end if body.mode == "historical" else None,
+        traffic_multiplier=body.traffic_multiplier,
+        source=_build_snapshot(
+            provider=body.source_provider,
+            model=body.source_model,
+            pricing=source_pricing,
+            usage_basis=source_basis,
         ),
-        delta=PlaygroundDelta(
-            absolute_cost_change_usd=float(absolute_cost_change),
-            percentage_cost_change=percentage_cost_change,
-            savings_usd=float(max(source_basis.total_cost_usd - target_total_cost, Decimal("0"))),
-            savings_percentage=savings_percentage,
-        ),
+        comparisons=comparisons,
     )

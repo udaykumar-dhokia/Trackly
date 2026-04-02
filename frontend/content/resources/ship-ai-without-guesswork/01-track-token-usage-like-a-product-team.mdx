@@ -1,0 +1,174 @@
+---
+title: "Track Token Usage Like a Product Team"
+slug: "track-token-usage-like-a-product-team"
+description: "Instrument a real Python feature with Trackly so you can see prompt tokens, completion tokens, spend, and latency by feature."
+chapter: "ship-ai-without-guesswork"
+chapterTitle: "Ship AI Without Guesswork"
+order: 1
+tags: ["track token usage", "llm observability", "python", "trackly", "feature analytics"]
+difficulty: "beginner"
+publishedAt: "2026-04-02"
+updatedAt: "2026-04-02"
+featured: true
+---
+
+# Track Token Usage Like a Product Team
+
+Most teams start by asking, "How much did this model call cost?"
+
+That is useful, but it is not enough for product decisions.
+
+The more useful question is:
+
+> Which feature is producing the tokens, latency, and spend that actually matter?
+
+That is the workflow Trackly is built for. You instrument a real feature, keep the metadata small and consistent, and then review usage by model, feature, environment, and session.
+
+## The example feature
+
+Assume you have a support assistant that summarizes a ticket and drafts a reply.
+
+You want to see:
+
+- prompt tokens per request
+- completion tokens per request
+- total estimated spend
+- latency
+- whether `support-triage` or `reply-draft` is becoming expensive
+
+## Step 1: initialize Trackly once
+
+```python
+from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(
+    api_key="tk_live_...",
+    feature="support-assistant",
+    environment="production",
+    session_id="chat-session-44",
+)
+
+ticket_summarizer = ChatOpenAI(
+    model="gpt-4o-mini",
+    callbacks=[trackly.callback()],
+)
+```
+
+This is the minimum useful setup. Every call now carries default context about the feature, environment, and session.
+
+## Step 2: instrument the feature that users actually touch
+
+```python
+def summarize_ticket(ticket_text: str) -> str:
+    prompt = f"""
+    Summarize the customer's issue in 3 bullets.
+
+    Ticket:
+    {ticket_text}
+    """
+    response = ticket_summarizer.invoke(prompt)
+    return response.content
+```
+
+That one model call is enough for Trackly to record:
+
+- provider
+- model
+- prompt tokens
+- completion tokens
+- total tokens
+- estimated cost
+- latency
+- session and feature context
+
+## Step 3: split features before they blur together
+
+Now imagine the same support workflow also drafts a reply. Do not keep both flows under one generic label.
+
+Instead, create separate Trackly clients or set metadata consistently for each job.
+
+```python
+reply_trackly = Trackly(
+    api_key="tk_live_...",
+    feature="reply-draft",
+    environment="production",
+    session_id="chat-session-44",
+)
+
+reply_llm = ChatOpenAI(
+    model="gpt-4o",
+    callbacks=[reply_trackly.callback()],
+)
+
+def draft_reply(summary: str) -> str:
+    response = reply_llm.invoke(
+        f"Write a calm, helpful reply based on this support summary:\n\n{summary}"
+    )
+    return response.content
+```
+
+This is where the dashboard starts becoming useful. Instead of one blended token bill, you can see which feature is doing the work.
+
+## Step 4: keep the session stable
+
+If the same user flow makes several model calls, keep the `session_id` stable across them.
+
+```python
+def build_support_flow(session_id: str) -> tuple[ChatOpenAI, ChatOpenAI]:
+    summarize_trackly = Trackly(
+        api_key="tk_live_...",
+        feature="support-triage",
+        environment="production",
+        session_id=session_id,
+    )
+    reply_trackly = Trackly(
+        api_key="tk_live_...",
+        feature="reply-draft",
+        environment="production",
+        session_id=session_id,
+    )
+
+    summarizer = ChatOpenAI(
+        model="gpt-4o-mini",
+        callbacks=[summarize_trackly.callback()],
+    )
+    replier = ChatOpenAI(
+        model="gpt-4o",
+        callbacks=[reply_trackly.callback()],
+    )
+    return summarizer, replier
+```
+
+Now a single customer interaction can be reviewed as one session instead of disconnected events.
+
+## What you can answer once this is live
+
+After a few hours of traffic, Trackly stops being a logging layer and starts becoming a decision layer.
+
+You can answer questions like:
+
+- Is `gpt-4o` worth the extra cost for reply quality?
+- Did prompt size grow after the last release?
+- Which feature is dominating token usage?
+- Are staging or preview environments wasting spend?
+
+## A realistic rollout pattern
+
+The most practical rollout is not "instrument everything."
+
+It is:
+
+1. instrument the top one or two user-facing flows
+2. split them by feature
+3. keep `session_id` stable for multi-step interactions
+4. review the dashboard after real traffic lands
+5. optimize the most expensive path first
+
+That is exactly how teams go from "we think this is expensive" to "we know which feature, model, and release caused the increase."
+
+## Final takeaway
+
+Token tracking is most useful when it is attached to product behavior, not only infrastructure.
+
+If Trackly knows the model, the tokens, the latency, the feature, and the session, you can debug cost with the same clarity you already expect from application analytics.

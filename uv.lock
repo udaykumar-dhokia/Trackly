@@ -1458,18 +1458,6 @@ wheels = [
 ]
 
 [[package]]
-name = "redis"
-version = "7.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "async-timeout", marker = "python_full_version < '3.11.3'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/7f/3759b1d0d72b7c92f0d70ffd9dc962b7b7b5ee74e135f9d7d8ab06b8a318/redis-7.4.0.tar.gz", hash = "sha256:64a6ea7bf567ad43c964d2c30d82853f8df927c5c9017766c55a1d1ed95d18ad", size = 4943913, upload-time = "2026-03-24T09:14:37.53Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/3a/95deec7db1eb53979973ebd156f3369a72732208d1391cd2e5d127062a32/redis-7.4.0-py3-none-any.whl", hash = "sha256:a9c74a5c893a5ef8455a5adb793a31bb70feb821c86eccb62eebef5a19c429ec", size = 409772, upload-time = "2026-03-24T09:14:35.968Z" },
-]
-
-[[package]]
 name = "regex"
 version = "2026.2.28"
 source = { registry = "https://pypi.org/simple" }
@@ -1880,15 +1868,10 @@ wheels = [
 
 [[package]]
 name = "trackly"
-version = "0.1.6"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
-    { name = "google-genai" },
     { name = "langchain-core" },
-    { name = "langchain-google-genai" },
-    { name = "ollama" },
-    { name = "redis" },
     { name = "requests" },
 ]
 
@@ -1930,15 +1913,12 @@ server = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.86.0" },
     { name = "asyncpg", marker = "extra == 'server'", specifier = ">=0.28.0" },
     { name = "bcrypt", marker = "extra == 'server'", specifier = ">=4.0.0" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.100.0" },
-    { name = "google-genai", specifier = ">=1.68.0" },
     { name = "langchain-anthropic", marker = "extra == 'all'", specifier = ">=0.1.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", specifier = ">=0.1.0" },
     { name = "langchain-core", specifier = ">=0.2.0" },
-    { name = "langchain-google-genai", specifier = ">=4.2.1" },
     { name = "langchain-google-genai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "langchain-google-genai", marker = "extra == 'gemini'", specifier = ">=1.0.0" },
     { name = "langchain-ollama", marker = "extra == 'all'", specifier = ">=0.1.0" },
@@ -1946,11 +1926,9 @@ requires-dist = [
     { name = "langchain-openai", marker = "extra == 'all'", specifier = ">=0.1.0" },
     { name = "langchain-openai", marker = "extra == 'openai'", specifier = ">=0.1.0" },
     { name = "mangum", marker = "extra == 'server'", specifier = ">=0.17.0" },
-    { name = "ollama", specifier = ">=0.6.1" },
     { name = "pydantic-settings", marker = "extra == 'server'", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21" },
-    { name = "redis", specifier = ">=7.4.0" },
     { name = "reportlab", marker = "extra == 'server'", specifier = ">=4.4.10" },
     { name = "requests", specifier = ">=2.28.0" },
     { name = "resend", marker = "extra == 'server'", specifier = ">=2.26.0" },

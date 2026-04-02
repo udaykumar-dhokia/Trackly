@@ -1,0 +1,148 @@
+---
+title: "Trace Agent Runs With Graphs"
+slug: "trace-agent-runs-with-graphs"
+description: "Use Trackly traces, spans, and graph views to understand where an agent workflow spent time, tokens, and money."
+chapter: "ship-ai-without-guesswork"
+chapterTitle: "Ship AI Without Guesswork"
+order: 3
+tags: ["agent tracing", "trace graphs", "python", "trackly", "llm debugging"]
+difficulty: "intermediate"
+publishedAt: "2026-04-02"
+updatedAt: "2026-04-02"
+featured: true
+---
+
+# Trace Agent Runs With Graphs
+
+Once an LLM app becomes multi-step, single-event tracking stops being enough.
+
+You also need to understand:
+
+- which step happened first
+- where time was spent
+- which node used the most tokens
+- where failures or retries appeared
+
+That is what Trackly tracing is for.
+
+## The example workflow
+
+Assume you have a small research assistant that:
+
+1. rewrites the question
+2. retrieves context
+3. drafts an answer
+4. summarizes the answer for the UI
+
+If that workflow is slow or expensive, you want a graph, not a spreadsheet.
+
+## Step 1: create one trace per user run
+
+```python
+from trackly import Trackly
+
+trackly = Trackly(
+    api_key="tk_live_...",
+    feature="research-agent",
+    environment="production",
+)
+
+def run_agent(question: str, session_id: str) -> str:
+    with trackly.trace(
+        name="research_agent_run",
+        session_id=session_id,
+        user_id="user_123",
+        metadata={"channel": "web"},
+    ):
+        rewritten = rewrite_question(question)
+        context = retrieve_context(rewritten)
+        draft = draft_answer(rewritten, context)
+        return summarize_for_ui(draft)
+```
+
+That single `trace(...)` call creates the top-level container for the whole run.
+
+## Step 2: add spans around the important steps
+
+```python
+def retrieve_context(question: str) -> list[str]:
+    with trackly.span("retrieve_context", metadata={"source": "knowledge-base"}):
+        # your retrieval logic here
+        return [
+            "Trackly records prompt tokens, completion tokens, and estimated cost.",
+            "Traces are visualized as graphs in the dashboard.",
+        ]
+```
+
+Now the trace graph can show where retrieval fits in the workflow.
+
+## Step 3: trace nested model work
+
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-4o-mini",
+    callbacks=[trackly.callback()],
+)
+
+def draft_answer(question: str, context: list[str]) -> str:
+    with trackly.step("draft_answer", metadata={"documents": len(context)}):
+        prompt = f"""
+        Answer the user question using only the context below.
+
+        Question:
+        {question}
+
+        Context:
+        {'\n'.join(context)}
+        """
+        return llm.invoke(prompt).content
+```
+
+Because the model call happens inside the active trace, Trackly can connect the generation event to the trace and parent span automatically.
+
+## Step 4: use decorators for repeated functions
+
+If the same function appears across many flows, the decorator version is often cleaner.
+
+```python
+@trackly.track(name="rewrite_question", capture_io=True)
+def rewrite_question(question: str) -> str:
+    return f"Rewrite this for retrieval: {question}"
+```
+
+That is especially handy when you want consistent trace nodes without wrapping every call site manually.
+
+## What the graph becomes useful for
+
+After a few runs, the graph view starts answering questions very quickly:
+
+- Did retrieval or generation dominate latency?
+- Did one span fail while the rest of the trace succeeded?
+- Which step created the most token usage?
+- Did a new branch appear in the workflow after a release?
+
+This is much easier to understand in a graph than in a flat event table.
+
+## A realistic debugging loop
+
+Imagine a product report saying:
+
+> The research assistant feels slower this week.
+
+With traces enabled, a good debugging flow is:
+
+1. open the trace list for the affected project
+2. open one slow trace
+3. inspect the graph
+4. compare node latency and total tokens
+5. fix the slowest or most expensive span first
+
+That turns a vague complaint into a visible execution path.
+
+## Final takeaway
+
+Trackly traces are most valuable when your workflow is no longer one model call.
+
+If you have chains, agents, retrieval, or nested reasoning steps, traces and graphs give you the execution map you need to improve speed, cost, and reliability without guessing.

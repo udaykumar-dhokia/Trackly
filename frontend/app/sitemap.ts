@@ -30,6 +30,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.75,
     },
+    {
+      url: `${SITE_URL}/llms.txt`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/llms-full.txt`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
     ...getResourceChapters().map((chapter) => ({
       url: `${SITE_URL}/resources/${chapter.slug}`,
       lastModified: now,

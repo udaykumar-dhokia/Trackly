@@ -109,6 +109,30 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     image: absoluteUrl(`${article.path}/opengraph-image`),
     mainEntityOfPage: absoluteUrl(article.path),
   };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Resources",
+        item: absoluteUrl("/resources"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: chapterData.title,
+        item: absoluteUrl(`/resources/${chapter}`),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: article.title,
+        item: absoluteUrl(article.path),
+      },
+    ],
+  };
 
   return (
     <ResourcesShell>
@@ -149,6 +173,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
           />
 
           <div className="rounded-xl border border-white/10 bg-[#0c0d11] p-6 sm:p-8 lg:p-10">

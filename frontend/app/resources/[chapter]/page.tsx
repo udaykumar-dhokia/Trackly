@@ -11,6 +11,7 @@ import {
   getResourceChapter,
   getResourceChapters,
 } from "@/lib/resources";
+import { absoluteUrl } from "@/lib/site";
 
 type ChapterPageProps = {
   params: Promise<{
@@ -39,6 +40,10 @@ export async function generateMetadata({
   return {
     title: chapterData.title,
     description: chapterData.description,
+    keywords: [
+      chapterData.title,
+      ...chapterData.articles.flatMap((article) => article.tags).slice(0, 12),
+    ],
     alternates: {
       canonical: `/resources/${chapterData.slug}`,
     },
@@ -75,6 +80,44 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   return (
     <ResourcesShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: chapterData.title,
+            description: chapterData.description,
+            url: absoluteUrl(`/resources/${chapterData.slug}`),
+            breadcrumb: {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Resources",
+                  item: absoluteUrl("/resources"),
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: chapterData.title,
+                  item: absoluteUrl(`/resources/${chapterData.slug}`),
+                },
+              ],
+            },
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: chapterData.articles.map((article, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: article.title,
+                url: absoluteUrl(article.path),
+              })),
+            },
+          }),
+        }}
+      />
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-8">
         <aside className="lg:sticky lg:top-28 lg:h-fit">
           <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6">

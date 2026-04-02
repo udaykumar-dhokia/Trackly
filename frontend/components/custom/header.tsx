@@ -8,6 +8,10 @@ import { usePathname } from "next/navigation";
 
 const menuItems = [
   {
+    label: "Home",
+    href: "/",
+  },
+  {
     label: "Documentation",
     href: "/docs",
   },

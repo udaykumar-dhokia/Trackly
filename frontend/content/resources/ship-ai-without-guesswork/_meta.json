@@ -1,0 +1,11 @@
+{
+  "title": "Ship AI Without Guesswork",
+  "description": "Practical Trackly workflows for tracking tokens, running model what-if analysis, and tracing real agent flows.",
+  "icon": "sparkles",
+  "order": 5,
+  "articles": [
+    "01-track-token-usage-like-a-product-team",
+    "02-use-playground-before-you-switch-models",
+    "03-trace-agent-runs-with-graphs"
+  ]
+}

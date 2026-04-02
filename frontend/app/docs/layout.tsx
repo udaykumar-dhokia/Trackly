@@ -5,6 +5,14 @@ export const metadata: Metadata = {
   title: "Docs",
   description:
     "Trackly documentation for SDK installation, LangChain callbacks, native provider wrappers, and backend APIs.",
+  keywords: [
+    "Trackly docs",
+    "LLM observability docs",
+    "token tracking python",
+    "LangChain callback tracking",
+    "LLM tracing docs",
+    "model usage analytics",
+  ],
   alternates: {
     canonical: "/docs",
   },

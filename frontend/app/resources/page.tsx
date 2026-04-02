@@ -19,12 +19,15 @@ import { DEFAULT_OG_IMAGE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Resources",
   description:
-    "Free Trackly resources on AI agents, RAG, LangChain, and practical LLM cost tracking.",
+    "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
   keywords: [
     "AI agents tutorial",
     "RAG tutorial",
     "LangChain guide",
     "LLM cost tracking",
+    "token tracking",
+    "model comparison playground",
+    "LLM tracing",
     "Trackly resources",
   ],
   alternates: {
@@ -33,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Resources | Trackly",
     description:
-      "Free Trackly resources on AI agents, RAG, LangChain, and practical LLM cost tracking.",
+      "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
     url: "/resources",
     type: "website",
     images: [
@@ -49,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Resources | Trackly",
     description:
-      "Free Trackly resources on AI agents, RAG, LangChain, and practical LLM cost tracking.",
+      "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
     images: [DEFAULT_OG_IMAGE],
   },
 };
@@ -57,15 +60,48 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   const chapters = getResourceChapters();
   const allArticles = getAllResourceArticles();
-  const featured = allArticles
+  const featured = [...allArticles]
     .filter((article) => article.featured)
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt ?? b.publishedAt).getTime() -
+        new Date(a.updatedAt ?? a.publishedAt).getTime(),
+    )
     .slice(0, 3);
   const startHere =
     chapters.find((chapter) => chapter.slug === "ai-agents")?.articles[0] ??
     allArticles[0];
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Trackly Resources",
+    description:
+      "Practical guides on AI agents, RAG, LangChain, token tracking, model comparison, tracing, and LLM cost visibility.",
+    url: "https://tracklyai.in/resources",
+    hasPart: chapters.map((chapter) => ({
+      "@type": "CreativeWorkSeries",
+      name: chapter.title,
+      url: `https://tracklyai.in/resources/${chapter.slug}`,
+      description: chapter.description,
+      numberOfItems: chapter.articles.length,
+    })),
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: featured.map((article, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://tracklyai.in${article.path}`,
+        name: article.title,
+      })),
+    },
+  };
 
   return (
     <ResourcesShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 sm:px-6 lg:px-8">
         <section className="max-w-4xl pt-2">
           <div className=" max-w-3xl">
@@ -81,12 +117,12 @@ export default function ResourcesPage() {
           </div>
           <div className="max-w-3xl">
             <h1 className="mt-5 max-w-3xl text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Learn AI agents. Free.
+              Practical guides for shipping AI systems.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
-              Trackly Resources is a simple, structured hub for developers
-              learning AI agents, RAG pipelines, LangChain, and LLM cost
-              visibility.
+              Trackly Resources is a structured library of practical guides on
+              AI agents, RAG pipelines, LangChain, token tracking, model
+              comparison, and trace-first debugging for real Python apps.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -158,9 +194,9 @@ export default function ResourcesPage() {
                 Start with practical guides, then go deeper.
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-400">
-                The first set is intentionally lightweight so you can publish
-                now, index early, and expand the content later without changing
-                the structure.
+                These are the most useful hands-on reads if you want to move
+                from rough LLM prototypes to observable, cost-aware production
+                workflows.
               </p>
             </div>
 

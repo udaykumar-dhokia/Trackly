@@ -1,0 +1,144 @@
+---
+title: "Use Playground Before You Switch Models"
+slug: "use-playground-before-you-switch-models"
+description: "Track real traffic in Python, then use Trackly Playground to compare your current model against cheaper or faster alternatives before shipping a change."
+chapter: "ship-ai-without-guesswork"
+chapterTitle: "Ship AI Without Guesswork"
+order: 2
+tags: ["model comparison", "playground", "llm cost optimization", "trackly", "python"]
+difficulty: "intermediate"
+publishedAt: "2026-04-02"
+updatedAt: "2026-04-02"
+featured: true
+---
+
+# Use Playground Before You Switch Models
+
+Switching models is one of the easiest ways to create invisible regressions.
+
+A cheaper model can increase retries. A faster model can require more prompt scaffolding. A stronger model can look expensive on paper but reduce total workflow cost.
+
+That is why Trackly Playground should come after instrumentation, not before it.
+
+## The practical flow
+
+The loop looks like this:
+
+1. instrument the current feature with Trackly
+2. collect real traffic for a few days
+3. open Playground
+4. compare the current model against one candidate
+5. open **Analyse All** to rank the full catalog against the same traffic shape
+
+## Step 1: instrument the current workload
+
+```python
+from trackly import Trackly
+from langchain_openai import ChatOpenAI
+
+trackly = Trackly(
+    api_key="tk_live_...",
+    feature="docs-assistant",
+    environment="production",
+)
+
+llm = ChatOpenAI(
+    model="gpt-4o",
+    callbacks=[trackly.callback()],
+)
+
+def answer_question(question: str) -> str:
+    prompt = f"""
+    Answer the user question using the product docs.
+    Keep the answer short and include one example when useful.
+
+    Question:
+    {question}
+    """
+    return llm.invoke(prompt).content
+```
+
+This gives Trackly the real prompt and completion token shape of your traffic instead of a fake benchmark prompt.
+
+## Step 2: let Trackly observe actual behavior
+
+Run the feature in staging or production long enough to collect a meaningful window.
+
+You want enough traffic to answer:
+
+- how many requests hit this feature
+- how large prompts usually are
+- which model is currently driving spend
+- what latency users actually experience
+
+## Step 3: open Playground and compare one target model
+
+In Playground, select:
+
+- the current source model from recent usage
+- a target model from the active catalog
+- a historical window that matches recent traffic
+- an optional traffic multiplier if you want to simulate growth
+
+This is useful when you already have one candidate in mind, like moving from `gpt-4o` to `gpt-4o-mini`.
+
+## Step 4: use Analyse All for the short list
+
+After the one-to-one comparison, click **Analyse All**.
+
+That page keeps the same traffic assumptions but ranks the full pricing catalog using:
+
+- projected total spend
+- delta from current spend
+- savings
+- percentage change
+- input and output token rates
+
+The key benefit is speed. You do not need to manually compare every provider-model pair one by one.
+
+## What a useful decision looks like
+
+Suppose the current workload looks like this:
+
+- source model: `gpt-4o`
+- requests in 30 days: 12,400
+- prompt tokens: 9.2M
+- completion tokens: 2.8M
+
+Trackly Playground can show that:
+
+- one alternative is dramatically cheaper
+- another is only slightly cheaper but may preserve quality better
+- a supposedly cheap option is not meaningfully better for this traffic shape
+
+That is the difference between price-list thinking and workload thinking.
+
+## Use manual mode when you are planning a new launch
+
+If the feature is not live yet, manual mode is still useful.
+
+You can model a scenario like this:
+
+```text
+Requests: 10,000
+Avg prompt tokens: 1,200
+Avg completion tokens: 350
+```
+
+That gives product and engineering a rough monthly cost envelope before launch.
+
+## A good operating habit
+
+Use Playground in three moments:
+
+1. before changing the production model
+2. before a major traffic ramp
+3. after a prompt redesign that may inflate token usage
+
+That keeps model changes grounded in observed usage instead of intuition.
+
+## Final takeaway
+
+Do not switch models from a pricing page alone.
+
+Track the current workload, use Playground to compare candidates against real traffic, and use **Analyse All** to see the full field before you ship the change.

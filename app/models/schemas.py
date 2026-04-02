@@ -350,6 +350,19 @@ class PlaygroundCompareRequest(BaseModel):
     avg_completion_tokens: int | None = Field(default=None, ge=0)
 
 
+class PlaygroundCompareAllRequest(BaseModel):
+    source_provider: str = Field(..., min_length=1, max_length=100)
+    source_model: str = Field(..., min_length=1, max_length=255)
+    mode: Literal["historical", "manual"] = "historical"
+    feature: str | None = Field(default=None, max_length=255)
+    start: datetime | None = None
+    end: datetime | None = None
+    traffic_multiplier: float = Field(default=1.0, gt=0)
+    request_count: int | None = Field(default=None, ge=1)
+    avg_prompt_tokens: int | None = Field(default=None, ge=0)
+    avg_completion_tokens: int | None = Field(default=None, ge=0)
+
+
 class PlaygroundScenarioSnapshot(BaseModel):
     provider: str
     model: str
@@ -381,6 +394,32 @@ class PlaygroundCompareResponse(BaseModel):
     source: PlaygroundScenarioSnapshot
     target: PlaygroundScenarioSnapshot
     delta: PlaygroundDelta
+
+
+class PlaygroundCompareAllItem(BaseModel):
+    rank: int
+    provider: str
+    model: str
+    matched_pricing_model: str | None = None
+    input_cost_per_1k: float | None = None
+    output_cost_per_1k: float | None = None
+    projected_total_cost_usd: float
+    absolute_cost_change_usd: float
+    percentage_cost_change: float | None = None
+    savings_usd: float
+    savings_percentage: float | None = None
+    is_source_model: bool = False
+
+
+class PlaygroundCompareAllResponse(BaseModel):
+    mode: Literal["historical", "manual"]
+    feature: str | None = None
+    window_start: datetime | None = None
+    window_end: datetime | None = None
+    traffic_multiplier: float
+    source: PlaygroundScenarioSnapshot
+    comparisons: list[PlaygroundCompareAllItem]
+
 
 class UserResponse(BaseModel):
     id: uuid.UUID

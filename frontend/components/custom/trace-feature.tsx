@@ -62,12 +62,10 @@ export default function TraceFeature() {
       <div className="trace-grid" />
       <div className="trace-orb" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1080px]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
+      <div className="relative z-10 mx-auto w-full max-w-[1240px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-24 items-center">
           {/* Left Column: Text & Features */}
           <div className="flex flex-col items-start text-left">
-
             <motion.h2
               initial={{ opacity: 0, y: 16 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -86,16 +84,29 @@ export default function TraceFeature() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="trace-p mb-10 max-w-lg"
             >
-              Stop guessing why your chains are slow. Trackly's trace graph reconstructs
-              parent-child spans automatically, giving you a crystal-clear map of
-              your LLM request lifecycle. No added latency, zero-config.
+              Stop guessing why your chains are slow. Trackly's trace graph
+              reconstructs parent-child spans automatically, giving you a
+              crystal-clear map of your LLM request lifecycle. No added latency,
+              zero-config.
             </motion.p>
 
             <div className="flex flex-col gap-6 w-full">
               {[
-                { icon: <TreeStructure size={20} />, title: "Automatic Hierarchy", desc: "LangChain chains and nested calls are mapped into a logical tree." },
-                { icon: <Graph size={20} />, title: "Interactive Graph", desc: "Pan, zoom, and inspect every node in a 2D force-directed layout." },
-                { icon: <Intersection size={20} />, title: "Live Bottleneck Detection", desc: "Identify the slowest span in your entire pipeline instantly." },
+                {
+                  icon: <TreeStructure size={20} />,
+                  title: "Automatic Hierarchy",
+                  desc: "LangChain chains and nested calls are mapped into a logical tree.",
+                },
+                {
+                  icon: <Graph size={20} />,
+                  title: "Interactive Graph",
+                  desc: "Pan, zoom, and inspect every node in a 2D force-directed layout.",
+                },
+                {
+                  icon: <Intersection size={20} />,
+                  title: "Live Bottleneck Detection",
+                  desc: "Identify the slowest span in your entire pipeline instantly.",
+                },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -104,12 +115,16 @@ export default function TraceFeature() {
                   transition={{ duration: 0.5, delay: 0.3 + idx * 0.1 }}
                   className="flex items-start gap-4 group"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform border border-violet-500/10">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
                     {item.icon}
                   </div>
                   <div>
-                    <h3 className="text-[0.9rem] font-bold text-white mb-1">{item.title}</h3>
-                    <p className="text-[0.8rem] text-zinc-500 leading-relaxed">{item.desc}</p>
+                    <h3 className="text-[0.9rem] font-bold text-white mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="text-[0.8rem] text-zinc-500 leading-relaxed">
+                      {item.desc}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -134,9 +149,9 @@ export default function TraceFeature() {
               />
             </div>
             {/* Subtle reflection/glow similar to Demo */}
+            <div className="absolute -inset-10 bg-primary/10 blur-[100px] -z-10 rounded-full opacity-50" />
             <div className="absolute -inset-4 bg-primary/5 blur-3xl -z-10 rounded-full" />
           </motion.div>
-
         </div>
       </div>
     </section>
