@@ -1,15 +1,40 @@
 "use client";
-import React, { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import React from "react";
+import { motion, Variants } from "framer-motion";
 import { Graph, TreeStructure, Intersection } from "@phosphor-icons/react";
 
-export default function TraceFeature() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
 
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+const featureItemVariants: Variants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+};
+
+export default function TraceFeature() {
   return (
     <section
-      ref={ref}
       className="relative flex flex-col items-center justify-center px-6 py-24 lg:py-32 text-zinc-100 bg-[#09090b] overflow-hidden border-t border-white/5"
     >
       <style>{`
@@ -62,14 +87,18 @@ export default function TraceFeature() {
       <div className="trace-grid" />
       <div className="trace-orb" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1240px]">
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={containerVariants}
+        className="relative z-10 mx-auto w-full max-w-[1240px]"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-24 items-center">
           {/* Left Column: Text & Features */}
           <div className="flex flex-col items-start text-left">
             <motion.h2
-              initial={{ opacity: 0, y: 16 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              variants={itemVariants}
               className="trace-h2 mb-6"
             >
               Visualize every <br />
@@ -79,9 +108,7 @@ export default function TraceFeature() {
             </motion.h2>
 
             <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              variants={itemVariants}
               className="trace-p mb-10 max-w-lg"
             >
               Stop guessing why your chains are slow. Trackly's trace graph
@@ -90,7 +117,7 @@ export default function TraceFeature() {
               zero-config.
             </motion.p>
 
-            <div className="flex flex-col gap-6 w-full">
+            <motion.div variants={containerVariants} className="flex flex-col gap-6 w-full">
               {[
                 {
                   icon: <TreeStructure size={20} />,
@@ -110,16 +137,17 @@ export default function TraceFeature() {
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={isInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ duration: 0.5, delay: 0.3 + idx * 0.1 }}
+                  variants={featureItemVariants}
                   className="flex items-start gap-4 group"
                 >
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                  <motion.div 
+                    whileHover={{ scale: 1.1 }}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0 group-hover:text-primary transition-colors"
+                  >
                     {item.icon}
-                  </div>
+                  </motion.div>
                   <div>
-                    <h3 className="text-[0.9rem] font-bold text-white mb-1">
+                    <h3 className="text-[0.9rem] font-bold text-white mb-1 group-hover:text-primary/90 transition-colors">
                       {item.title}
                     </h3>
                     <p className="text-[0.8rem] text-zinc-500 leading-relaxed">
@@ -128,14 +156,12 @@ export default function TraceFeature() {
                   </div>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Right Column: Video */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.98, x: 20 }}
-            animate={isInView ? { opacity: 1, scale: 1, x: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            variants={itemVariants}
             className="relative"
           >
             <div className="video-wrapper">
@@ -149,11 +175,22 @@ export default function TraceFeature() {
               />
             </div>
             {/* Subtle reflection/glow similar to Demo */}
-            <div className="absolute -inset-10 bg-primary/10 blur-[100px] -z-10 rounded-full opacity-50" />
+            <motion.div 
+              animate={{ 
+                opacity: [0.3, 0.5, 0.3],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{ 
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute -inset-10 bg-primary/10 blur-[100px] -z-10 rounded-full" 
+            />
             <div className="absolute -inset-4 bg-primary/5 blur-3xl -z-10 rounded-full" />
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

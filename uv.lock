@@ -1871,7 +1871,9 @@ name = "trackly"
 version = "0.1.7"
 source = { editable = "." }
 dependencies = [
+    { name = "langchain-anthropic" },
     { name = "langchain-core" },
+    { name = "langchain-google-genai" },
     { name = "requests" },
 ]
 
@@ -1916,9 +1918,11 @@ requires-dist = [
     { name = "asyncpg", marker = "extra == 'server'", specifier = ">=0.28.0" },
     { name = "bcrypt", marker = "extra == 'server'", specifier = ">=4.0.0" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.100.0" },
+    { name = "langchain-anthropic", specifier = ">=1.4.0" },
     { name = "langchain-anthropic", marker = "extra == 'all'", specifier = ">=0.1.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", specifier = ">=0.1.0" },
     { name = "langchain-core", specifier = ">=0.2.0" },
+    { name = "langchain-google-genai", specifier = ">=4.2.1" },
     { name = "langchain-google-genai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "langchain-google-genai", marker = "extra == 'gemini'", specifier = ">=1.0.0" },
     { name = "langchain-ollama", marker = "extra == 'all'", specifier = ">=0.1.0" },

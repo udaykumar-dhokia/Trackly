@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Twitter, Verified, truncate } from "@/components/ui/tweet-card";
@@ -19,9 +20,11 @@ export function TestimonialCard({
   const handle = displayName.toLowerCase().replace(/\s+/g, "");
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -5, scale: 1.01 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
-        "relative flex h-fit w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border p-5 bg-background shadow-sm hover:border-border/80 transition-all duration-300",
+        "relative flex h-fit w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border p-5 bg-background shadow-sm hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-colors duration-300",
         className,
       )}
     >
@@ -52,6 +55,6 @@ export function TestimonialCard({
       <div className="text-[15px] leading-relaxed tracking-normal text-foreground">
         <p>{content}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }

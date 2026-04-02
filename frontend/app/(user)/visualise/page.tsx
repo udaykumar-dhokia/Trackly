@@ -6,7 +6,6 @@ import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import {
   fetchTraceSessions,
   fetchTraceGraph,
-  clearActiveGraph,
   type TraceNode,
   type TraceGraph,
 } from "@/lib/store/features/tracesSlice";
@@ -14,10 +13,8 @@ import {
   WarningCircle,
   Graph as GraphIcon,
   X,
-  Lightning,
   Clock,
   CurrencyDollar,
-  Cpu,
   ArrowClockwise,
   TreeStructure,
   CircleNotch,
@@ -25,9 +22,16 @@ import {
   Gauge,
   ArrowsOutSimple,
   CaretLeft,
+  CaretRight,
+  ArrowRight,
 } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  encodeModelKey,
+  type PlaygroundOptions,
+} from "@/lib/playground";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
@@ -53,6 +57,22 @@ const GRAPH_BG = "#09090b";
 
 function getProviderColor(p: string) {
   return PROVIDER_COLORS[p.toLowerCase()] || DEFAULT_COLOR;
+}
+
+function ModelNodeIcon({ color, size = 40 }: { color: string; size?: number }) {
+  return (
+    <div
+      className="rounded-full shadow-lg border border-white/20 relative overflow-hidden"
+      style={{
+        width: size,
+        height: size,
+        background: `radial-gradient(circle at 30% 30%, ${color}ee, ${color}99)`,
+        boxShadow: `0 0 20px ${color}44`,
+      }}
+    >
+      <div className="absolute inset-0 bg-white/10 opacity-30 transform -rotate-45 translate-x-[-20%] translate-y-[-20%]" />
+    </div>
+  );
 }
 function formatCost(v: number) {
   if (v < 0.001) return `$${v.toFixed(6)}`;
@@ -218,7 +238,24 @@ export default function VisualisePage() {
   const [showInsights, setShowInsights] = useState(true);
   const graphRef = useRef<any>(null);
 
+  // --- What-If Analysis State ---
+  const [playgroundOptions, setPlaygroundOptions] =
+    useState<PlaygroundOptions | null>(null);
+  const [selectedTargetModelKey, setSelectedTargetModelKey] =
+    useState<string>("");
+  const [loadingOptions, setLoadingOptions] = useState(false);
+
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const shelfRef = useRef<HTMLDivElement>(null);
+
+  const scrollShelf = (dir: "left" | "right") => {
+    if (shelfRef.current) {
+      shelfRef.current.scrollBy({
+        left: dir === "left" ? -300 : 300,
+        behavior: "smooth",
+      });
+    }
+  };
   const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -258,9 +295,6 @@ export default function VisualisePage() {
       dispatch(
         fetchTraceSessions({ projectId: activeProjectId, auth0Id: user.sub }),
       );
-      setSelectedSessionId(null);
-      dispatch(clearActiveGraph());
-      setSelectedNode(null);
     }
   }, [activeProjectId, user?.sub, dispatch]);
 
@@ -277,12 +311,43 @@ export default function VisualisePage() {
     }
   }, [activeProjectId, user?.sub, selectedSessionId, dispatch]);
 
+  useEffect(() => {
+    if (!activeProjectId || !user?.sub) return;
+
+    const loadOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const response = await fetch(
+          `${apiUrl}/api/v1/projects/${activeProjectId}/playground/options?auth0_id=${encodeURIComponent(user.sub)}`,
+        );
+        if (response.ok) {
+          const data = (await response.json()) as PlaygroundOptions;
+          setPlaygroundOptions(data);
+          if (data.catalog.length > 0) {
+            setSelectedTargetModelKey(
+              encodeModelKey(data.catalog[0].provider, data.catalog[0].model),
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load playground options", err);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    void loadOptions();
+  }, [activeProjectId, user?.sub]);
+
   const graphData = useMemo(() => {
     if (!activeGraph) return { nodes: [], links: [] };
     const mc = Math.max(
       ...activeGraph.nodes.map((n) => n.estimated_cost_usd),
       0.0001,
     );
+
     return {
       nodes: activeGraph.nodes.map((n, idx) => ({
         id: n.id || `node-${idx}`,
@@ -294,6 +359,7 @@ export default function VisualisePage() {
         color: getProviderColor(n.provider),
         val: 18 + (n.estimated_cost_usd / mc) * 20,
         _raw: n,
+        node_type: n.node_type,
       })),
       links: activeGraph.edges.map((e) => ({
         source: e.source,
@@ -325,6 +391,31 @@ export default function VisualisePage() {
 
   const paintNode = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      let nodeLabel = node.label;
+      let nodeColor = node.color;
+      let nodeCost = node.cost;
+
+      // Check if this node is currently being "Swapped" in What-If mode
+      const isLLM = selectedNode?.node_type === "generation";
+
+      if (
+        selectedNode?.id === node.id &&
+        isLLM &&
+        selectedTargetModelKey &&
+        playgroundOptions
+      ) {
+        const target = playgroundOptions.catalog.find(
+          (m) => encodeModelKey(m.provider, m.model) === selectedTargetModelKey,
+        );
+        if (target) {
+          nodeLabel = target.model;
+          nodeColor = getProviderColor(target.provider);
+          nodeCost =
+            (selectedNode.prompt_tokens / 1000) * target.input_cost_per_1k +
+            (selectedNode.completion_tokens / 1000) * target.output_cost_per_1k;
+        }
+      }
+
       const r = Math.sqrt(node.val) * 2;
       const hov = hoveredNode === node.id;
       const sel = selectedNode?.id === node.id;
@@ -334,21 +425,21 @@ export default function VisualisePage() {
       if (hov || sel) {
         ctx.beginPath();
         ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
-        ctx.fillStyle = `${node.color}30`;
+        ctx.fillStyle = `${nodeColor}30`;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(x, y, r + 8, 0, 2 * Math.PI);
-        ctx.fillStyle = `${node.color}15`;
+        ctx.fillStyle = `${nodeColor}15`;
         ctx.fill();
       }
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
-      g.addColorStop(0, `${node.color}ee`);
-      g.addColorStop(1, `${node.color}88`);
+      g.addColorStop(0, `${nodeColor}ee`);
+      g.addColorStop(1, `${nodeColor}88`);
       ctx.fillStyle = g;
       ctx.fill();
-      ctx.strokeStyle = hov || sel ? "#fff" : `${node.color}cc`;
+      ctx.strokeStyle = hov || sel ? "#fff" : `${nodeColor}cc`;
       ctx.lineWidth = hov || sel ? 2 : 1;
       ctx.stroke();
 
@@ -358,15 +449,15 @@ export default function VisualisePage() {
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.fillStyle = "#e4e4e7";
-        ctx.fillText(node.label, x, y + r + 4);
+        ctx.fillText(nodeLabel, x, y + r + 4);
         if (globalScale > 1) {
           ctx.font = `${fs * 0.75}px Inter,system-ui,sans-serif`;
           ctx.fillStyle = "#71717a";
-          ctx.fillText(formatCost(node.cost), x, y + r + 4 + fs + 2);
+          ctx.fillText(formatCost(nodeCost), x, y + r + 4 + fs + 2);
         }
       }
     },
-    [hoveredNode, selectedNode],
+    [hoveredNode, selectedNode, selectedTargetModelKey, playgroundOptions],
   );
 
   const paintLink = useCallback(
@@ -402,6 +493,49 @@ export default function VisualisePage() {
     [],
   );
 
+  const whatIfResult = useMemo(() => {
+    const isLLM = selectedNode?.node_type === "generation";
+
+    if (
+      !selectedNode ||
+      !isLLM ||
+      !playgroundOptions ||
+      !selectedTargetModelKey
+    )
+      return null;
+
+    const targetModel = playgroundOptions.catalog.find(
+      (m) => encodeModelKey(m.provider, m.model) === selectedTargetModelKey,
+    );
+    if (!targetModel) return null;
+
+    // Node-level analysis
+    const nodeCurrent = selectedNode.estimated_cost_usd;
+    const nodeProjected =
+      (selectedNode.prompt_tokens / 1000) * targetModel.input_cost_per_1k +
+      (selectedNode.completion_tokens / 1000) * targetModel.output_cost_per_1k;
+
+    // Session-level analysis
+    const sessionCurrent = activeGraph?.summary.total_cost || 0;
+    const sessionProjected = sessionCurrent - nodeCurrent + nodeProjected;
+
+    const nodeDelta = nodeProjected - nodeCurrent;
+    const sessionDelta = sessionProjected - sessionCurrent;
+    const sessionPercentage =
+      sessionCurrent > 0 ? (sessionDelta / sessionCurrent) * 100 : 0;
+
+    return {
+      target: targetModel,
+      nodeCurrent,
+      nodeProjected,
+      sessionCurrent,
+      sessionProjected,
+      nodeDelta,
+      sessionDelta,
+      sessionPercentage,
+    };
+  }, [selectedNode, playgroundOptions, selectedTargetModelKey, activeGraph]);
+
   if (
     projectsStatus === "loading" ||
     (projectsStatus === "idle" && !activeProjectId)
@@ -427,6 +561,15 @@ export default function VisualisePage() {
 
   return (
     <div className="absolute inset-0 top-14 z-20 flex flex-col bg-[#09090b] overflow-hidden">
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none !important;
+        }
+        * {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+      `}</style>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#09090b] shrink-0 z-30">
         <div className="flex items-center gap-3">
@@ -597,14 +740,43 @@ export default function VisualisePage() {
                 {/* Summary HUD — top right over the graph */}
                 {activeGraph.summary && (
                   <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                    <div className="rounded-lg border border-white/10 bg-black/60 backdrop-blur-md px-4 py-3 min-w-[130px]">
-                      <div className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest mb-0.5">
-                        Session Overview
+                    <div className="rounded-lg border border-white/10 bg-black/60 backdrop-blur-md px-4 py-3 min-w-[130px] transition-all">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <div className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">
+                          {whatIfResult &&
+                          selectedNode?.node_type === "llm" &&
+                          whatIfResult.target.model !== selectedNode?.model
+                            ? "Projected Total"
+                            : "Session Overview"}
+                        </div>
+                        {whatIfResult &&
+                          selectedNode?.node_type === "llm" &&
+                          whatIfResult.target.model !== selectedNode?.model && (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-bold uppercase tracking-widest border border-amber-500/20">
+                              What-if
+                            </span>
+                          )}
                       </div>
-                      <div className="text-xl font-semibold text-white tracking-tight">
-                        {formatCost(activeGraph.summary.total_cost)}
+                      <div
+                        className={`text-xl font-semibold tracking-tight transition-all flex items-center gap-2 ${whatIfResult && selectedNode?.node_type === "generation" && whatIfResult.target.model !== selectedNode?.model ? (whatIfResult.nodeDelta <= 0 ? "text-emerald-400" : "text-rose-500") : "text-white"}`}
+                      >
+                        {whatIfResult &&
+                        selectedNode?.node_type === "generation" &&
+                        whatIfResult.target.model !== selectedNode?.model ? (
+                          <>
+                            <span className="opacity-40 text-sm line-through decoration-zinc-500">
+                              {formatCost(activeGraph.summary.total_cost)}
+                            </span>
+                            <ArrowRight size={14} className="opacity-40" />
+                            <span>
+                              {formatCost(whatIfResult.sessionProjected)}
+                            </span>
+                          </>
+                        ) : (
+                          formatCost(activeGraph.summary.total_cost)
+                        )}
                       </div>
-                      <div className="flex gap-3 mt-1.5 text-[10px] text-zinc-400 font-medium">
+                      <div className="flex gap-3 mt-1.5 text-[10px] text-zinc-400 font-medium tracking-tight">
                         <span>{activeGraph.summary.event_count} events</span>
                         <span>
                           {formatLatency(activeGraph.summary.total_latency_ms)}
@@ -634,53 +806,175 @@ export default function VisualisePage() {
                 </div>
               </div>
 
-              {/* Insights section — inside middle panel, bottom docked */}
-              {showInsights && insights.length > 0 && (
-                <div className="max-h-[50%] overflow-y-auto border-t border-white/10 bg-[#09090b]/95 backdrop-blur-lg shrink-0 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#121216] sticky top-0 z-10">
-                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
-                      Diagnostics
-                    </span>
-                    <button
-                      onClick={() => setShowInsights(false)}
-                      className="cursor-pointer p-1 text-zinc-500 hover:text-white transition-colors"
-                    >
-                      <X size={14} weight="bold" />
-                    </button>
-                  </div>
-                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {insights.map((ins, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-lg border p-3.5 ${ins.severity === "warning"
-                          ? "border-amber-500/30 bg-amber-500/5 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]"
-                          : ins.severity === "success"
-                            ? "border-emerald-500/20 bg-emerald-500/5"
-                            : "border-white/5 bg-white/[0.02]"
-                          }`}
+              {/* Bottom Panel: Insights or What-If Shelf */}
+              {((showInsights && insights.length > 0) ||
+                (selectedNode && selectedNode.node_type === "generation")) && (
+                <div className="max-h-[60%] overflow-y-auto border-t border-white/10 bg-[#09090b]/95 backdrop-blur-lg shrink-0 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                  <AnimatePresence mode="wait">
+                    {selectedNode && selectedNode.node_type === "generation" ? (
+                      <motion.div
+                        key="what-if-shelf"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 30 }}
+                        className="p-5 flex flex-col"
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">
-                            {ins.title}
+                        <div className="flex items-center justify-between mb-4 px-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
+                              Model Swap: {selectedNode.model}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedTargetModelKey("")}
+                            className="cursor-pointer text-[10px] text-zinc-500 hover:text-white transition-colors uppercase font-bold flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10"
+                          >
+                            <ArrowClockwise size={14} /> Revert Original
+                          </button>
+                        </div>
+
+                        <div className="relative group/shelf">
+                          <div
+                            ref={shelfRef}
+                            className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide px-4"
+                          >
+                            {playgroundOptions?.catalog.map((m) => {
+                              const key = encodeModelKey(m.provider, m.model);
+                              const isActive = selectedTargetModelKey === key;
+                              const nodeProj =
+                                (selectedNode.prompt_tokens / 1000) *
+                                  m.input_cost_per_1k +
+                                (selectedNode.completion_tokens / 1000) *
+                                  m.output_cost_per_1k;
+                              const delta =
+                                nodeProj - selectedNode.estimated_cost_usd;
+                              const savings = delta <= 0;
+                              const pColor = getProviderColor(m.provider);
+
+                              return (
+                                <button
+                                  key={key}
+                                  onClick={() => setSelectedTargetModelKey(key)}
+                                  className={`cursor-pointer group flex flex-col items-center gap-3 min-w-[140px] transition-all relative ${isActive ? "opacity-100 scale-105" : "opacity-50 hover:opacity-100"}`}
+                                >
+                                  <div className="relative">
+                                    <ModelNodeIcon
+                                      color={pColor}
+                                      size={isActive ? 56 : 48}
+                                    />
+                                    {isActive && (
+                                      <motion.div
+                                        layoutId="active-ring"
+                                        className="absolute -inset-3 rounded-full border-2 border-white/20"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                      />
+                                    )}
+                                  </div>
+
+                                  <div className="flex flex-col items-center text-center gap-0.5 max-w-[120px]">
+                                    <span className="text-[11px] font-bold text-white tracking-tight leading-tight truncate w-full">
+                                      {m.model}
+                                    </span>
+                                    <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-tighter">
+                                      {m.provider}
+                                    </span>
+                                  </div>
+
+                                  <div
+                                    className={`flex flex-col items-center bg-black/50 px-2.5 py-1.5 rounded-lg border border-white/5 shadow-xl transition-all ${isActive ? "border-white/20 shadow-white/2" : "border-transparent"}`}
+                                  >
+                                    <div className="flex flex-col gap-0.5 items-center">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] text-zinc-600 uppercase font-bold">
+                                          Proj
+                                        </span>
+                                        <span className="text-[11px] font-mono font-bold text-white">
+                                          {formatCost(nodeProj)}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 opacity-60">
+                                        <span className="text-[8px] text-zinc-700 uppercase font-bold">
+                                          Orig
+                                        </span>
+                                        <span className="text-[9px] font-mono text-zinc-500">
+                                          {formatCost(
+                                            selectedNode.estimated_cost_usd,
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div
+                                      className={`mt-1.5 pt-1.5 border-t border-white/5 w-full text-center text-[10px] font-mono font-black ${savings ? "text-emerald-400" : "text-rose-500"}`}
+                                    >
+                                      {savings ? "-" : "+"}$
+                                      {Math.abs(delta).toFixed(4)}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Navigation Buttons */}
+                          <button
+                            onClick={() => scrollShelf("left")}
+                            className="absolute cursor-pointer left-0 top-1/2 -translate-y-10 z-30 p-2 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white opacity-0 group-hover/shelf:opacity-100 transition-opacity hover:bg-black/80"
+                          >
+                            <CaretLeft size={20} weight="bold" />
+                          </button>
+                          <button
+                            onClick={() => scrollShelf("right")}
+                            className="absolute cursor-pointer right-0 top-1/2 -translate-y-10 z-30 p-2 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white opacity-0 group-hover/shelf:opacity-100 transition-opacity hover:bg-black/80"
+                          >
+                            <CaretRight size={20} weight="bold" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="diagnostics"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        className="p-4"
+                      >
+                        <div className="flex items-center justify-between mb-1 px-1">
+                          <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
+                            Diagnostics
                           </span>
-                          {ins.severity === "warning" && (
-                            <WarningCircle
-                              size={14}
-                              className="text-amber-400"
-                            />
-                          )}
+                          <button
+                            onClick={() => setShowInsights(false)}
+                            className="cursor-pointer p-1 text-zinc-500 hover:text-white transition-colors"
+                          >
+                            <X size={14} weight="bold" />
+                          </button>
                         </div>
-                        <div
-                          className={`text-base font-semibold tracking-tight mb-1 ${ins.severity === "warning" ? "text-amber-400" : "text-white"}`}
-                        >
-                          {ins.value}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {insights.map((ins, i) => (
+                            <div
+                              key={i}
+                              className={`rounded-lg border p-3 ${ins.severity === "warning" ? "border-amber-500/30 bg-amber-500/5" : ins.severity === "success" ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/5 bg-white/2"}`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">
+                                  {ins.title}
+                                </span>
+                              </div>
+                              <div
+                                className={`text-base font-semibold tracking-tight mb-0.5 ${ins.severity === "warning" ? "text-amber-400" : "text-white"}`}
+                              >
+                                {ins.value}
+                              </div>
+                              <p className="text-[10px] text-zinc-500 leading-normal font-medium truncate">
+                                {ins.detail}
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-[11px] text-zinc-500 leading-relaxed font-medium">
-                          {ins.detail}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
             </>
@@ -719,11 +1013,6 @@ export default function VisualisePage() {
                     <span className="text-[11px] text-zinc-400 capitalize">
                       {selectedNode.provider}
                     </span>
-                    {selectedNode.feature && (
-                      <span className="text-[9px] border border-white/10 bg-white/5 rounded px-1.5 py-0.5 text-zinc-400">
-                        {selectedNode.feature}
-                      </span>
-                    )}
                   </div>
                 </div>
                 <button
@@ -784,12 +1073,12 @@ export default function VisualisePage() {
               </div>
 
               {/* Run metadata */}
-              {selectedNode.run_id && (
+              {selectedNode?.run_id && (
                 <div className="space-y-3 pt-4 border-t border-white/5">
                   <span className="text-[9px] font-semibold text-zinc-600 uppercase tracking-widest">
                     Execution IDs
                   </span>
-                  <div className="bg-white/[0.01] border border-white/5 rounded-lg p-3 space-y-3">
+                  <div className="bg-white/1 border border-white/5 rounded-lg p-3 space-y-3">
                     <div>
                       <div className="text-[9px] text-zinc-600 mb-1 uppercase tracking-widest">
                         Run ID

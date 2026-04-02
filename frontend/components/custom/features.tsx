@@ -1,6 +1,7 @@
 "use client"
 import { MoneyIcon, TimerIcon, TrendUpIcon, UserIcon, WarningIcon } from '@phosphor-icons/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { motion, Variants } from 'framer-motion'
 
 const PROVIDERS = [
     { chip: 'OpenAI', provider: 'openai', model: 'gpt-4o' },
@@ -24,20 +25,28 @@ const BARS = [
 
 const SPARKLINE = [35, 45, 40, 60, 50, 70, 65, 80, 72, 88, 76, 90, 85, 95, 100, 90, 85, 92, 88, 96, 100]
 
-export default function Features() {
-    const [mounted, setMounted] = useState(false)
-    const [barsGo, setBarsGo] = useState(false)
-    const [provIdx, setProvIdx] = useState(0)
-    const sectionRef = useRef<HTMLElement>(null)
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+}
 
-    useEffect(() => {
-        const obs = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) { setMounted(true); setBarsGo(true) } },
-            { threshold: 0.15 }
-        )
-        if (sectionRef.current) obs.observe(sectionRef.current)
-        return () => obs.disconnect()
-    }, [])
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6, ease: "easeOut" }
+    }
+}
+
+export default function Features() {
+    const [provIdx, setProvIdx] = useState(0)
 
     useEffect(() => {
         const id = setInterval(() => setProvIdx(i => (i + 1) % PROVIDERS.length), 1600)
@@ -49,7 +58,6 @@ export default function Features() {
     return (
         <>
             <style>{`
-
         .feat-section { position: relative; overflow: hidden; }
         .feat-section::before {
           content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -63,10 +71,8 @@ export default function Features() {
         .feat-card {
           background: #0f0f12; border: 1px solid rgba(255,255,255,0.06);
           padding: 28px;
-          transition: border-color 0.2s, transform 0.2s;
           position: relative; overflow: hidden;
         }
-        .feat-card:hover { border-color: rgba(255,255,255,0.11); transform: translateY(-2px); }
         .feat-card::after {
           content: ''; position: absolute; inset: 0;
           opacity: 0; transition: opacity 0.3s; pointer-events: none;
@@ -77,8 +83,6 @@ export default function Features() {
         .glow-amber::after  { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(251,191,36,0.05), transparent); }
         .glow-blue::after   { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(96,165,250,0.06), transparent); }
 
-        .bar-fill { transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
-
         .meta-code {
           background: #141418; border: 1px solid rgba(255,255,255,0.06);
           padding: 12px 14px;
@@ -86,19 +90,18 @@ export default function Features() {
         }
         .spark-bar { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.15); transition: background 0.2s; }
         .spark-bar:hover, .spark-bar.hi { background: rgba(167,139,250,0.3); border-color: rgba(167,139,250,0.4); }
-
-        .feat-reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.55s ease, transform 0.55s ease; }
-        .feat-reveal.in { opacity: 1; transform: translateY(0); }
       `}</style>
 
-            <section
-                ref={sectionRef}
-                className="feat-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100"
-            >
-                <div className="mx-auto max-w-[1080px]">
-
+            <section className="feat-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100">
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.15 }}
+                    variants={containerVariants}
+                    className="mx-auto max-w-[1080px]"
+                >
                     {/* Header */}
-                    <div className={`rounded-xl feat-reveal ${mounted ? 'in' : ''}`}>
+                    <motion.div variants={itemVariants} className="mb-14">
                         <div className="flex items-center gap-2 mb-4">
                             <span className="w-5 h-px bg-primary/60" />
                             <span className=" text-[11px] uppercase tracking-[.12em] text-primary">
@@ -110,19 +113,23 @@ export default function Features() {
                             <span className="text-primary">understand</span>
                             <br />your AI spend
                         </h2>
-                        <p className="text-[.95rem] text-zinc-400 leading-[1.7] max-w-[480px] mb-14">
+                        <p className="text-[.95rem] text-zinc-400 leading-[1.7] max-w-[480px]">
                             From zero-config provider detection to per-user cost attribution —
                             Trackly gives you{' '}
                             <strong className="text-zinc-200 font-semibold">complete visibility</strong>{' '}
                             without changing how you write code.
                         </p>
-                    </div>
+                    </motion.div>
 
                     {/* Bento grid */}
                     <div className="grid grid-cols-12 gap-3">
 
-                        {/* Card 1: Zero-config (tall, 5 cols, 2 rows) */}
-                        <div className={`rounded-xl feat-card glow-purple col-span-12 md:col-span-5 row-span-2 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.1s' }}>
+                        {/* Card 1: Zero-config */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-purple col-span-12 md:col-span-5 row-span-2 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-2">
                                 Zero-config <span className="text-primary">provider detection</span>
                             </p>
@@ -134,7 +141,6 @@ export default function Features() {
                                 — so Groq, Ollama, Together, and Fireworks all work out of the box.
                             </p>
 
-                            {/* Chips */}
                             <div className="flex flex-wrap gap-1.5 mt-5">
                                 {PROVIDERS.map((prov, i) => (
                                     <span
@@ -151,7 +157,6 @@ export default function Features() {
                                 ))}
                             </div>
 
-                            {/* Live detection readout */}
                             <div className="rounded-xl mt-6 pt-5 border-t border-white/6">
                                 <p className=" text-[10px] text-zinc-500 tracking-[.04em] uppercase mb-2">
                                     Detected automatically
@@ -167,10 +172,14 @@ export default function Features() {
                                     <span className="text-zinc-200 transition-all">{p.model}</span>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Card 2: Cost attribution (7 cols) */}
-                        <div className={`rounded-xl feat-card glow-amber col-span-12 md:col-span-7 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.18s' }}>
+                        {/* Card 2: Cost attribution */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-amber col-span-12 md:col-span-7 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Cost attribution</span> by feature
                             </p>
@@ -184,19 +193,27 @@ export default function Features() {
                                     <div key={bar.label} className="flex items-center gap-2.5">
                                         <span className=" text-[10px] text-zinc-500 w-20 shrink-0">{bar.label}</span>
                                         <div className="flex-1 h-[6px] bg-[#141418] overflow-hidden">
-                                            <div
-                                                className="bar-fill h-full rounded-xl"
-                                                style={{ width: barsGo ? `${bar.pct}%` : '0%', background: bar.color }}
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                whileInView={{ width: `${bar.pct}%` }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+                                                className="h-full rounded-xl"
+                                                style={{ background: bar.color }}
                                             />
                                         </div>
                                         <span className=" text-[10px] text-zinc-500 w-10 text-right">{bar.val}</span>
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Card 3: Latency (4 cols) */}
-                        <div className={`rounded-xl feat-card glow-green col-span-12 md:col-span-4 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.28s' }}>
+                        {/* Card 3: Latency */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-green col-span-12 md:col-span-4 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 Latency <span className="text-primary">per model</span>
                             </p>
@@ -215,10 +232,14 @@ export default function Features() {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Card 4: Per-user cost (3 cols) */}
-                        <div className={`rounded-xl feat-card glow-blue col-span-12 md:col-span-3 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.36s' }}>
+                        {/* Card 4: Per-user cost */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-blue col-span-12 md:col-span-3 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Per-user</span> cost
                             </p>
@@ -236,10 +257,14 @@ export default function Features() {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Card 5: Live pricing table (6 cols) */}
-                        <div className={`rounded-xl feat-card glow-amber col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.44s' }}>
+                        {/* Card 5: Live pricing table */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-amber col-span-12 md:col-span-6 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 Live <span className="text-primary">model pricing</span>
                             </p>
@@ -263,10 +288,14 @@ export default function Features() {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Card 6: Alerts (6 cols) */}
-                        <div className={`rounded-xl feat-card glow-purple col-span-12 md:col-span-6 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.52s' }}>
+                        {/* Card 6: Alerts */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-purple col-span-12 md:col-span-6 transition-colors duration-200"
+                        >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
                                 <span className="text-primary">Cost alerts</span>
                             </p>
@@ -284,10 +313,14 @@ export default function Features() {
                                     </div>
                                 </div>
                             ))}
-                        </div>
+                        </motion.div>
 
-                        {/* Card 7: Daily trends (12 cols) */}
-                        <div className={`rounded-xl feat-card glow-green col-span-12 feat-reveal ${mounted ? 'in' : ''}`} style={{ transitionDelay: '0.68s' }}>
+                        {/* Card 7: Daily trends */}
+                        <motion.div
+                            variants={itemVariants}
+                            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.11)" }}
+                            className="rounded-xl feat-card glow-green col-span-12 transition-colors duration-200"
+                        >
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
@@ -304,20 +337,23 @@ export default function Features() {
                             </div>
                             <div className="flex justify-end items-end gap-1 h-[52px] mt-4">
                                 {SPARKLINE.map((h, i) => (
-                                    <div
+                                    <motion.div
                                         key={i}
+                                        initial={{ height: 0 }}
+                                        whileInView={{ height: `${h}%` }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.5, delay: 0.8 + i * 0.02 }}
                                         className={`spark-bar flex-1 ${h === 100 ? 'hi' : ''}`}
-                                        style={{ height: `${h}%` }}
                                     />
                                 ))}
                             </div>
                             <div className="flex justify-between mt-1.5  text-[9.5px] text-zinc-600">
                                 <span>Mar 1</span><span>Mar 11</span><span>Mar 22</span>
                             </div>
-                        </div>
+                        </motion.div>
 
                     </div>
-                </div>
+                </motion.div>
             </section>
         </>
     )

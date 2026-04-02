@@ -26,7 +26,9 @@ classifiers = [
 
 # SDK
 dependencies = [
+    "langchain-anthropic>=1.4.0",
     "langchain-core>=0.2.0",
+    "langchain-google-genai>=4.2.1",
     "requests>=2.28.0",
 ]
 

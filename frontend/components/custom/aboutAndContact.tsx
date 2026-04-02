@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
+import { motion, Variants } from "framer-motion";
 
 const SOCIALS = [
   {
@@ -55,6 +56,26 @@ const TAGS = [
   { label: "Flutter", hi: false },
   { label: "PostgreSQL", hi: false },
 ];
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
+};
 
 export default function AboutContact() {
   const [formData, setFormData] = useState({
@@ -114,19 +135,22 @@ export default function AboutContact() {
           background: rgba(52,211,153,0.06); filter: blur(60px); pointer-events: none;
         }
         .social-link { transition: border-color 0.15s, background 0.15s, color 0.15s; }
-        .social-link:hover { background: rgba(255,255,255,0.02) !important; }
         .form-input:focus {
           border-color: rgba(167,139,250,0.5) !important;
           box-shadow: 0 0 0 3px rgba(167,139,250,0.08);
           outline: none;
         }
-        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
-        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
       `}</style>
 
       <section className="ac-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100">
-        <div className="mx-auto max-w-[1080px] grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-          <div className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={containerVariants}
+          className="mx-auto max-w-[1080px] grid grid-cols-1 md:grid-cols-2 gap-3 items-start"
+        >
+          <motion.div variants={itemVariants} className="about-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
             <div className="flex items-center gap-2 mb-5">
               <span className="block w-[18px] h-px bg-primary/60" />
               <span className="text-[11px] tracking-widest uppercase text-primary">
@@ -135,7 +159,8 @@ export default function AboutContact() {
             </div>
 
             <div className="flex items-center gap-3.5 mb-6">
-              <div
+              <motion.div
+                whileHover={{ scale: 1.05 }}
                 className="w-13 h-13 rounded-xl bg-[#141418] border border-white/10 flex items-center justify-content-center shrink-0 overflow-hidden"
                 style={{ width: 52, height: 52 }}
               >
@@ -150,7 +175,7 @@ export default function AboutContact() {
                       '<span style="font-size:18px;font-weight:700;color:#a78bfa;width:100%;height:100%;display:flex;align-items:center;justify-content:center">UD</span>';
                   }}
                 />
-              </div>
+              </motion.div>
               <div>
                 <p className="text-[1.05rem] font-bold tracking-[-0.02em] text-zinc-100">
                   Udaykumar Dhokia
@@ -189,28 +214,30 @@ export default function AboutContact() {
 
             <div className="flex flex-wrap gap-1.5 mb-7">
               {TAGS.map((tag) => (
-                <span
+                <motion.span
                   key={tag.label}
+                  whileHover={{ y: -2, scale: 1.05 }}
                   className={[
-                    "text-[10px] px-2.5 py-1 rounded-xl border tracking-[.02em]",
+                    "text-[10px] px-2.5 py-1 rounded-xl border tracking-[.02em] cursor-default transition-colors",
                     tag.hi
-                      ? "border-primary/30 text-primary bg-primary/10"
-                      : "border-white/10 text-zinc-500 bg-[#141418]",
+                      ? "border-primary/30 text-primary bg-primary/10 hover:border-primary/50"
+                      : "border-white/10 text-zinc-500 bg-[#141418] hover:border-white/20",
                   ].join(" ")}
                 >
                   {tag.label}
-                </span>
+                </motion.span>
               ))}
             </div>
 
             <div className="flex flex-col gap-2">
               {SOCIALS.map((s) => (
-                <a
+                <motion.a
                   key={s.href}
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="social-link flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/6 text-zinc-400 no-underline hover:border-white/11 hover:text-zinc-100"
+                  whileHover={{ x: 4, borderColor: "rgba(255,255,255,0.15)" }}
+                  className="social-link flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/6 text-zinc-400 no-underline"
                 >
                   <div
                     className={`w-7 h-7 rounded-xl border flex items-center justify-center shrink-0 ${s.iconBg}`}
@@ -225,13 +252,17 @@ export default function AboutContact() {
                       {s.handle}
                     </p>
                   </div>
-                  <span className="ml-auto text-[12px] opacity-30">↗</span>
-                </a>
+                  <motion.span 
+                    initial={{ opacity: 0.3 }}
+                    whileHover={{ opacity: 1, x: 2 }}
+                    className="ml-auto text-[12px]"
+                  >↗</motion.span>
+                </motion.a>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
+          <motion.div variants={itemVariants} className="contact-glow relative bg-[#0f0f12] border border-white/6 rounded-xl p-9 h-full overflow-hidden">
             <div className="flex items-center gap-2 mb-5">
               <span
                 className="block w-[18px] h-px opacity-60"
@@ -322,8 +353,9 @@ export default function AboutContact() {
                 <Button type="submit" disabled={sending} className="cursor-pointer border-black bg-white/20 px-5 py-3 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:ring-2 focus:ring-indigo-300 focus:outline-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed w-full">
                   {sending ? (
                     <>
-                      <svg
-                        className="animate-spin"
+                      <motion.svg
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         width="14"
                         height="14"
                         viewBox="0 0 24 24"
@@ -336,7 +368,7 @@ export default function AboutContact() {
                           d="M12 2a10 10 0 0 1 10 10"
                           strokeLinecap="round"
                         />
-                      </svg>
+                      </motion.svg>
                       Sending…
                     </>
                   ) : (
@@ -346,31 +378,28 @@ export default function AboutContact() {
                   )}
                 </Button>
               ) : (
-                <div
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
-                  style={{
-                    background: "rgba(52,211,153,0.08)",
-                    borderColor: "rgba(52,211,153,0.2)",
-                  }}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10"
                 >
-                  <span
-                    className="pulse-dot w-1.5 h-1.5 rounded-xl shrink-0"
-                    style={{
-                      background: "#34d399",
-                      boxShadow: "0 0 6px #34d399",
-                    }}
+                  <motion.span
+                    animate={{ opacity: [1, 0.4, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-1.5 h-1.5 rounded-xl shrink-0 bg-emerald-400 shadow-[0_0_6px_#10b981]"
                   />
-                  <span className="text-[.78rem]" style={{ color: "#34d399" }}>
+                  <span className="text-[.78rem] text-emerald-400">
                     Message sent — I'll reply within 24 hours.
                   </span>
-                </div>
+                </motion.div>
               )}
             </form>
 
             <div className="mt-5 pt-4 border-t border-white/6 flex items-center gap-2">
-              <span
-                className="pulse-dot w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ background: "#34d399", boxShadow: "0 0 6px #34d399" }}
+              <motion.span
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400 shadow-[0_0_6px_#10b981]"
               />
               <span className="text-[.78rem] text-zinc-500">
                 Usually responds within{" "}
@@ -379,8 +408,8 @@ export default function AboutContact() {
                 </strong>
               </span>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
     </>
   );

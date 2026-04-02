@@ -6,15 +6,16 @@ This repository contains both the **Trackly Python SDK** and the **Trackly Inges
 
 ---
 
-![Trackly Dashboard Preview](frontend/public/demo.png)
+![Trackly Trace Graph & What-If Analysis](frontend/public/graph.png)
 
 ## ⚡ Features
 
-- **Zero Overhead**: Callbacks fire instantly. All events are batched asynchronously off-thread and shipped every 2 seconds.
-- **Resilient**: Implements intelligent retries. If the server is down, payloads are gracefully dropped after maximum retries—your application will never block or crash.
+- **"What-If" Analysis Engine**: Real-time cost simulation for model swaps. Click any node in your trace to instantly project how switching to a different LLM (e.g. GPT-4o -> Claude 3.5 Sonnet) affects your session-level costs.
+- **Interactive Trace Graph**: Visualize complex multi-model AI pipelines with a high-performance 2D force-directed graph. Features Neo4j-style collision physics and provider-branded node styling.
+- **Model Swap Simulator**: A navigation-optimized shelf with pricing configurations for over 50+ models, providing an instant `Original -> Projected` cost comparison.
+- **Zero-Overhead SDK**: Callbacks fire instantly. All events are batched asynchronously off-thread and shipped every 2 seconds without ever blocking your application.
 - **Deep Integrations**: Automatically captures exact model names (e.g. `gemini-1.5-flash`, `gpt-4o`) directly from LangChain's invocation parameters using a robust two-layer detection heuristic.
 - **Provider Agnostic**: Native support for OpenAI, Anthropic, Google Gemini, Ollama, Groq, Mistral, Cohere, Bedrock, and generic wrappers.
-- **Extensible Metadata**: Slice models by your custom application features, users, or environments instantly.
 
 ---
 

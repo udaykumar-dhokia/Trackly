@@ -3,6 +3,7 @@
 import { Check } from "@phosphor-icons/react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import { motion, Variants } from "framer-motion";
 
 const plans = [
   {
@@ -59,6 +60,26 @@ const plans = [
   },
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
 export default function Pricing() {
   return (
     <>
@@ -76,12 +97,7 @@ export default function Pricing() {
           background: #0f0f12;
           border: 1px solid rgba(255,255,255,0.06);
           padding: 32px;
-          transition: border-color 0.2s, transform 0.2s;
           position: relative; overflow: hidden;
-        }
-        .pricing-card:hover {
-          border-color: rgba(255,255,255,0.11);
-          transform: translateY(-2px);
         }
         .pricing-card::after {
           content: ''; position: absolute; inset: 0;
@@ -96,19 +112,18 @@ export default function Pricing() {
           opacity: 0.6;
           background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(129,140,248,0.08), transparent);
         }
-        .pricing-btn {
-          transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-        }
-        .pricing-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 0 24px rgba(167,139,250,0.3);
-        }
       `}</style>
 
       <section className="pricing-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100">
-        <div className="mx-auto max-w-[1080px]">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={containerVariants}
+          className="mx-auto max-w-[1080px]"
+        >
           {/* Header */}
-          <div className="mb-14">
+          <motion.div variants={itemVariants} className="mb-14">
             <div className="flex items-center gap-2 mb-4">
               <span className="w-5 h-px bg-primary/60" />
               <span className="text-[11px] uppercase tracking-[.12em] text-primary">
@@ -122,14 +137,16 @@ export default function Pricing() {
               Start free. Scale when you're ready. No hidden fees — just raw
               performance and deep insights.
             </p>
-          </div>
+          </motion.div>
 
           {/* Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {plans.map((plan) => (
-              <div
+              <motion.div
                 key={plan.name}
-                className={`rounded-xl pricing-card ${plan.popular ? "popular" : ""}`}
+                variants={itemVariants}
+                whileHover={{ y: -5, borderColor: plan.popular ? "rgba(129,140,248,0.4)" : "rgba(255,255,255,0.11)" }}
+                className={`rounded-xl pricing-card flex flex-col ${plan.popular ? "popular" : ""}`}
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0">
@@ -196,12 +213,12 @@ export default function Pricing() {
                     {plan.cta}
                   </Button>
                 </Link>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* Footer note */}
-          <p className="text-center text-[.78rem] text-zinc-600 mt-8">
+          <motion.p variants={itemVariants} className="text-center text-[.78rem] text-zinc-600 mt-8">
             Need more?{" "}
             <a
               href="#contact"
@@ -209,8 +226,8 @@ export default function Pricing() {
             >
               Contact us for enterprise pricing
             </a>
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
       </section>
     </>
   );

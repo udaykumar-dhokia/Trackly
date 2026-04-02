@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 function useCountUp(target: number, duration = 2400, start = false) {
   const [value, setValue] = useState(0);
@@ -33,6 +34,29 @@ const PROVIDER_LOGOS = [
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqdPRKA0_sLVNpiF5--45w5ql-IgJzqNUtgw&s",
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.16, 1, 0.3, 1], // Custom easeOutExpo
+    },
+  },
+};
+
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
   const [providerIdx, setProviderIdx] = useState(0);
@@ -60,10 +84,11 @@ export default function Hero() {
     fetchStats();
   }, []);
 
+  const statsRef = useRef(null);
   const events = useCountUp(totalEvents || 4_812_903, 2400, mounted);
   const tokens = useCountUp(totalTokens || 183_450_281, 2400, mounted);
 
-  useEffect(() => { const t = setTimeout(() => setMounted(true), 100); return () => clearTimeout(t); }, []);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     const id = setInterval(() => setProviderIdx((i) => (i + 1) % PROVIDERS.length), 1800);
     return () => clearInterval(id);
@@ -93,16 +118,10 @@ export default function Hero() {
         .orb-1 { width:600px;height:600px;background:var(--color-primary);top:-200px;left:-150px;opacity:.18; }
         .orb-2 { width:400px;height:400px;background:var(--color-secondary);top:100px;right:-100px;opacity:.1; }
 
-        /* headline — matches Features h2 clamp */
         .hero-h1 {
           font-size:clamp(1.9rem,3.5vw,2.8rem); font-weight:800;
           line-height:1.08; letter-spacing:-.03em; margin-bottom:20px;
         }
-        .provider-word {
-          display:inline-block; min-width:120px;
-          animation:cycle-fade 1.8s ease-in-out infinite;
-        }
-        @keyframes cycle-fade { 0%,80%{opacity:1} 90%,100%{opacity:0} }
 
         .pip-pill {
           display:flex; align-items:center; overflow:hidden;
@@ -160,11 +179,6 @@ export default function Hero() {
           .pip-pill { max-width:100%; }
         }
 
-        .reveal { opacity:0; transform:translateY(16px); transition:opacity .6s ease,transform .6s ease; }
-        .reveal.in { opacity:1; transform:translateY(0); }
-        .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.35s}
-        .d4{transition-delay:.5s}.d5{transition-delay:.65s}.d6{transition-delay:.8s}
-
         .demo-video-container {
           background:var(--surface); border:1px solid var(--border); border-radius:12px;
           overflow:hidden; width:100%; max-width:900px; margin:0 auto;
@@ -180,34 +194,55 @@ export default function Hero() {
         <div className="orb orb-2" />
 
         <section className="relative flex min-h-screen flex-col items-center justify-center px-6 py-24 text-zinc-100">
-          <div className="mx-auto w-full max-w-[1080px] flex flex-col items-center text-center">
-
-            <div className={`reveal d1 ${mounted ? "in" : ""} mb-8 w-full`}>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="mx-auto w-full max-w-[1080px] flex flex-col items-center text-center"
+          >
+            <motion.div variants={itemVariants} className="mb-8 w-full">
               <div className="provider-logos-wrap">
                 <div className="provider-logos-inner">
                   {PROVIDER_LOGOS.map((logo, i) => (
-                    <img key={i} src={logo} alt="Provider" className="provider-logo" />
+                    <motion.img
+                      key={i}
+                      src={logo}
+                      alt="Provider"
+                      className="provider-logo"
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    />
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <h1 className={`hero-h1 reveal d2 ${mounted ? "in" : ""} w-full max-w-[660px]`}>
+            <motion.h1 variants={itemVariants} className="hero-h1 w-full max-w-[660px]">
               Track every{" "}
-              <span className="provider-word text-primary" key={providerIdx}>
-                {PROVIDERS[providerIdx]}
+              <span className="inline-block min-w-[120px] text-primary">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={PROVIDERS[providerIdx]}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    {PROVIDERS[providerIdx]}
+                  </motion.span>
+                </AnimatePresence>
               </span>
               <br />
               call. Know your costs.
-            </h1>
+            </motion.h1>
 
-            <p className={`reveal d3 ${mounted ? "in" : ""} mb-9 max-w-xl text-[.95rem] leading-[1.7] text-zinc-400`}>
+            <motion.p variants={itemVariants} className="mb-9 max-w-xl text-[.95rem] leading-[1.7] text-zinc-400">
               Two lines of code. Automatic token tracking, cost attribution, and
               latency monitoring — across OpenAI, Anthropic, Groq, Gemini, and
               more. No proxies, zero added latency.
-            </p>
+            </motion.p>
 
-            <div className={`hero-cta-row reveal d4 ${mounted ? "in" : ""} mb-6 flex items-center justify-center gap-3`}>
+            <motion.div variants={itemVariants} className="hero-cta-row mb-6 flex items-center justify-center gap-3">
               <Link href="/docs">
                 <Button className="h-10 cursor-pointer border-black bg-white/20 px-5 font-semibold text-white hover:bg-indigo-300 hover:text-black focus:outline-0 focus:ring-2 focus:ring-indigo-300">
                   Read Docs <ArrowUpRightIcon />
@@ -231,25 +266,44 @@ export default function Hero() {
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <div className={`reveal d4 ${mounted ? "in" : ""} mb-8 flex flex-col items-center gap-4`}>
+            <motion.div variants={itemVariants} className="mb-8 flex flex-col items-center gap-4">
               <div className="flex flex-col items-center gap-2">
                 <div className="flex">
                   {featuredUsers.length > 0
                     ? featuredUsers.slice(0, 5).map((u, i) => (
-                      <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", overflow: "hidden", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a", zIndex: 5 - i }}>
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                        style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", overflow: "hidden", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a", zIndex: 5 - i }}
+                      >
                         {u.profile_photo
                           ? <img src={u.profile_photo} alt="Dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           : (u.name || "U").toUpperCase()}
-                      </div>
+                      </motion.div>
                     ))
                     : ["photo-1535713875002-d1d0cf377fde", "photo-1494790108377-be9c29b29330", "photo-1599566150163-29194dcaad36", "photo-1527980965255-d3b416303d12", "photo-1438761681033-6461ffad8d80"].map((id, i) => (
-                      <img key={i} src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=64&h=64&q=80`} alt="Dev" style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", objectFit: "cover", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i }} />
+                      <motion.img
+                        key={i}
+                        src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=64&h=64&q=80`}
+                        alt="Dev"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                        style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", objectFit: "cover", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i }}
+                      />
                     ))}
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", marginLeft: -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a" }}>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1 }}
+                    style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #09090b", background: "#18181b", marginLeft: -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#71717a" }}
+                  >
                     +{totalUsers > 1000 ? (totalUsers / 1000).toFixed(1) + "k" : totalUsers}
-                  </div>
+                  </motion.div>
                 </div>
                 <p style={{ fontSize: 12, fontWeight: 500, color: "#71717a" }}>
                   Join <span style={{ color: "#f4f4f5" }}>{totalUsers.toLocaleString()}+</span> developers building the future of AI
@@ -261,16 +315,21 @@ export default function Hero() {
                   </a>
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className={`reveal d5 ${mounted ? "in" : ""} w-full flex justify-center mt-4`}>
-              <div className="demo-video-container">
+            <motion.div variants={itemVariants} className="w-full flex justify-center mt-4">
+              <motion.div
+                className="demo-video-container"
+                whileInView={{ y: [20, 0], opacity: [0, 1] }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              >
                 <video src="/demo.mp4" autoPlay loop muted playsInline className="demo-video" />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <div className={`reveal d6 ${mounted ? "in" : ""} mt-4 w-full`}>
-              <div className="stats-row">
+            <motion.div variants={itemVariants} className="mt-4 w-full">
+              <div className="stats-row" ref={statsRef}>
                 <div className="stat-cell">
                   <div className="stat-num">{events.toLocaleString()}</div>
                   <div className="stat-label">Events</div>
@@ -288,9 +347,8 @@ export default function Hero() {
                   <div className="stat-label">Lines of code</div>
                 </div>
               </div>
-            </div>
-
-          </div>
+            </motion.div>
+          </motion.div>
         </section>
       </div>
     </>

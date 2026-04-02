@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { motion, Variants } from "framer-motion";
 
 const STEPS = [
   {
@@ -40,21 +40,35 @@ const STEPS = [
   },
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const stepVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+const connectorVariants: Variants = {
+  hidden: { scaleY: 0 },
+  visible: {
+    scaleY: 1,
+    transition: { duration: 0.8, ease: "easeInOut" },
+  },
+};
+
 export default function HowItWorks() {
-  const [mounted, setMounted] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setMounted(true);
-      },
-      { threshold: 0.08 },
-    );
-    if (sectionRef.current) obs.observe(sectionRef.current);
-    return () => obs.disconnect();
-  }, []);
-
   return (
     <>
       <style>{`
@@ -67,8 +81,6 @@ export default function HowItWorks() {
           background-size: 48px 48px;
           mask-image: radial-gradient(ellipse 100% 50% at 50% 0%, black 20%, transparent 80%);
         }
-        .hiw-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .hiw-reveal.in { opacity: 1; transform: translateY(0); }
         .hiw-img-wrap {
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 12px;
@@ -95,15 +107,21 @@ export default function HowItWorks() {
           flex: 1;
           background: linear-gradient(to bottom, rgba(167,139,250,0.3), rgba(167,139,250,0.05));
           margin-left: 17px;
+          transform-origin: top;
         }
       `}</style>
 
       <section
-        ref={sectionRef}
         className="hiw-section bg-[#09090b] border-t border-white/6 px-6 py-24 text-zinc-100"
       >
-        <div className="mx-auto max-w-[1080px]">
-          <div className={`hiw-reveal ${mounted ? "in" : ""}`}>
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={containerVariants}
+          className="mx-auto max-w-[1080px]"
+        >
+          <motion.div variants={stepVariants}>
             <div className="flex items-center gap-2 mb-4">
               <span className="w-5 h-px bg-primary/60" />
               <span className="text-[11px] uppercase tracking-[.12em] text-primary">
@@ -118,27 +136,33 @@ export default function HowItWorks() {
               From sign-in to your first tracked LLM call — here's everything
               you need to get up and running with Trackly.
             </p>
-          </div>
+          </motion.div>
 
           <div className="flex flex-col gap-0">
             {STEPS.map((step, i) => (
-              <div key={step.n} className="flex gap-6">
+              <motion.div 
+                key={step.n} 
+                variants={stepVariants}
+                className="flex gap-6"
+              >
                 <div className="hidden md:flex rounded-xl flex-col items-center">
-                  <div
-                    className={`hiw-step-badge bg-white/20 inset-shadow-2xs inset-shadow-white/30 rounded-xl hiw-reveal ${mounted ? "in" : ""}`}
-                    style={{ transitionDelay: `${0.1 + i * 0.1}s` }}
+                  <motion.div
+                    whileHover={{ scale: 1.1, backgroundColor: "rgba(167,139,250,0.3)" }}
+                    className="hiw-step-badge bg-white/20 inset-shadow-2xs inset-shadow-white/30 rounded-xl"
                   >
                     {step.n}
-                  </div>
-                  {i < STEPS.length - 1 && <div className="hiw-connector rounded-xl" />}
+                  </motion.div>
+                  {i < STEPS.length - 1 && (
+                    <motion.div 
+                      variants={connectorVariants}
+                      className="hiw-connector rounded-xl" 
+                    />
+                  )}
                 </div>
 
-                <div
-                  className={`flex-1 pb-12 hiw-reveal ${mounted ? "in" : ""}`}
-                  style={{ transitionDelay: `${0.12 + i * 0.1}s` }}
-                >
+                <div className="flex-1 pb-12">
                   <div className="flex md:hidden items-center gap-3 mb-3">
-                    <div className="hiw-step-badge">{step.n}</div>
+                    <div className="hiw-step-badge bg-white/10 rounded-xl">{step.n}</div>
                     <h3 className="text-[1.05rem] font-bold tracking-[-0.02em]">
                       {step.title}
                     </h3>
@@ -150,18 +174,21 @@ export default function HowItWorks() {
                   <p className="text-[.88rem] text-zinc-400 leading-[1.7] mb-4 max-w-[520px]">
                     {step.desc}
                   </p>
-                  <div className="hiw-img-wrap max-w-[720px]">
+                  <motion.div 
+                    whileHover={{ y: -5 }}
+                    className="hiw-img-wrap max-w-[720px]"
+                  >
                     <img
                       src={step.img}
                       alt={`Step ${step.n}: ${step.title}`}
                       loading="lazy"
                     />
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
     </>
   );
