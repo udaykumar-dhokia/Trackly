@@ -28,10 +28,7 @@ import {
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  encodeModelKey,
-  type PlaygroundOptions,
-} from "@/lib/playground";
+import { encodeModelKey, type PlaygroundOptions } from "@/lib/playground";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
@@ -234,6 +231,9 @@ export default function VisualisePage() {
   );
   const [selectedNode, setSelectedNode] = useState<TraceNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [highlightMode, setHighlightMode] = useState<
+    "none" | "longest" | "costliest"
+  >("none");
   const [showSessions, setShowSessions] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
   const graphRef = useRef<any>(null);
@@ -368,6 +368,82 @@ export default function VisualisePage() {
     };
   }, [activeGraph]);
 
+  const criticalPath = useMemo(() => {
+    if (!activeGraph || highlightMode === "none") {
+      return { nodes: new Set<string>(), links: new Set<string>() };
+    }
+
+    const adj: Record<string, string[]> = {};
+    const inDegree: Record<string, number> = {};
+    activeGraph.nodes.forEach((n) => {
+      inDegree[n.id] = 0;
+      adj[n.id] = [];
+    });
+
+    activeGraph.edges.forEach((e) => {
+      adj[e.source] = adj[e.source] || [];
+      adj[e.source].push(e.target);
+      inDegree[e.target] = (inDegree[e.target] || 0) + 1;
+    });
+
+    const nodeWeights: Record<string, number> = {};
+    activeGraph.nodes.forEach((n) => {
+      nodeWeights[n.id] =
+        highlightMode === "longest" ? n.latency_ms : n.estimated_cost_usd;
+    });
+
+    const memo: Record<string, { weight: number; path: string[] }> = {};
+
+    const findMaxPath = (id: string): { weight: number; path: string[] } => {
+      if (memo[id]) return memo[id];
+
+      const children = adj[id] || [];
+      const weight = nodeWeights[id] || 0;
+
+      if (children.length === 0) {
+        return { weight, path: [id] };
+      }
+
+      let maxSubWeight = -1;
+      let maxSubPath: string[] = [];
+
+      children.forEach((childId) => {
+        const res = findMaxPath(childId);
+        if (res.weight > maxSubWeight) {
+          maxSubWeight = res.weight;
+          maxSubPath = res.path;
+        }
+      });
+
+      const result = {
+        weight: weight + maxSubWeight,
+        path: [id, ...maxSubPath],
+      };
+      memo[id] = result;
+      return result;
+    };
+
+    const roots = Object.keys(inDegree).filter((id) => inDegree[id] === 0);
+    let bestWeight = -1;
+    let bestPath: string[] = [];
+
+    roots.forEach((rootId) => {
+      const res = findMaxPath(rootId);
+      if (res.weight > bestWeight) {
+        bestWeight = res.weight;
+        bestPath = res.path;
+      }
+    });
+
+    const nodes = new Set(bestPath);
+    const links = new Set<string>();
+    for (let i = 0; i < bestPath.length - 1; i++) {
+      links.add(`${bestPath[i]}->${bestPath[i + 1]}`);
+    }
+
+    return { nodes, links };
+  }, [activeGraph, highlightMode]);
+
   const insights = useMemo(
     () => (activeGraph ? computeInsights(activeGraph) : []),
     [activeGraph],
@@ -395,7 +471,6 @@ export default function VisualisePage() {
       let nodeColor = node.color;
       let nodeCost = node.cost;
 
-      // Check if this node is currently being "Swapped" in What-If mode
       const isLLM = selectedNode?.node_type === "generation";
 
       if (
@@ -419,28 +494,39 @@ export default function VisualisePage() {
       const r = Math.sqrt(node.val) * 2;
       const hov = hoveredNode === node.id;
       const sel = selectedNode?.id === node.id;
+      const isCritical = criticalPath.nodes.has(node.id);
       const x = node.x || 0,
         y = node.y || 0;
 
-      if (hov || sel) {
+      if (hov || sel || isCritical) {
         ctx.beginPath();
         ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
-        ctx.fillStyle = `${nodeColor}30`;
+        ctx.fillStyle = isCritical
+          ? "rgba(234, 179, 8, 0.4)"
+          : `${nodeColor}30`;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(x, y, r + 8, 0, 2 * Math.PI);
-        ctx.fillStyle = `${nodeColor}15`;
+        ctx.fillStyle = isCritical
+          ? "rgba(234, 179, 8, 0.2)"
+          : `${nodeColor}15`;
         ctx.fill();
       }
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
-      g.addColorStop(0, `${nodeColor}ee`);
-      g.addColorStop(1, `${nodeColor}88`);
+      if (isCritical) {
+        g.addColorStop(0, "#fbbf24");
+        g.addColorStop(1, "#d97706");
+      } else {
+        g.addColorStop(0, `${nodeColor}ee`);
+        g.addColorStop(1, `${nodeColor}88`);
+      }
       ctx.fillStyle = g;
       ctx.fill();
-      ctx.strokeStyle = hov || sel ? "#fff" : `${nodeColor}cc`;
-      ctx.lineWidth = hov || sel ? 2 : 1;
+
+      ctx.strokeStyle = hov || sel || isCritical ? "#fff" : `${nodeColor}cc`;
+      ctx.lineWidth = hov || sel || isCritical ? 2.5 : 1;
       ctx.stroke();
 
       if (globalScale > 0.6) {
@@ -448,16 +534,22 @@ export default function VisualisePage() {
         ctx.font = `600 ${fs}px Inter,system-ui,sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = "#e4e4e7";
+        ctx.fillStyle = isCritical ? "#fef3c7" : "#e4e4e7"; // Amber 50
         ctx.fillText(nodeLabel, x, y + r + 4);
         if (globalScale > 1) {
           ctx.font = `${fs * 0.75}px Inter,system-ui,sans-serif`;
-          ctx.fillStyle = "#71717a";
+          ctx.fillStyle = isCritical ? "#f59e0b" : "#71717a"; // Amber 500
           ctx.fillText(formatCost(nodeCost), x, y + r + 4 + fs + 2);
         }
       }
     },
-    [hoveredNode, selectedNode, selectedTargetModelKey, playgroundOptions],
+    [
+      hoveredNode,
+      selectedNode,
+      selectedTargetModelKey,
+      playgroundOptions,
+      criticalPath,
+    ],
   );
 
   const paintLink = useCallback(
@@ -465,17 +557,25 @@ export default function VisualisePage() {
       const s = link.source,
         e = link.target;
       if (!s || !e || typeof s.x !== "number") return;
+
+      const linkId = `${s.id}->${e.id}`;
+      const isCritical = criticalPath.links.has(linkId);
+
       ctx.beginPath();
       ctx.moveTo(s.x, s.y);
       ctx.lineTo(e.x, e.y);
-      ctx.strokeStyle = "rgba(161,161,170,0.25)";
-      ctx.lineWidth = 1.5 / globalScale;
+      ctx.strokeStyle = isCritical
+        ? "rgba(245, 158, 11, 0.8)"
+        : "rgba(161,161,170,0.25)";
+      ctx.lineWidth = (isCritical ? 3 : 1.5) / globalScale;
       ctx.stroke();
+
       const a = Math.atan2(e.y - s.y, e.x - s.x);
       const er = Math.sqrt(e.val || 6) * 2;
       const ax = e.x - Math.cos(a) * (er + 2),
         ay = e.y - Math.sin(a) * (er + 2);
-      const al = 6 / globalScale;
+      const al = (isCritical ? 10 : 6) / globalScale;
+
       ctx.beginPath();
       ctx.moveTo(ax, ay);
       ctx.lineTo(
@@ -487,10 +587,12 @@ export default function VisualisePage() {
         ay - al * Math.sin(a + Math.PI / 7),
       );
       ctx.closePath();
-      ctx.fillStyle = "rgba(161,161,170,0.45)";
+      ctx.fillStyle = isCritical
+        ? "rgba(245, 158, 11, 1)"
+        : "rgba(161,161,170,0.45)";
       ctx.fill();
     },
-    [],
+    [criticalPath],
   );
 
   const whatIfResult = useMemo(() => {
@@ -598,6 +700,31 @@ export default function VisualisePage() {
           )}
         </div>
         <div className="flex items-center gap-1">
+          {activeGraph && activeGraph.nodes.length > 0 && (
+            <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 mr-2">
+              <button
+                onClick={() => setHighlightMode("none")}
+                className={`cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${highlightMode === "none" ? "bg-white/10 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
+              >
+                None
+              </button>
+              <button
+                onClick={() => setHighlightMode("longest")}
+                className={`cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1 ${highlightMode === "longest" ? "bg-amber-500/20 text-amber-400 shadow-sm border border-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}
+              >
+                <Clock size={12} weight="bold" />
+                Longest
+              </button>
+              <button
+                onClick={() => setHighlightMode("costliest")}
+                className={`cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1 ${highlightMode === "costliest" ? "bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20" : "text-zinc-500 hover:text-zinc-300"}`}
+              >
+                <CurrencyDollar size={12} weight="bold" />
+                Costliest
+              </button>
+            </div>
+          )}
+
           {activeGraph && activeGraph.nodes.length > 0 && (
             <Button
               onClick={() => setShowInsights((v) => !v)}
@@ -937,7 +1064,7 @@ export default function VisualisePage() {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.02 }}
-                        className="p-4"
+                        className="p-4 max-h-[60%] h-[60%]"
                       >
                         <div className="flex items-center justify-between mb-1 px-1">
                           <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
