@@ -11,7 +11,7 @@ const plans = [
     price: "$0",
     period: "forever",
     desc: "For side projects and experiments.",
-    logs: "50K",
+    logs: "1M",
     features: [
       "3 Projects",
       "7-day log retention",
@@ -28,7 +28,7 @@ const plans = [
     price: "$29",
     period: "/month",
     desc: "For growing teams that need reliable telemetry.",
-    logs: "500K",
+    logs: "5M",
     features: [
       "Unlimited projects",
       "30-day log retention",
@@ -46,7 +46,7 @@ const plans = [
     price: "$99",
     period: "/month",
     desc: "Advanced controls for high-volume traffic.",
-    logs: "1M",
+    logs: "10M",
     features: [
       "Everything in Pro",
       "90-day log retention",
@@ -182,7 +182,7 @@ export default function Pricing() {
                     {plan.logs}
                   </span>
                   <span className="text-[10px] text-zinc-500 uppercase tracking-[.06em]">
-                    logs / month
+                    tokens / month
                   </span>
                 </div>
 

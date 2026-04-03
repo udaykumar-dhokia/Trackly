@@ -11,10 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.orm import LlmEvent, Project
 
 PLAN_LIMITS = {
-    "free": 50_000,
-    "starter": 50_000,
-    "pro": 500_000,
-    "scale": 1_000_000
+    "free": 1_000_000,
+    "starter": 1_000_000,
+    "pro": 5_000_000,
+    "scale": 10_000_000
 }
 
 def get_current_month_start() -> datetime:
@@ -40,10 +40,10 @@ class ProjectUsageSnapshot:
 async def get_organization_usage(db: AsyncSession, org_id: uuid.UUID) -> int:
     """
     Counts all LlmEvents for all projects belonging to the given organization
-    that occurred within the current calendar month.
+    that occurred within the current calendar month and returns total tokens.
     """
     snapshot = await get_organization_usage_snapshot(db, org_id)
-    return snapshot.event_count
+    return snapshot.total_tokens
 
 
 async def get_organization_usage_snapshot(

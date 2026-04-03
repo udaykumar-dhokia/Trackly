@@ -69,7 +69,7 @@ export default function UsagePage() {
   }, [activeOrgId]);
 
   const usagePercentage = usage
-    ? Math.min((usage.current_month_events / usage.plan_limit) * 100, 100)
+    ? Math.min((usage.current_month_tokens / usage.plan_limit) * 100, 100)
     : 0;
   const isNearLimit = usagePercentage > 80;
   const isOverLimit = usagePercentage >= 100;
@@ -111,10 +111,10 @@ export default function UsagePage() {
                     </CardTitle>
                     <div className="flex items-baseline gap-3">
                       <span className="text-5xl font-bold tracking-tight text-foreground">
-                        {usage.current_month_events.toLocaleString()}
+                        {usage.current_month_tokens.toLocaleString()}
                       </span>
                       <span className="text-sm font-semibold text-muted-foreground opacity-60">
-                        / {usage.plan_limit.toLocaleString()} logs
+                        / {usage.plan_limit.toLocaleString()} tokens
                       </span>
                     </div>
                   </div>
@@ -146,28 +146,29 @@ export default function UsagePage() {
                       initial={{ width: 0 }}
                       animate={{ width: `${usagePercentage}%` }}
                       transition={{ duration: 1.2, ease: "circOut" }}
-                      className={`h-full rounded-xl ${isOverLimit
-                        ? "bg-destructive"
-                        : isNearLimit
-                          ? "bg-amber-500"
-                          : "bg-emerald-500"
-                        } opacity-90`}
+                      className={`h-full rounded-xl ${
+                        isOverLimit
+                          ? "bg-destructive"
+                          : isNearLimit
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                      } opacity-90`}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                   <InfoTile
-                    icon={<ChartLineUp size={20} weight="bold" />}
-                    color="bg-indigo-500"
-                    label="Events"
-                    value={usage.current_month_events.toLocaleString()}
-                  />
-                  <InfoTile
                     icon={<Stack size={20} weight="bold" />}
                     color="bg-fuchsia-500"
                     label="Tokens"
                     value={usage.current_month_tokens.toLocaleString()}
+                  />
+                  <InfoTile
+                    icon={<ChartLineUp size={20} weight="bold" />}
+                    color="bg-indigo-500"
+                    label="Events"
+                    value={usage.current_month_events.toLocaleString()}
                   />
                   <InfoTile
                     icon={<Coins size={20} weight="bold" />}

@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { List } from "@phosphor-icons/react";
+import { List, ArrowRight } from "@phosphor-icons/react";
 import Header from "@/components/custom/header";
 import Footer from "@/components/custom/footer";
+import DocsOptions from "@/components/custom/docs-options";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type NavGroup = {
@@ -825,7 +826,7 @@ function ParameterGrid({ items }: { items: ParamSpec[] }) {
 
 function RouteBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex items-center border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[.8rem] text-zinc-200 font-mono uppercase tracking-[0.14em]">
+    <div className="inline-flex items-center border border-white/10 bg-white/4 px-3 py-1.5 text-[.8rem] text-zinc-200 font-mono uppercase tracking-[0.14em]">
       {children}
     </div>
   );
@@ -858,9 +859,9 @@ const DocsNav = ({
                     onItemSelected?.();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className={`text-left px-4 py-3 text-[0.84rem] transition-all duration-200 cursor-pointer border-l-2 ${
+                  className={`text-left px-4 py-3 text-[0.84rem] cursor-pointer border-l-2 ${
                     isActive
-                      ? "border-[#f59e0b] bg-white/[0.06] text-white translate-x-1"
+                      ? "border-[#f59e0b] bg-white/6 text-white translate-x-1"
                       : "border-transparent text-zinc-500 hover:text-zinc-200 hover:border-white/20"
                   }`}
                 >
@@ -2218,7 +2219,27 @@ SUPPORT_EMAIL=support@tracklyai.in`}</CodeBlock>
         </aside>
 
         <main className="flex-1 min-w-0 max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {renderContent()}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+              <Link href="/" className="hover:text-white transition-colors">Trackly</Link>
+              <span>/</span>
+              <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
+              <span>/</span>
+              <span className="text-[#f59e0b] font-extrabold tracking-widest">{activeNav}</span>
+            </div>
+            <DocsOptions activeNav={activeNav} />
+          </div>
+          
+          <article id="docs-content" className="prose prose-invert max-w-none">
+            {renderContent()}
+          </article>
+
+          <div className="mt-20 pt-8 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-500 uppercase tracking-widest font-bold">
+            <span>Last updated: April 2026</span>
+            <Link href="/resources" className="hover:text-white flex items-center gap-1.5 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
+              Next: Resources <ArrowRight size={14} weight="bold" />
+            </Link>
+          </div>
         </main>
       </div>
 

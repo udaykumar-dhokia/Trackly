@@ -561,7 +561,7 @@ async def get_project_usage(
         project_id=project_id,
         org_id=project.org_id,
         plan=org.plan,
-        current_month_usage=usage.event_count,
+        current_month_usage=usage.total_tokens,
         current_month_events=usage.event_count,
         current_month_tokens=usage.total_tokens,
         current_month_cost_usd=float(usage.total_cost_usd),
@@ -640,7 +640,7 @@ async def get_org_usage(
     return OrganizationUsageResponse(
         org_id=org_id,
         plan=org.plan,
-        current_month_usage=usage.event_count,
+        current_month_usage=usage.total_tokens,
         current_month_events=usage.event_count,
         current_month_tokens=usage.total_tokens,
         current_month_cost_usd=float(usage.total_cost_usd),
