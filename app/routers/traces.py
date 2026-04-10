@@ -239,6 +239,7 @@ async def get_trace_detail(
         started_at=trace.started_at,
         ended_at=trace.ended_at,
         graph=graph,
+        insights=trace.insights,
     )
 
 
@@ -405,6 +406,7 @@ async def _build_graph_from_trace(db: AsyncSession, trace: Trace) -> TraceGraphR
         nodes=nodes,
         edges=edges,
         summary=summary,
+        insights=trace.insights,
     )
 
 

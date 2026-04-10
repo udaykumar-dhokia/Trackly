@@ -64,6 +64,7 @@ export default function DashboardPage() {
     status: statsStatus,
     error: statsError,
     lastFetchedParams,
+    insights,
   } = useAppSelector((state) => state.stats);
 
   const [providerFilter, setProviderFilter] = useState("all");
@@ -283,6 +284,56 @@ export default function DashboardPage() {
         <div className="border-2 border-red-500/50 bg-[#141418] p-8 font-mono text-red-500 shadow-[6px_6px_0_0_#ef4444]">
           Error: {statsError}
         </div>
+      )}
+
+      {statsStatus === "succeeded" && (
+        <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+           <div className="flex items-center gap-2 mb-4">
+             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">
+                Decision Engine Insights
+             </h2>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {insights?.map((insight: any, i: number) => (
+                <div 
+                  key={i}
+                  className={`rounded-xl border p-5 transition-all ${
+                    insight.severity === "error" ? "border-rose-500/30 bg-rose-500/5" : 
+                    insight.severity === "warning" ? "border-amber-500/30 bg-amber-500/5" : 
+                    insight.severity === "success" ? "border-emerald-500/20 bg-emerald-500/5" : 
+                    "border-white/10 bg-white/[0.02]"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 h-full">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-2 py-0.5 bg-white/5 rounded">
+                        {insight.title || insight.type}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-white tracking-tight truncate">
+                        {insight.subject || insight.name || insight.title}
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 font-mono leading-relaxed line-clamp-2">
+                        {insight.message}
+                      </p>
+                    </div>
+
+                    <div className={`text-lg font-black tracking-tighter mt-1 ${
+                       insight.severity === 'error' ? 'text-rose-400' :
+                       insight.severity === 'warning' ? 'text-amber-400' :
+                       'text-white'
+                    }`}>
+                       {insight.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
+           </div>
+        </section>
       )}
 
       {statsStatus === "succeeded" && summary && (

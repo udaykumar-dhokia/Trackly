@@ -30,6 +30,7 @@ interface StatsState {
   summary: UsageSummary | null;
   models: UsageByModel[];
   dailyUsage: DailyUsage[];
+  insights: any[] | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   lastFetchedParams: {
@@ -47,6 +48,7 @@ const initialState: StatsState = {
   summary: null,
   models: [],
   dailyUsage: [],
+  insights: null,
   status: "idle",
   error: null,
   lastFetchedParams: null,
@@ -99,7 +101,7 @@ export const fetchDashboardStats = createAsyncThunk(
       ? `?${queryParams.toString()}`
       : "";
 
-    const [summaryRes, modelsRes, dailyRes] = await Promise.all([
+    const [summaryRes, modelsRes, dailyRes, insightsRes] = await Promise.all([
       fetch(
         `${apiUrl}/api/v1/projects/${projectId}/stats/summary${queryString}`,
       ),
@@ -107,6 +109,7 @@ export const fetchDashboardStats = createAsyncThunk(
         `${apiUrl}/api/v1/projects/${projectId}/stats/by-model${queryString}`,
       ),
       fetch(`${apiUrl}/api/v1/projects/${projectId}/stats/daily${queryString}`),
+      fetch(`${apiUrl}/api/v1/projects/${projectId}/traces/insights${queryString}`),
     ]);
 
     if (!summaryRes.ok || !modelsRes.ok || !dailyRes.ok) {
@@ -116,8 +119,9 @@ export const fetchDashboardStats = createAsyncThunk(
     const summary = (await summaryRes.json()) as UsageSummary;
     const models = (await modelsRes.json()) as UsageByModel[];
     const dailyUsage = (await dailyRes.json()) as DailyUsage[];
+    const insights = insightsRes.ok ? (await insightsRes.json()).insights : [];
 
-    return { summary, models, dailyUsage };
+    return { summary, models, dailyUsage, insights };
   },
 );
 
@@ -139,6 +143,7 @@ export const statsSlice = createSlice({
         state.summary = action.payload.summary;
         state.models = action.payload.models;
         state.dailyUsage = action.payload.dailyUsage;
+        state.insights = action.payload.insights;
         state.lastFetchedParams = action.meta.arg;
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {

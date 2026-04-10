@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.models.orm import LlmEvent, Span, Trace
 from app.models.schemas import EventPayload, IngestRequest, IngestResponse
 from app.services.auth import authenticate
+from app.services.insights_engine import generate_trace_insights
 from app.services.pricing import compute_cost
 from app.services.project_budgets import maybe_send_project_budget_alert
 from app.services.rate_limit import limiter
@@ -214,6 +215,16 @@ async def _upsert_trace_end(
     trace.status_message = event.status_message or trace.status_message
     trace.ended_at = ended_at
     trace.ingested_at = now
+
+    await db.flush()
+    span_stmt = select(Span).where(Span.trace_ref_id == trace.id)
+    span_result = await db.execute(span_stmt)
+    spans = span_result.scalars().all()
+    
+    try:
+        trace.insights = generate_trace_insights(trace, list(spans))
+    except Exception:
+        logger.exception("Failed to generate highlights for trace %s", trace.trace_id)
 
 
 async def _upsert_span(

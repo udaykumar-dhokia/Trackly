@@ -38,7 +38,11 @@ export interface TraceNode {
   run_id: string | null;
   parent_run_id: string | null;
   status: string | null;
+  status_message?: string | null;
   level: number;
+  attempts?: TraceNode[];
+  hasFailures?: boolean;
+  _raw?: TraceNode;
 }
 
 export interface TraceEdge {
@@ -76,11 +80,13 @@ export interface TraceCriticalPathSummary {
 
 export interface TraceGraphInsight {
   type: string;
-  severity: 'info' | 'warning' | 'success';
+  severity: 'info' | 'warning' | 'success' | 'error';
   title: string;
+  subject?: string;
+  value?: string;
   message: string;
-  recommended_action: string | null;
-  step_id: string | null;
+  action?: string | null;
+  step_id?: string | null;
 }
 
 export interface TraceGraphCriticalPath {

@@ -179,6 +179,7 @@ class Trace(Base):
     feature: Mapped[str | None] = mapped_column(String(255))
     environment: Mapped[str | None] = mapped_column(String(50))
     status_message: Mapped[str | None] = mapped_column(Text)
+    insights: Mapped[list | None] = mapped_column(JSONB)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

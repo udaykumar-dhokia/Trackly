@@ -55,3 +55,6 @@ async def _apply_schema_backfills(conn) -> None:
     await conn.execute(
         text("ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT")
     )
+    await conn.execute(
+        text("ALTER TABLE traces ADD COLUMN IF NOT EXISTS insights JSONB")
+    )

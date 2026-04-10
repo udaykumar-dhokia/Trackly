@@ -44,6 +44,7 @@ class EventPayload(BaseModel):
     started_at: datetime | None = None
     ended_at: datetime | None = None
     total_cost_usd: float | None = None
+    total_latency_ms: int | None = None
     step_count: int | None = None
     pipeline_fingerprint: str | None = None
     health_score: float | None = None
@@ -166,6 +167,7 @@ class TraceGraphResponse(BaseModel):
     nodes: list[TraceGraphNode]
     edges: list[TraceGraphEdge]
     summary: TraceGraphSummary
+    insights: list[dict[str, Any]] | None = None
 
 
 class TraceSpanResponse(BaseModel):
@@ -228,6 +230,7 @@ class TraceDetailResponse(BaseModel):
     started_at: datetime
     ended_at: datetime | None = None
     graph: TraceGraphResponse
+    insights: list[dict[str, Any]] | None = None
 
 
 class TraceInsightItem(BaseModel):
