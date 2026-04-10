@@ -55,6 +55,40 @@ export interface TraceGraphSummary {
   time_range: string[];
 }
 
+export interface TraceCriticalPathStep {
+  step_id: string;
+  label: string;
+  provider: string;
+  model: string;
+  node_type: string;
+  total_cost_usd: number;
+  total_tokens: number;
+  latency_ms: number;
+  status: string | null;
+}
+
+export interface TraceCriticalPathSummary {
+  label: string;
+  total_cost_usd: number;
+  total_latency_ms: number;
+  steps: TraceCriticalPathStep[];
+}
+
+export interface TraceGraphInsight {
+  type: string;
+  severity: 'info' | 'warning' | 'success';
+  title: string;
+  message: string;
+  recommended_action: string | null;
+  step_id: string | null;
+}
+
+export interface TraceGraphCriticalPath {
+  slowest_path: TraceCriticalPathSummary | null;
+  costliest_path: TraceCriticalPathSummary | null;
+  failure_point: TraceCriticalPathStep | null;
+}
+
 export interface TraceGraph {
   session_id: string;
   trace_id: string;
@@ -63,6 +97,8 @@ export interface TraceGraph {
   nodes: TraceNode[];
   edges: TraceEdge[];
   summary: TraceGraphSummary;
+  critical_path: TraceGraphCriticalPath | null;
+  insights: TraceGraphInsight[];
 }
 
 interface TracesState {

@@ -101,9 +101,9 @@ export default function TraceFeature() {
               variants={itemVariants}
               className="trace-h2 mb-6"
             >
-              Visualize every <br />
+              Detect every <br />
               <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-primary">
-                chain and agent
+                critical path
               </span>
             </motion.h2>
 
@@ -111,28 +111,27 @@ export default function TraceFeature() {
               variants={itemVariants}
               className="trace-p mb-10 max-w-lg"
             >
-              Stop guessing why your chains are slow. Trackly's trace graph
-              reconstructs parent-child spans automatically, giving you a
-              crystal-clear map of your LLM request lifecycle. No added latency,
-              zero-config.
+              Surface what&apos;s wrong with your AI instantly. Trackly automatically 
+              detects critical paths, highlighting the slowest, most expensive, 
+              and failure steps in every agent run — so you can fix them.
             </motion.p>
 
             <motion.div variants={containerVariants} className="flex flex-col gap-6 w-full">
               {[
                 {
+                  icon: <Intersection size={20} />,
+                  title: "Live Critical Path",
+                  desc: "Automatically highlight the slowest and most expensive steps in every run.",
+                },
+                {
                   icon: <TreeStructure size={20} />,
-                  title: "Automatic Hierarchy",
-                  desc: "LangChain chains and nested calls are mapped into a logical tree.",
+                  title: "Step-By-Step Analysis",
+                  desc: "Reconstruct every agent decision and model call into a logical, actionable map.",
                 },
                 {
                   icon: <Graph size={20} />,
-                  title: "Interactive Graph",
-                  desc: "Pan, zoom, and inspect every node in a 2D force-directed layout.",
-                },
-                {
-                  icon: <Intersection size={20} />,
-                  title: "Live Bottleneck Detection",
-                  desc: "Identify the slowest span in your entire pipeline instantly.",
+                  title: "Auto Insights Engine",
+                  desc: "Surface plain-English findings on why a specific run was sub-optimal.",
                 },
               ].map((item, idx) => (
                 <motion.div

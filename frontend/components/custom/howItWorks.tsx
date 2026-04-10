@@ -129,12 +129,12 @@ export default function HowItWorks() {
               </span>
             </div>
             <h2 className="text-[clamp(1.9rem,3.5vw,2.8rem)] font-extrabold tracking-[-0.03em] leading-[1.1] mb-4 max-w-[660px]">
-              Start tracking in{" "}
+              Activate the decision engine in{" "}
               <span className="text-primary">6 simple steps</span>
             </h2>
             <p className="text-[.95rem] text-zinc-400 leading-[1.7] max-w-[520px] mb-14">
-              From sign-in to your first tracked LLM call — here's everything
-              you need to get up and running with Trackly.
+              From sign-in to your first automated AI insight — here&apos;s everything
+              you need to get up and running with the Trackly Decision Engine.
             </p>
           </motion.div>
 

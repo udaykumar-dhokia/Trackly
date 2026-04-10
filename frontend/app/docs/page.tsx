@@ -892,32 +892,32 @@ export default function DocsPage() {
               Introduction
             </h1>
             <p className="text-[.96rem] text-zinc-300 leading-[1.8] mb-6">
-              Trackly is a Python usage-tracking layer for LLM apps. It hooks
-              into LangChain callbacks or native Anthropic, Ollama, and Gemini
-              SDK calls, then records provider, model, tokens, latency, and your
-              own labels in the background.
+              Trackly is the AI Decision Engine for improving production AI
+              systems. It goes beyond logs to surface plain-English insights,
+              detect critical paths, and suggest auto-optimizations for your AI
+              agents and chains.
             </p>
 
             <SectionTitle accentColor="#14b8a6">
-              What Trackly records
+              Decision Engine capabilities
             </SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
-                  title: "Provider + model",
-                  desc: "Trackly stores the provider name and exact model string so pricing and filtering stay accurate.",
+                  title: "Auto Insights",
+                  desc: "Automatically surface plain-English findings like retry storms, cost spikes, and latency bottlenecks.",
                 },
                 {
-                  title: "Token usage",
-                  desc: "Prompt, completion, and total tokens are captured when the provider exposes them.",
+                  title: "Critical Path",
+                  desc: "Highlight the slowest and most expensive steps in every agent run automatically.",
                 },
                 {
-                  title: "Latency",
-                  desc: "Each event records the wall-clock duration in milliseconds when available.",
+                  title: "Cost Intelligence",
+                  desc: "Get concrete model efficiency suggestions (e.g., 'Switch to GPT-4o-mini to save 68%').",
                 },
                 {
-                  title: "Your metadata",
-                  desc: "Feature, environment, user, session, tags, and extra JSON help you slice usage later.",
+                  title: "Run Comparison",
+                  desc: "Side-by-side comparison of cost, latency, and steps to catch regressions fast.",
                 },
               ].map((card) => (
                 <div

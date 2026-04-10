@@ -21,9 +21,9 @@ const articleLines = articles
 
 const content = `# Trackly
 
-> Trackly is a premium LLM observability and cost tracking platform for AI teams.
+> Trackly is the AI Decision Engine for improving production AI systems.
 
-Trackly helps teams monitor token usage, latency, spend, and model performance across all major providers with zero-configuration overhead.
+Trackly helps teams find what's wrong with their AI — and fix it. Automatically surface plain-English insights, detect critical paths, and optimize costs across all major providers with zero-configuration overhead.
 
 ## Primary Pages
 - Home: ${SITE_URL}
@@ -33,17 +33,17 @@ Trackly helps teams monitor token usage, latency, spend, and model performance a
 - Pricing: ${SITE_URL}/#pricing
 
 ## Core Features
-### 1. Observability & Tracing
-- **Zero-config provider detection**: Automatic resolution from LangChain namespaces.
-- **Trace Graphs**: Visual debugging for nested agents, chains, and complex LLM workflows.
-- **Latency Monitoring**: P50 and P95 latency tracking per model and feature.
-- **Per-user Attribution**: Track exactly which users are driving costs.
+### 1. AI Decision Engine
+- **Auto Insights Engine**: Automatically surfaces plain-English findings from every run.
+- **Critical Path Detection**: Highlight the slowest, most expensive, and failure steps automatically.
+- **Run Comparison**: Side-by-side comparison of cost, latency, steps, and output diffs.
+- **"What-If" Analysis**: Real-time cost simulation for model swaps.
 
-### 2. Cost Management
+### 2. Cost Intelligence & Optimization
+- **Cost Intelligence**: Get model efficiency suggestions (e.g., switching to faster/cheaper models).
 - **Feature-level Attribution**: Slice usage by functional area (e.g., chat, RAG, summary).
 - **Live Model Pricing**: Ingest-time cost computation ensures accuracy even as provider rates change.
-- **Budget Alerts**: Real-time notifications for budget thresholds and usage spikes.
-- **Multi-project visibility**: Manage multiple environments (dev, staging, prod) in one place.
+- **Smart Alerts**: Interpreted real-time notifications for budget thresholds and usage spikes.
 
 ## Supported Providers
 - OpenAI (GPT-4o, GPT-4-turbo)

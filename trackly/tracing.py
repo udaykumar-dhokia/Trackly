@@ -46,6 +46,10 @@ class SpanRecord:
 
 @dataclass
 class TraceRecord:
+    """
+    Internal representation of an AI system journey including all steps, spans, and generations.
+    Used by the Trackly Decision Engine to compute health scores and fingerprints.
+    """
     trace_id: str
     name: str
     session_id: str | None = None
@@ -353,6 +357,12 @@ def track(
     metadata: dict[str, Any] | None = None,
     trackly_instance: Trackly | None = None,
 ):
+    """
+    Decorator/wrapper to track an AI system component or step.
+
+    Trackly automatically records the component execution, captures status, 
+    and links it to the active decision engine trace.
+    """
     def decorator(func: Callable) -> Callable:
         trace_name = name or func.__qualname__
 

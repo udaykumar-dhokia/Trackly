@@ -19,15 +19,16 @@ import { DEFAULT_OG_IMAGE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Resources",
   description:
-    "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
+    "Free Trackly resources on AI agents, RAG, LangChain, cost intelligence, run comparison, and improving production AI systems.",
   keywords: [
     "AI agents tutorial",
     "RAG tutorial",
     "LangChain guide",
-    "LLM cost tracking",
-    "token tracking",
-    "model comparison playground",
-    "LLM tracing",
+    "AI decision engine",
+    "cost intelligence",
+    "run comparison",
+    "critical path detection",
+    "AI monitoring",
     "Trackly resources",
   ],
   alternates: {
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Resources | Trackly",
     description:
-      "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
+      "Free Trackly resources on AI agents, RAG, LangChain, cost intelligence, run comparison, and improving production AI systems.",
     url: "/resources",
     type: "website",
     images: [
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Resources | Trackly",
     description:
-      "Free Trackly resources on AI agents, RAG, LangChain, token tracking, model comparison, traces, and practical LLM observability.",
+      "Free Trackly resources on AI agents, RAG, LangChain, cost intelligence, run comparison, and improving production AI systems.",
     images: [DEFAULT_OG_IMAGE],
   },
 };
@@ -76,7 +77,7 @@ export default function ResourcesPage() {
     "@type": "CollectionPage",
     name: "Trackly Resources",
     description:
-      "Practical guides on AI agents, RAG, LangChain, token tracking, model comparison, tracing, and LLM cost visibility.",
+      "Practical guides on AI agents, RAG, LangChain, cost intelligence, run comparison, and optimized production AI systems.",
     url: "https://tracklyai.in/resources",
     hasPart: chapters.map((chapter) => ({
       "@type": "CreativeWorkSeries",
@@ -121,8 +122,8 @@ export default function ResourcesPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
               Trackly Resources is a structured library of practical guides on
-              AI agents, RAG pipelines, LangChain, token tracking, model
-              comparison, and trace-first debugging for real Python apps.
+              AI agents, RAG pipelines, LangChain, cost intelligence, run
+              comparison, and optimizing performance for real Python apps.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -139,7 +140,7 @@ export default function ResourcesPage() {
                 href="/auth/login?screen_hint=signup"
                 className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
               >
-                Building agents? Track your LLM costs
+                Building agents? Improve your AI systems
               </Link>
             </div>
           </div>

@@ -239,33 +239,18 @@ export default function Hero() {
 
             <motion.h1
               variants={itemVariants}
-              className="hero-h1 w-full max-w-[660px]"
+              className="hero-h1 w-full max-w-[720px]"
             >
-              Track every{" "}
-              <span className="inline-block min-w-[120px] text-primary">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={PROVIDERS[providerIdx]}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                  >
-                    {PROVIDERS[providerIdx]}
-                  </motion.span>
-                </AnimatePresence>
-              </span>
-              <br />
-              call. Know your costs.
+              Find what's wrong with your AI — <span className="text-primary italic">and fix it.</span>
             </motion.h1>
 
             <motion.p
               variants={itemVariants}
-              className="mb-9 max-w-xl text-[.95rem] leading-[1.7] text-zinc-400"
+              className="mb-9 max-w-2xl text-[.95rem] leading-[1.7] text-zinc-400"
             >
-              Two lines of code. Automatic token tracking, cost attribution, and
-              latency monitoring — across OpenAI, Anthropic, Groq, Gemini, and
-              more. No proxies, zero added latency.
+              The AI Decision Engine for improving production systems. Automatically
+              surface plain-English insights, detect critical paths, and optimize costs
+              for your AI agents and chains.
             </motion.p>
 
             <motion.div

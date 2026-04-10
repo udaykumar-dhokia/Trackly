@@ -27,19 +27,25 @@ const TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="workspace-switcher"]',
     title: "Workspace switcher",
     description:
-      "Change organizations here. Trackly refreshes your active workspace so metrics and projects stay in sync.",
+      "Change organizations here. Trackly refreshes your active workspace so the visual diagnostics stay aligned with the right team and project.",
   },
   {
     selector: '[data-tour="project-switcher"]',
     title: "Project switcher",
     description:
-      "Pick the active project for the current workspace here. Trackly uses this context across project-specific views and member management.",
+      "Pick the active project for the current workspace here. Trackly uses this context across graph inspection, comparisons, budgets, and member management.",
+  },
+  {
+    selector: '[data-tour="visualise-nav"]',
+    title: "Visualise",
+    description:
+      "Start here. Visualise turns raw traces into a map of your AI system so you can spot bottlenecks, expensive branches, and risky steps fast.",
   },
   {
     selector: '[data-tour="dashboard-nav"]',
     title: "Dashboard overview",
     description:
-      "Start here for high-level usage, spend, and model visibility across the project you are currently viewing.",
+      "Use the dashboard for rollups and trends after you understand the run-level story in Visualise.",
   },
   {
     selector: '[data-tour="budgets-nav"]',
@@ -285,7 +291,7 @@ export function PlatformTour({ autoStart = false }: { autoStart?: boolean }) {
                   Welcome to Trackly
                 </p>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-white">
-                  Take a quick platform tour
+                  Take a quick visual intelligence tour
                 </h2>
               </div>
               <Button
@@ -301,12 +307,12 @@ export function PlatformTour({ autoStart = false }: { autoStart?: boolean }) {
 
             <p className="text-sm leading-7 text-zinc-400">
               We&apos;ll point out the core places you&apos;ll use most often so
-              you can get oriented fast and jump straight into tracking.
+              you can get oriented fast and move from raw events to clear decisions.
             </p>
 
             <div className="mt-6 grid gap-3 text-sm">
               <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                Switch workspaces and projects confidently.
+                Start with Visualise, then fan out into trends and controls.
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
                 Learn where to navigate, retrace steps, and ask for help.

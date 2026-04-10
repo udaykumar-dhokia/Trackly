@@ -7,7 +7,12 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  DEFAULT_OG_IMAGE,
+  SITE_NAME,
+  SITE_TAGLINE,
+  SITE_URL,
+} from "@/lib/site";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import StoreProvider from "@/lib/store/StoreProvider";
@@ -39,22 +44,24 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: SITE_NAME,
   title: {
-    default: "Trackly | Track LLM Costs & Usage",
+    default: "Trackly | The AI Decision Engine",
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models from one dashboard.",
+    "Find what's wrong with your AI — and fix it. Trackly surfaces plain-English insights, detects critical paths, and optimizes costs for production AI systems.",
   keywords: [
-    "LLM",
-    "AI costs",
-    "usage tracking",
+    "AI decision engine",
+    "AI performance optimization",
+    "critical path detection",
+    "AI cost optimization",
+    "auto insights",
+    "AI diagnostics",
+    "run comparison",
+    "AI monitoring",
     "OpenAI",
     "GPT",
     "Claude",
     "Gemini",
-    "API analytics",
-    "token usage",
-    "AI monitoring",
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
@@ -67,23 +74,23 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "Trackly | Track LLM Costs & Usage",
+    title: "Trackly | The AI Decision Engine",
     description:
-      "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models.",
+      "Find what's wrong with your AI — and fix it. Visual intelligence that surfaces insights and optimizes your AI systems.",
     images: [
       {
         url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Trackly LLM Cost and Usage Dashboard",
+        alt: "Trackly AI decision engine workspace",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trackly | Track LLM Costs & Usage",
+    title: "Trackly | The AI Decision Engine",
     description:
-      "Monitor and optimize your LLM spending in real-time. Track costs, usage, and performance across all your AI models.",
+      "Find what's wrong with your AI — and fix it. Visual intelligence that surfaces insights and optimizes your AI systems.",
     images: [DEFAULT_OG_IMAGE],
   },
   icons: {
@@ -106,6 +113,9 @@ export const metadata: Metadata = {
     },
   },
   category: "technology",
+  other: {
+    "application-name": `${SITE_NAME} - ${SITE_TAGLINE}`,
+  },
 };
 
 export default function RootLayout({

@@ -106,7 +106,7 @@ export default function QuickStart() {
             {"  "}callbacks<span className="c-amber">=</span>
             [trackly.callback()],{"\n"}){"\n"}
             <span className="c-muted">
-              # Every Claude call is now tracked automatically &check;
+              # Every Claude run is now analyzed automatically &check;
             </span>
           </div>
         </motion.div>

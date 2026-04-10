@@ -64,6 +64,11 @@ type UserProps = {
 
 const navItems = [
   {
+    title: "Visualise",
+    url: "/visualise",
+    icon: Graph,
+  },
+  {
     title: "Dashboard",
     url: "/dashboard",
     icon: ChartBar,
@@ -72,11 +77,6 @@ const navItems = [
     title: "Events Log",
     url: "/events",
     icon: ActivityIcon,
-  },
-  {
-    title: "Visualise",
-    url: "/visualise",
-    icon: Graph,
   },
   {
     title: "Playground",
@@ -176,7 +176,7 @@ export function AppSidebar({
               Trackly
             </span>
             <span className="text-[9px] text-zinc-500 font-mono tracking-[0.2em] mt-1 uppercase">
-              AI Observability
+              Decision Engine
             </span>
           </div>
         </div>
@@ -227,10 +227,11 @@ export function AppSidebar({
                           router.push("/dashboard");
                         }
                       }}
-                      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-xl border border-transparent transition-all focus:bg-indigo-500/10 focus:border-indigo-500/30 focus:text-white ${org.id === activeOrgId
-                        ? "bg-white/5 border-white/10 inset-shadow-2xs inset-shadow-white/30 text-white font-bold"
-                        : ""
-                        }`}
+                      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-xl border border-transparent transition-all focus:bg-indigo-500/10 focus:border-indigo-500/30 focus:text-white ${
+                        org.id === activeOrgId
+                          ? "bg-white/5 border-white/10 inset-shadow-2xs inset-shadow-white/30 text-white font-bold"
+                          : ""
+                      }`}
                     >
                       <div
                         className={`size-2 rounded-full ${org.id === activeOrgId ? "bg-white/20 inset-shadow-2xs inset-shadow-white/30 animate-pulse" : "bg-zinc-700"}`}
@@ -277,11 +278,6 @@ export function AppSidebar({
                         }
                       />
                       <span>{item.title}</span>
-                      {item.title === "Visualise" && (
-                        <span className="ml-auto text-[8px] font-bold tracking-widest uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">
-                          Beta
-                        </span>
-                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -298,8 +294,16 @@ export function AppSidebar({
             <SidebarMenu className="space-y-1">
               {[
                 { url: "/organizations", label: "Projects", Icon: Database },
-                { url: "/organizations/members", label: "Members", Icon: Users },
-                { url: "/organizations/usage", label: "Usage & Billing", Icon: ChartLineUp },
+                {
+                  url: "/organizations/members",
+                  label: "Members",
+                  Icon: Users,
+                },
+                {
+                  url: "/organizations/usage",
+                  label: "Usage & Billing",
+                  Icon: ChartLineUp,
+                },
               ].map(({ url, label, Icon }) => {
                 const isActive = pathname === url;
                 return (
@@ -311,12 +315,18 @@ export function AppSidebar({
                     >
                       <Link
                         href={url}
-                        data-tour={label === "Projects" ? "org-projects-nav" : undefined}
+                        data-tour={
+                          label === "Projects" ? "org-projects-nav" : undefined
+                        }
                       >
                         <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
-                          className={isActive ? "text-white size-5" : "text-zinc-400 size-5"}
+                          className={
+                            isActive
+                              ? "text-white size-5"
+                              : "text-zinc-400 size-5"
+                          }
                         />
                         <span>{label}</span>
                       </Link>
@@ -338,7 +348,11 @@ export function AppSidebar({
             </SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
               {[
-                { url: `/projects/${activeProjectId}/members`, label: "Project Members", Icon: Users },
+                {
+                  url: `/projects/${activeProjectId}/members`,
+                  label: "Project Members",
+                  Icon: Users,
+                },
               ].map(({ url, label, Icon }) => {
                 const isActive = pathname === url;
                 return (
@@ -352,7 +366,11 @@ export function AppSidebar({
                         <Icon
                           size={20}
                           weight={isActive ? "fill" : "duotone"}
-                          className={isActive ? "text-white size-5" : "text-zinc-400 size-5"}
+                          className={
+                            isActive
+                              ? "text-white size-5"
+                              : "text-zinc-400 size-5"
+                          }
                         />
                         <span>{label}</span>
                       </Link>
@@ -414,10 +432,11 @@ export function AppSidebar({
                       <DropdownMenuItem
                         key={project.id}
                         onClick={() => handleProjectSwitch(project.id)}
-                        className={`flex rounded-xl items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white border border-transparent ${project.id === activeProjectId
-                          ? "bg-white/5 border-white/10 text-white font-bold inset-shadow-2xs inset-shadow-white/30"
-                          : ""
-                          }`}
+                        className={`flex rounded-xl items-center gap-2 px-2 py-2 cursor-pointer focus:bg-white/5 focus:text-white border border-transparent ${
+                          project.id === activeProjectId
+                            ? "bg-white/5 border-white/10 text-white font-bold inset-shadow-2xs inset-shadow-white/30"
+                            : ""
+                        }`}
                       >
                         <span className="flex-1 truncate">{project.name}</span>
                         {project.environment && (

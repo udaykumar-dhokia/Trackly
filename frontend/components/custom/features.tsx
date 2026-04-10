@@ -110,8 +110,8 @@ export default function Features() {
                         </div>
                         <h2 className="text-[clamp(1.9rem,3.5vw,2.8rem)] font-extrabold tracking-[-0.03em] leading-[1.1] mb-4 max-w-[660px]">
                             Everything you need to{' '}
-                            <span className="text-primary">understand</span>
-                            <br />your AI spend
+                            <span className="text-primary italic">fix</span>
+                            <br />your AI systems
                         </h2>
                         <p className="text-[.95rem] text-zinc-400 leading-[1.7] max-w-[480px]">
                             From zero-config provider detection to per-user cost attribution —
@@ -131,14 +131,13 @@ export default function Features() {
                             className="rounded-xl feat-card glow-purple col-span-12 md:col-span-5 row-span-2 transition-colors duration-200"
                         >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-2">
-                                Zero-config <span className="text-primary">provider detection</span>
+                                Auto <span className="text-primary">Insights Engine</span>
                             </p>
                             <p className="text-[.85rem] text-zinc-400 leading-[1.65]">
-                                Pass your LLM to{' '}
-                                <code className=" text-[.8rem] text-zinc-200">trackly.callback()</code>
-                                {' '}and walk away. Provider resolved from LangChain's class namespace —{' '}
-                                <strong className="text-zinc-200">not guessed from model names</strong>{' '}
-                                — so Groq, Ollama, Together, and Fireworks all work out of the box.
+                                Stop reading dashboards. Trackly automatically surfaces{' '}
+                                <strong className="text-zinc-200">plain-English findings</strong>{' '}
+                                from every run: "Cost spike caused by GPT-4 overuse in step 3" or
+                                "Latency bottleneck detected in the tool-calling loop."
                             </p>
 
                             <div className="flex flex-wrap gap-1.5 mt-5">
@@ -181,12 +180,11 @@ export default function Features() {
                             className="rounded-xl feat-card glow-amber col-span-12 md:col-span-7 transition-colors duration-200"
                         >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
-                                <span className="text-primary">Cost attribution</span> by feature
+                                <span className="text-primary">Critical Path</span> Detection
                             </p>
                             <p className="text-[.85rem] text-zinc-400 leading-[1.65] mb-4">
-                                See exactly which features are driving your bill. Tag calls with{' '}
-                                <code className=" text-[.8rem] text-zinc-200">feature=</code>
-                                {' '}and get a live breakdown.
+                                Automatically highlight the slowest, most expensive, and failure points.
+                                Visually tagged as the <strong className="text-primary">🔥 Critical Path</strong> so you know exactly where to look.
                             </p>
                             <div className="flex flex-col gap-2.5">
                                 {BARS.map(bar => (
@@ -215,10 +213,11 @@ export default function Features() {
                             className="rounded-xl feat-card glow-green col-span-12 md:col-span-4 transition-colors duration-200"
                         >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
-                                Latency <span className="text-primary">per model</span>
+                                Cost <span className="text-primary">Intelligence</span>
                             </p>
                             <p className="text-[.85rem] text-zinc-400 leading-[1.65] mb-4">
-                                P50 / P95 tracked per model, per feature.
+                                Move beyond tracking. Get model efficiency suggestions:{' '}
+                                <strong className="text-primary">"Switch to GPT-4o-mini to save 68% cost."</strong>
                             </p>
                             <div className=" text-[2.8rem] font-light text-zinc-100 tracking-[-0.04em] leading-none">
                                 312<span className="text-[1rem] text-zinc-500 ml-1">ms</span>
@@ -241,10 +240,10 @@ export default function Features() {
                             className="rounded-xl feat-card glow-blue col-span-12 md:col-span-3 transition-colors duration-200"
                         >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
-                                <span className="text-primary">Per-user</span> cost
+                                Run <span className="text-primary">Comparison</span>
                             </p>
                             <p className="text-[.8rem] text-zinc-400 leading-[1.65] mb-4">
-                                Know your most expensive users instantly.
+                                Side-by-side diffs of cost, latency, and steps taken.
                             </p>
                             <div className="flex flex-col gap-0">
                                 {[['u_8821', '$4.21', '#fbbf24'], ['u_3341', '$2.87', ''], ['u_9102', '$1.44', ''], ['u_0551', '$0.93', '']].map(([uid, val, col], i) => (
@@ -297,10 +296,10 @@ export default function Features() {
                             className="rounded-xl feat-card glow-purple col-span-12 md:col-span-6 transition-colors duration-200"
                         >
                             <p className="text-[1rem] font-bold tracking-[-0.02em] mb-1.5">
-                                <span className="text-primary">Cost alerts</span>
+                                Smart <span className="text-primary">Alerts</span>
                             </p>
                             <p className="text-[.8rem] text-zinc-400 leading-[1.65] mb-1">
-                                Get notified before you overspend.
+                                Every alert carries an interpreted reason for the spike.
                             </p>
                             {[
                                 { dot: '#f87171', shadow: '#f87171', title: 'Budget exceeded', sub: 'summarizer hit $20 limit' },

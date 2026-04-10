@@ -19,7 +19,9 @@ export function DynamicBreadcrumb() {
     <Breadcrumb data-tour="page-breadcrumb">
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard" className="font-bold text-white">Trackly</BreadcrumbLink>
+          <BreadcrumbLink href="/visualise" className="font-bold text-white">
+            Trackly
+          </BreadcrumbLink>
         </BreadcrumbItem>
         {segments.length > 0 && <BreadcrumbSeparator />}
         {segments.map((segment, index) => {

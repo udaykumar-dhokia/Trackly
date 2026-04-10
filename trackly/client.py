@@ -17,6 +17,13 @@ from .worker import _TracklyWorker
 
 
 class Trackly(BaseCallbackHandler):
+    """
+    The AI Decision Engine for improving production AI systems.
+
+    Trackly helps teams find what's wrong with their AI — and fix it. Automatically
+    surface plain-English insights, detect critical paths, and optimize costs
+    across your AI agents and chains.
+    """
     def __init__(
         self,
         provider: Optional[str] = None,

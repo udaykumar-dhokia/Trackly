@@ -1,21 +1,21 @@
 # Trackly
 
-Zero-overhead AI cost and usage tracking for Python. Import the library, wrap your LangChain model, and every LLM call is automatically logged — tokens, cost, latency, and your own metadata.
+The AI Decision Engine for improving production AI systems. Find what's wrong with your AI — and fix it.
 
-This repository contains both the **Trackly Python SDK** and the **Trackly Ingest API** (the backend component). You can self-host the API or use it alongside your local development.
+Zero-overhead intelligence for Python. Import the library, wrap your model, and Trackly automatically surfaces plain-English insights, detects critical paths, and suggests cost optimizations.
 
 ---
 
-![Trackly Trace Graph & What-If Analysis](frontend/public/graph.png)
+![Trackly visual intelligence dashboard](frontend/public/graph.png)
 
 ## ⚡ Features
 
-- **"What-If" Analysis Engine**: Real-time cost simulation for model swaps. Click any node in your trace to instantly project how switching to a different LLM (e.g. GPT-4o -> Claude 3.5 Sonnet) affects your session-level costs.
-- **Interactive Trace Graph**: Visualize complex multi-model AI pipelines with a high-performance 2D force-directed graph. Features Neo4j-style collision physics and provider-branded node styling.
-- **Model Swap Simulator**: A navigation-optimized shelf with pricing configurations for over 50+ models, providing an instant `Original -> Projected` cost comparison.
-- **Zero-Overhead SDK**: Callbacks fire instantly. All events are batched asynchronously off-thread and shipped every 2 seconds without ever blocking your application.
-- **Deep Integrations**: Automatically captures exact model names (e.g. `gemini-1.5-flash`, `gpt-4o`) directly from LangChain's invocation parameters using a robust two-layer detection heuristic.
-- **Provider Agnostic**: Native support for OpenAI, Anthropic, Google Gemini, Ollama, Groq, Mistral, Cohere, Bedrock, and generic wrappers.
+- **Auto Insights Engine**: Automatically surface plain-English findings from every run. Detect cost spikes, retry storms, latency bottlenecks, and tool failure rates without manual dashboard reading.
+- **Critical Path Detection**: Automatically highlight the slowest, most expensive, and failure steps in every agent run. Visually tagged as the 🔥 Critical Path.
+- **Cost Intelligence & Optimization**: Beyond total cost tracking. Per-feature attribution, "wasted token" detection, and model efficiency suggestions (e.g., "Switching to GPT-4o-mini saves 68%").
+- **Run Comparison**: Side-by-side comparison of cost, latency, steps, and output diffs. Perfect for prompt testing, model switching, and regression debugging.
+- **"What-If" Analysis**: Real-time cost simulation for model swaps. Project how switching LLMs affects your session-level costs before making the change.
+- **Interactive Trace Graph**: Visualize complex multi-model AI pipelines with a high-performance 2D force-directed graph.
 
 ---
 

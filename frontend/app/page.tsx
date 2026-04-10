@@ -11,26 +11,32 @@ import AboutContact from "@/components/custom/aboutAndContact";
 import Footer from "@/components/custom/footer";
 import Testimonials from "@/components/custom/testimonials";
 import PopularGuides from "@/components/custom/popular-guides";
-import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  absoluteUrl,
+  DEFAULT_OG_IMAGE,
+  SITE_NAME,
+  SITE_TAGLINE,
+  SITE_URL,
+} from "@/lib/site";
 import { getAllResourceArticles } from "@/lib/resources";
 
-const homepageTitle = "Trackly | LLM Observability, Cost Tracking & Usage Analytics";
+const homepageTitle = "Trackly | The AI Decision Engine";
 const homepageDescription =
-  "Track LLM costs, token usage, latency, and model performance in one place. Trackly helps teams monitor OpenAI, Anthropic, Gemini, and other AI workloads with production-ready observability.";
+  "Understand, debug, and optimize your AI systems. Trackly goes beyond logs to give you plain English insights, critical path detection, and auto-optimization suggestions for your AI agents and chains.";
 
 export const metadata: Metadata = {
   title: homepageTitle,
   description: homepageDescription,
   keywords: [
-    "LLM observability",
-    "LLM cost tracking",
-    "AI usage analytics",
-    "OpenAI cost monitoring",
-    "Anthropic usage tracking",
-    "Gemini usage tracking",
-    "token tracking dashboard",
-    "AI latency monitoring",
-    "LLM analytics platform",
+    "AI system visualization",
+    "trace visualization",
+    "AI decision engine",
+    "critical path detection",
+    "run comparison",
+    "AI cost optimization",
+    "AI latency diagnostics",
+    "LLM trace graph",
+    "agent workflow visualization",
   ],
   alternates: {
     canonical: "/",
@@ -45,7 +51,7 @@ export const metadata: Metadata = {
         url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Trackly LLM observability dashboard",
+        alt: "Trackly visual intelligence dashboard",
       },
     ],
   },
@@ -64,6 +70,7 @@ const structuredData = [
     name: SITE_NAME,
     url: SITE_URL,
     logo: absoluteUrl("/web/logo-96.png"),
+    slogan: SITE_TAGLINE,
   },
   {
     "@context": "https://schema.org",
